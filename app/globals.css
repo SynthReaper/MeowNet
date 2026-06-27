@@ -1,0 +1,757 @@
+/* Codebase by SynthReaper — MeowNet */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600&family=Quicksand:wght@600;700&family=DM+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ============================================================
+   MeowNet — Global Design Token System
+   Elite v3 §3.2 — Old naval empire meets live mission-control
+   ============================================================ */
+
+:root {
+  /* Backgrounds */
+  --bg-void:         #fdf9f3; /* Cozy Warm Cream */
+  --bg-surface:      #ffffff; /* Surface Container Lowest / Card bg */
+  --bg-elevated:     #f7f3ed; /* Surface Container Low */
+  --bg-border:       #dbc2b2; /* Outline Variant */
+
+  /* Empire (gold/terracotta) */
+  --empire-gold:     #944a00; /* Deep Terracotta Orange */
+  --empire-gold-dim: #713700;
+  --empire-cream:    #1c1c18; /* On Background (Dark text) */
+
+  /* Life (teal + amber) */
+  --life-teal:       #006a63; /* Deep Emerald Teal */
+  --life-teal-dim:   #00504a;
+  --life-amber:      #f28c38; /* Sunlit Amber */
+
+  /* Status */
+  --status-adoptable: #006a63;
+  --status-tnr:       var(--empire-gold);
+  --status-stray:     #ba1a1a;
+  --status-adopted:   #818CF8;
+
+  /* Typography */
+  --font-display: 'Quicksand', system-ui, sans-serif;
+  --font-body:    'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-data:    'DM Mono', monospace;
+
+  /* Text Colors */
+  --text-primary:    #1c1c18;
+  --text-secondary:  rgba(28, 28, 24, 0.72);
+  --text-muted:      rgba(28, 28, 24, 0.5);
+
+  /* Shadows */
+  --shadow-card:   0 4px 12px rgba(242, 140, 56, 0.08), 0 0 0 1px var(--bg-border);
+  --shadow-active: 0 8px 24px rgba(242, 140, 56, 0.15), 0 0 0 1px var(--empire-gold);
+  --shadow-glow:   0 0 40px rgba(0, 106, 99, 0.1);
+
+  /* Spacing */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+
+[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-void:         #141210; /* Deep Dark Espresso */
+  --bg-surface:      #1c1a17; /* Dark Card Surface */
+  --bg-elevated:     #25221e; /* Dark Surface container */
+  --bg-border:       #403730; /* Darker outline border */
+
+  /* Empire (gold/terracotta) */
+  --empire-gold:     #f28c38; /* Terracotta Orange / Sunlit Amber */
+  --empire-gold-dim: #c57b37;
+  --empire-cream:    #fdf9f3; /* Light Warm Cream text */
+
+  /* Life (teal + amber) */
+  --life-teal:       #4dd0e1; /* Lighter mint teal */
+  --life-teal-dim:   #00acc1;
+  --life-amber:      #ffd54f;
+
+  /* Text Colors */
+  --text-primary:    #fdf9f3;
+  --text-secondary:  rgba(253, 249, 243, 0.72);
+  --text-muted:      rgba(253, 249, 243, 0.5);
+
+  /* Status overrides */
+  --status-adoptable: #4dd0e1;
+
+  /* Shadows */
+  --shadow-card:   0 4px 12px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--bg-border);
+  --shadow-active: 0 8px 24px rgba(242, 140, 56, 0.15), 0 0 0 1px var(--empire-gold);
+
+  /* Override hardcoded text colors that are unreadable in dark mode */
+  [class*="text-[#5c4a3c]"] {
+    color: var(--text-primary) !important;
+  }
+  [class*="text-[#6b5a4d]"] {
+    color: var(--text-secondary) !important;
+  }
+
+  /* Support border overrides for light theme borders */
+  [class*="border-[#f0e6dc]"],
+  [class*="border-[#dbc2b2]"] {
+    border-color: var(--bg-border) !important;
+  }
+
+  /* Support light background overrides */
+  [class*="bg-[#f7f0e8]"],
+  [class*="bg-[#fdf9f3]"] {
+    background-color: var(--bg-surface) !important;
+  }
+  [class*="bg-[#fceee1]"] {
+    background-color: var(--bg-elevated) !important;
+  }
+  [class*="bg-white"] {
+    background-color: var(--bg-surface) !important;
+  }
+}
+
+
+/* ============================================================
+   Base Reset + Global Styles
+   ============================================================ */
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    color-scheme: light;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--bg-void);
+    color: var(--empire-cream);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ============================================================
+     Typography
+     ============================================================ */
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--empire-cream);
+  }
+
+  h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
+  h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); }
+  h3 { font-size: clamp(1.2rem, 2vw, 1.5rem); }
+
+  /* ============================================================
+     Scrollbar
+     ============================================================ */
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-void); }
+  ::-webkit-scrollbar-thumb { background: var(--bg-border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--empire-gold-dim); }
+
+  /* ============================================================
+     Focus Rings — WCAG 2.1 AA
+     ============================================================ */
+
+  :focus-visible {
+    outline: 2px solid var(--life-teal);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  /* ============================================================
+     Reduced Motion
+     ============================================================ */
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ============================================================
+   Component & Utility Classes
+   ============================================================ */
+
+@layer components {
+  .font-data {
+    font-family: var(--font-data);
+  }
+
+  .card {
+    background: var(--bg-surface);
+    border: 1px solid var(--bg-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    padding: 1.5rem;
+  }
+
+  .card-elevated {
+    background: var(--bg-elevated);
+    border: 1px solid var(--bg-border);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    transition: box-shadow 0.2s ease;
+  }
+
+  .card-elevated:hover {
+    box-shadow: var(--shadow-active);
+  }
+
+  .glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Status badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .badge-adoptable { background: rgba(74,222,128,.15); color: var(--status-adoptable); border: 1px solid rgba(74,222,128,.3); }
+  .badge-tnr       { background: rgba(250,204,21,.15); color: var(--status-tnr);       border: 1px solid rgba(250,204,21,.3); }
+  .badge-stray     { background: rgba(248,113,113,.15); color: var(--status-stray);    border: 1px solid rgba(248,113,113,.3); }
+  .badge-adopted   { background: rgba(129,140,248,.15); color: var(--status-adopted);  border: 1px solid rgba(129,140,248,.3); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-decoration: none;
+  }
+
+  .btn-primary {
+    background: var(--empire-gold);
+    color: #06060A;
+  }
+  .btn-primary:hover {
+    background: #e6b020;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(212,160,23,.4);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--empire-cream);
+    border: 1px solid var(--bg-border);
+  }
+  .btn-ghost:hover {
+    background: var(--bg-elevated);
+    border-color: var(--empire-gold-dim);
+  }
+
+  .btn-teal {
+    background: var(--life-teal);
+    color: #06060A;
+  }
+  .btn-teal:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  /* ============================================================
+     Skeleton Loading
+     ============================================================ */
+
+  .skeleton {
+    background: linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-elevated) 50%, var(--bg-surface) 75%);
+    background-size: 400% 100%;
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+  }
+
+  @keyframes skeleton-pulse {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ============================================================
+     Map overrides (Leaflet needs explicit z-index)
+     ============================================================ */
+
+  .leaflet-container {
+    background: var(--bg-surface);
+    font-family: var(--font-body);
+    border-radius: var(--radius-md);
+  }
+
+  .leaflet-popup-content-wrapper {
+    background: var(--bg-elevated);
+    border: 1px solid var(--bg-border);
+    color: var(--empire-cream);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+  }
+
+  .leaflet-popup-tip { background: var(--bg-elevated); }
+
+  /* ============================================================
+     Points Toast Animation
+     ============================================================ */
+
+  .points-toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 9999;
+    background: var(--bg-elevated);
+    border: 1px solid var(--empire-gold-dim);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: var(--shadow-active);
+    animation: toast-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(20px) scale(0.9); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ============================================================
+     Cozy Community Custom Classes
+     ============================================================ */
+
+  .paw-pattern {
+    background-color: var(--bg-void);
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23dbc2b2' fill-opacity='0.15'%3E%3Cpath d='M22.5 28.5c-2.485 0-4.5-2.015-4.5-4.5s2.015-4.5 4.5-4.5 4.5 2.015 4.5 4.5-2.015 4.5-4.5 4.5zm15 0c-2.485 0-4.5-2.015-4.5-4.5s2.015-4.5 4.5-4.5 4.5 2.015 4.5 4.5-2.015 4.5-4.5 4.5zm-22.5-7.5c-2.485 0-4.5-2.015-4.5-4.5s2.015-4.5 4.5-4.5 4.5 2.015 4.5 4.5-2.015 4.5-4.5 4.5zm30 0c-2.485 0-4.5-2.015-4.5-4.5s2.015-4.5 4.5-4.5 4.5 2.015 4.5 4.5-2.015 4.5-4.5 4.5zm-15 15c-4.142 0-7.5-3.358-7.5-7.5 0-3.314 5.25-10.5 7.5-10.5 2.25 0 7.5 7.186 7.5 10.5 0 4.142-3.358 7.5-7.5 7.5z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  [data-theme="dark"] .paw-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23403730' fill-opacity='0.25'%3E%3Cpath d='M22.5 28.5c-2.485 0-4.5-2.015-4.5-4.5s2.015-4.5 4.5-4.5 4.5 2.015 4.5 4.5-2.015 4.5-4.5 4.5zm15 0c-2.485 0-4.5-2.015-4.5-4.5s2.015-4.5 4.5-4.5 4.5 2.015 4.5 4.5-2.015 4.5-4.5 4.5zm-22.5-7.5c-2.485 0-4.5-2.015-4.5-4.5s2.015-4.5 4.5-4.5 4.5 2.015 4.5 4.5-2.015 4.5-4.5 4.5zm30 0c-2.485 0-4.5-2.015-4.5-4.5s2.015-4.5 4.5-4.5 4.5 2.015 4.5 4.5-2.015 4.5-4.5 4.5zm-15 15c-4.142 0-7.5-3.358-7.5-7.5 0-3.314 5.25-10.5 7.5-10.5 2.25 0 7.5 7.186 7.5 10.5 0 4.142-3.358 7.5-7.5 7.5z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  .cat-pattern {
+    background-color: var(--bg-void);
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10,35 L16,20 L25,28 L35,28 L44,20 L50,35 C50,46 41,54 30,54 C19,54 10,46 10,35 Z' fill='%23dbc2b2' fill-opacity='0.08'/%3E%3C/svg%3E");
+  }
+
+  [data-theme="dark"] .cat-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10,35 L16,20 L25,28 L35,28 L44,20 L50,35 C50,46 41,54 30,54 C19,54 10,46 10,35 Z' fill='%23403730' fill-opacity='0.18'/%3E%3C/svg%3E");
+  }
+
+  .shadow-ambient {
+    box-shadow: 0 4px 12px rgba(242, 140, 56, 0.08);
+  }
+
+  /* Custom pulsing radar map markers */
+  .custom-radar-icon {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .radar-marker {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .radar-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+    z-index: 2;
+    transition: transform 0.2s ease;
+  }
+
+  .radar-pulse {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    animation: radar-blip 2s infinite ease-out;
+    opacity: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .radar-marker:hover .radar-dot {
+    transform: scale(1.3);
+  }
+
+  @keyframes radar-blip {
+    0% {
+      transform: scale(0.5);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(2.5);
+      opacity: 0;
+    }
+  }
+
+  /* Automatic dark mode override for bg-white */
+  [data-theme="dark"] .bg-white {
+    background-color: var(--bg-surface) !important;
+  }
+}
+
+/* ============================================================
+   Floating Cat Doodle Animations for Auth Pages
+   ============================================================ */
+
+@keyframes float-slow {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0.08; }
+  33% { transform: translate(30px, -45px) rotate(12deg) scale(1.08); opacity: 0.18; }
+  66% { transform: translate(-20px, -20px) rotate(-10deg) scale(0.95); opacity: 0.12; }
+  100% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0.08; }
+}
+
+@keyframes float-medium {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0.06; }
+  50% { transform: translate(-35px, -65px) rotate(18deg) scale(1.12); opacity: 0.16; }
+  100% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0.06; }
+}
+
+@keyframes float-fast {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0.08; }
+  50% { transform: translate(25px, -40px) rotate(-15deg) scale(0.9); opacity: 0.20; }
+  100% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 0.08; }
+}
+
+.animate-float-slow {
+  animation: float-slow 14s ease-in-out infinite;
+}
+
+.animate-float-medium {
+  animation: float-medium 10s ease-in-out infinite;
+}
+
+.animate-float-fast {
+  animation: float-fast 8s ease-in-out infinite;
+}
+
+/* ============================================================
+   Clerk Auth Styling Overrides (Unified & Dull Warm Tones)
+   ============================================================ */
+
+.cl-card {
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--bg-border) !important;
+  box-shadow: var(--shadow-card) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+.cl-headerTitle {
+  color: var(--empire-cream) !important;
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+}
+
+.cl-headerSubtitle,
+.cl-formFieldLabel,
+.cl-dividerText,
+.cl-footerActionText,
+.cl-identityPreviewText,
+.cl-userButtonPopoverActionButtonText {
+  color: var(--text-secondary) !important;
+}
+
+.cl-formFieldInput {
+  background-color: var(--bg-elevated) !important;
+  border: 1px solid var(--bg-border) !important;
+  color: var(--empire-cream) !important;
+  transition: all 0.2s ease !important;
+}
+
+.cl-formFieldInput:focus {
+  border-color: var(--life-teal) !important;
+  outline: none !important;
+}
+
+.cl-socialButtonsBlockButton {
+  background-color: var(--bg-elevated) !important;
+  border: 1px solid var(--bg-border) !important;
+  color: var(--empire-cream) !important;
+  transition: all 0.2s ease !important;
+}
+
+.cl-socialButtonsBlockButton:hover {
+  background-color: var(--bg-border) !important;
+  border-color: var(--empire-gold) !important;
+}
+
+.cl-socialButtonsBlockButtonText {
+  color: var(--empire-cream) !important;
+}
+
+.cl-formButtonPrimary {
+  background-color: var(--empire-gold) !important;
+  color: white !important;
+  font-family: var(--font-display) !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 4px 12px rgba(242, 140, 56, 0.1) !important;
+}
+
+.cl-formButtonPrimary:hover {
+  background-color: #e6b020 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 16px rgba(242, 140, 56, 0.25) !important;
+}
+
+.cl-footerActionLink {
+  color: var(--life-teal) !important;
+  transition: color 0.2s ease !important;
+  text-decoration: none !important;
+}
+
+.cl-footerActionLink:hover {
+  color: var(--empire-gold) !important;
+}
+
+.cl-dividerLine {
+  background-color: var(--bg-border) !important;
+  opacity: 0.5 !important;
+}
+
+.cl-footer {
+  background-color: transparent !important;
+  border-top: 1px solid var(--bg-border) !important;
+  opacity: 0.8 !important;
+}
+
+/* ============================================================
+   Cat Loading Screen Animations
+   ============================================================ */
+
+@keyframes cat-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+
+@keyframes ear-twitch-left {
+  0%, 80%, 100% { transform: rotate(0deg); }
+  85%, 95% { transform: rotate(-8deg); }
+}
+
+@keyframes ear-twitch-right {
+  0%, 82%, 100% { transform: rotate(0deg); }
+  87%, 93% { transform: rotate(8deg); }
+}
+
+@keyframes whisker-twitch-left {
+  0%, 75%, 100% { transform: translate(0, 0) rotate(0deg); }
+  80%, 90% { transform: translate(-3px, -1px) rotate(-2deg); }
+}
+
+@keyframes whisker-twitch-right {
+  0%, 78%, 100% { transform: translate(0, 0) rotate(0deg); }
+  83%, 93% { transform: translate(3px, -1px) rotate(2deg); }
+}
+
+@keyframes paw-pulse {
+  0%, 100% { opacity: 0.15; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.15); filter: drop-shadow(0 0 8px var(--empire-gold)); }
+}
+
+@keyframes text-fade-cycle {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.animate-cat-blink {
+  animation: cat-blink 4s infinite ease-in-out;
+  transform-origin: center;
+}
+
+.animate-ear-left {
+  animation: ear-twitch-left 3.5s infinite ease-in-out;
+  transform-origin: bottom right;
+}
+
+.animate-ear-right {
+  animation: ear-twitch-right 3.5s infinite ease-in-out;
+  transform-origin: bottom left;
+}
+
+.animate-whisker-left {
+  animation: whisker-twitch-left 4.5s infinite ease-in-out;
+  transform-origin: right center;
+}
+
+.animate-whisker-right {
+  animation: whisker-twitch-right 4.5s infinite ease-in-out;
+  transform-origin: left center;
+}
+
+.animate-text-cycle {
+  animation: text-fade-cycle 2s infinite ease-in-out;
+}
+
+.animate-paw-1 { animation: paw-pulse 1.6s infinite ease-in-out; animation-delay: 0.0s; }
+.animate-paw-2 { animation: paw-pulse 1.6s infinite ease-in-out; animation-delay: 0.4s; }
+.animate-paw-3 { animation: paw-pulse 1.6s infinite ease-in-out; animation-delay: 0.8s; }
+.animate-paw-4 { animation: paw-pulse 1.6s infinite ease-in-out; animation-delay: 1.2s; }
+
+.cat-loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background-color: var(--bg-void);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1), visibility 0.6s;
+}
+
+.cat-loader-overlay.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ============================================================
+   Floating Action Button (FAB) bouncing entry
+   ============================================================ */
+
+.fab-bounce {
+  animation: fab-entry 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes fab-entry {
+  0% { transform: translateY(100px) scale(0.3); opacity: 0; }
+  50% { transform: translateY(-10px) scale(1.1); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* ============================================================
+   TNR Progress Track and Fill (Colony pages)
+   ============================================================ */
+
+.tnr-progress-track {
+  width: 100%;
+  height: 10px;
+  background: var(--bg-elevated);
+  border-radius: 5px;
+  border: 1px solid var(--bg-border);
+  overflow: hidden;
+  position: relative;
+}
+
+.tnr-progress-fill {
+  height: 100%;
+  background: var(--life-teal);
+  border-radius: 5px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+   Onboarding Tour Tooltip and Backdrop
+   ============================================================ */
+
+.tour-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99990;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  transition: opacity 0.3s ease;
+}
+
+.tour-tooltip {
+  position: fixed;
+  z-index: 99991;
+  background: var(--bg-surface);
+  border: 2px solid var(--empire-gold);
+  box-shadow: 0 10px 30px rgba(212, 163, 89, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  animation: tour-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes tour-pop {
+  from { opacity: 0; transform: scale(0.9) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ============================================================
+   Success Stories Card Classes
+   ============================================================ */
+
+.story-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--bg-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.story-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-active);
+}
+
+/* ============================================================
+   Fade In Animation Utility
+   ============================================================ */
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   Full-Window Layout Overrides (Map & Community)
+   ============================================================ */
+
+body:has(#community-page-root),
+body:has(#map-page-root) {
+  overflow: hidden !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+}
+
+body:has(#community-page-root) footer,
+body:has(#map-page-root) footer {
+  display: none !important;
+}
+
+
+
+

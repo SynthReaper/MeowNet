@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: 🔒 Security Vulnerability
+    url: https://github.com/SynthReaper/MeowNet/security/advisories/new
+    about: "Report vulnerabilities privately via GitHub Security Advisories"
+  - name: 💬 General Question / Discussion
+    url: https://github.com/SynthReaper/MeowNet/discussions
+    about: "Ask questions, share ideas, get help — without creating an issue"
+  - name: 🐾 Cat Rescue Resources
+    url: https://www.alleycat.org/resources/
+    about: "Alley Cat Allies — TNR and community cat resources"

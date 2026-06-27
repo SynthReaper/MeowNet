@@ -1,0 +1,6 @@
+Contact: mailto:synthreaperx@gmail.com
+Contact: https://github.com/SynthReaper/MeoNet/security/advisories/new
+Expires: 2027-06-25T12:00:00.000Z
+Preferred-Languages: en
+Canonical: https://meownet-sr.vercel.app/.well-known/security.txt
+Policy: https://github.com/SynthReaper/MeoNet/blob/master/SECURITY.md

@@ -1,0 +1,83 @@
+{
+  "name": "meownet",
+  "version": "0.4.0",
+  "description": "Community-powered cat rescue platform — 3D globe, live map, gamification, AI breed estimation, and dual auth for #hackthekitty 2026.",
+  "author": "SynthReaper <synthreaperx@gmail.com> (https://github.com/SynthReaper)",
+  "license": "MIT",
+  "homepage": "https://meownet-sr.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SynthReaper/MeowNet.git"
+  },
+  "keywords": [
+    "cats",
+    "cat-rescue",
+    "TNR",
+    "animal-welfare",
+    "next.js",
+    "supabase",
+    "hackathon"
+  ],
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^7.5.7",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.2",
+    "@tanstack/react-virtual": "^3.14.3",
+    "@types/pg": "^8.20.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dompurify": "^3.4.11",
+    "gsap": "^3.15.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.21.0",
+    "next": "16.2.9",
+    "pg": "^8.22.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-leaflet": "^5.0.0",
+    "recharts": "^3.8.1",
+    "sharp": "^0.35.2",
+    "swr": "^2.4.2",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss-animate": "^1.0.7",
+    "three": "^0.184.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/dompurify": "^3.0.5",
+    "@types/leaflet": "^1.9.21",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/three": "^0.184.1",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.9",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "overrides": {
+    "postcss": "^8.5.10"
+  }
+}

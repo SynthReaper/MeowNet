@@ -1,0 +1,94 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# ── Dependencies ──────────────────────────────────────────────────────────────
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+/coverage
+/playwright-report
+/test-results
+*.test-results.json
+
+# ── Next.js ───────────────────────────────────────────────────────────────────
+/.next/
+/out/
+/build
+
+# ── Python ML service ─────────────────────────────────────────────────────────
+# Global patterns — match at any depth (routers/, domain/, infrastructure/, etc.)
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+python-ml/.venv/
+python-ml/venv/
+python-ml/.pytest_cache/
+**/.pytest_cache/
+python-ml/dist/
+python-ml/*.egg-info/
+
+# ── Environment variables ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Keep .env.example committed
+!.env.example
+
+# ── OS / Editor ───────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+*.pem
+
+# ── Debug logs ────────────────────────────────────────────────────────────────
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# ── TypeScript ────────────────────────────────────────────────────────────────
+*.tsbuildinfo
+next-env.d.ts
+
+# ── Vercel ────────────────────────────────────────────────────────────────────
+.vercel
+
+# ── Clerk (contains secrets) ──────────────────────────────────────────────────
+/.clerk/
+
+# ── Supabase local ────────────────────────────────────────────────────────────
+supabase/.temp/
+supabase/.branches/
+
+# ── Agents / AI tooling ───────────────────────────────────────────────────────
+/.agents/
+
+# ── Plans ─────────────────────────────────────────────────────────────────────
+/plans/
+
+# ── Antigravity IDE ───────────────────────────────────────────────────────────
+.gemini/
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────────
+.idea/
+.vscode/settings.json
+.vscode/launch.json
+*.swp
+*.swo
+*~
+
+# ── Private / local-only docs ─────────────────────────────────────────────────
+SETUP.md
