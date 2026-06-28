@@ -152,6 +152,10 @@ Permissions-Policy: camera=(), microphone=(), geolocation=(self)
 Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
 ```
 
+## Security Audits
+
+An independent security audit was performed. The full report is available in the repository at [security-audit-report.pdf](../aikido-security-audit/security-audit-report.pdf).
+
 ---
 
 ## Vulnerability Disclosure

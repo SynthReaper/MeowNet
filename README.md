@@ -3,7 +3,6 @@
 > **The community-powered cat empire.** Log strays, coordinate TNR, earn Empire Points — every particle on that globe is a cat with a better life.
 
 [![CI Status](https://github.com/SynthReaper/MeowNet/actions/workflows/ci.yml/badge.svg)](https://github.com/SynthReaper/MeowNet/actions/workflows/ci.yml)
-[![Deploy Status](https://github.com/SynthReaper/MeowNet/actions/workflows/deploy.yml/badge.svg)](https://github.com/SynthReaper/MeowNet/actions/workflows/deploy.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostGIS-green?logo=supabase)](https://supabase.com/)
@@ -102,7 +101,7 @@ Browser
   │
   ├── Supabase (PostgreSQL + PostGIS)
   │     ├── Auth            — email/password + Google/GitHub + direct creds
-  │     ├── Database        — cats, events, profiles, gamification (28 migrations)
+  │     ├── Database        — cats, events, profiles, gamification (42 migrations)
   │     ├── Storage         — Cat photos (EXIF stripped before upload)
   │     └── Realtime        — Live cat sighting map + community chat
   │
@@ -217,11 +216,12 @@ npm run build         # Production build
 |----------|---------|
 | [docs/HACKATHON.md](docs/HACKATHON.md) | **Start here** — Judge guide, demo walkthrough |
 | [docs/architecture.md](docs/architecture.md) | System design, ADRs, data flow |
-| [docs/database.md](docs/database.md) | 33 migrations, schema, RLS matrix |
+| [docs/database.md](docs/database.md) | 42 migrations, schema, RLS matrix |
 | [docs/api.md](docs/api.md) | API route reference |
 | [docs/security.md](docs/security.md) | Threat model, GDPR compliance |
 | [docs/deployment.md](docs/deployment.md) | Vercel + Railway + Docker guide |
 | [docs/weather.md](docs/weather.md) | Open-Meteo integration |
+| [security-audit-report.pdf](aikido-security-audit/security-audit-report.pdf) | Aikido Security Audit Report |
 
 ---
 
@@ -243,5 +243,5 @@ Created for **#hackthekitty 2026** 🐾 by [SynthReaper](https://github.com/Synt
 
 ---
 
-**Author:** [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com · **Version:** 0.4.0 · **License:** MIT
+**Author:** [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com · **Version:** 0.4.0 · **License:** [MIT with Custom Disclaimer](LICENSE)
 

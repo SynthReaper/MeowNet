@@ -124,14 +124,11 @@ vercel env add SUPABASE_SERVICE_ROLE_KEY
 vercel --prod
 ```
 
-### Continuous Deployment (GitHub Actions)
+### Continuous Deployment (Direct Git Integration)
 
-The `.github/workflows/deploy.yml` workflow automatically deploys to Vercel on every push to `main`:
-
-```yaml
-# Requires GitHub Secrets:
-# VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
-```
+Continuous deployment is configured via direct integration with Vercel and Render. On every push to the `main` branch:
+- **Vercel** automatically builds and deploys the Next.js frontend application.
+- **Render** automatically triggers a build and deploy for the Python ML service.
 
 ---
 
@@ -181,16 +178,17 @@ docker run -p 8000:8000 \
 
 ```
 Push to main
-  ↓
-GitHub Actions: ci.yml
-  ├── npm run type-check   # TypeScript (0 errors)
-  ├── npm run lint         # ESLint
-  ├── npm run build        # Next.js production build
-  └── gitleaks scan        # Secret detection
-  ↓
-GitHub Actions: deploy.yml
-  ├── Vercel deploy (Next.js)
-  └── Railway redeploy trigger (ML service)
+  ├── GitHub Actions: ci.yml
+  │     ├── npm run type-check   # TypeScript (0 errors)
+  │     ├── npm run lint         # ESLint
+  │     ├── npm run build        # Next.js production build
+  │     └── gitleaks scan        # Secret detection
+  │
+  ├── Vercel Integration
+  │     └── Next.js production build & deployment
+  │
+  └── Render Git Integration
+        └── Python ML Service build & deployment
 ```
 
 ---
