@@ -3,23 +3,34 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+import { useUser } from '@clerk/nextjs';
+
 export default function JudgeWelcomePopup() {
   const [isOpen, setIsOpen] = useState(false);
   const [judgeType, setJudgeType] = useState<'volunteer' | 'submod' | null>(null);
   const [userEmail, setUserEmail] = useState('');
+  const { user, isLoaded } = useUser();
 
   useEffect(() => {
     // Prevent rendering in non-browser context
     if (typeof window === 'undefined') return;
+
+    if (!isLoaded) return;
 
     // Check if we've already shown this during the current browser tab session
     const hasShown = sessionStorage.getItem('meownet_judge_popup_shown');
     if (hasShown === 'true') return;
 
     const checkSession = async () => {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      const email = session?.user?.email;
+      let email: string | undefined;
+
+      if (user) {
+        email = user.primaryEmailAddress?.emailAddress;
+      } else {
+        const supabase = createClient();
+        const { data: { session } } = await supabase.auth.getSession();
+        email = session?.user?.email;
+      }
 
       if (email === 'judge-user@meownet.org') {
         setUserEmail(email);
@@ -29,11 +40,13 @@ export default function JudgeWelcomePopup() {
         setUserEmail(email);
         setJudgeType('submod');
         setIsOpen(true);
+      } else {
+        setIsOpen(false);
       }
     };
 
     checkSession();
-  }, []);
+  }, [user, isLoaded]);
 
   const handleClose = () => {
     sessionStorage.setItem('meownet_judge_popup_shown', 'true');

@@ -3,7 +3,7 @@
 # Service: python-ml/main.py · Version: 1.2.0
 # Updated: 2026-06-27
 
-fastapi==0.115.6
+fastapi==0.133.0
 uvicorn[standard]==0.32.1
 httpx==0.28.1
 slowapi==0.1.9
