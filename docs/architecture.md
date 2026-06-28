@@ -1,6 +1,6 @@
 # MeowNet Architecture
 
-> Last updated: 2026-06-28 · v0.5.0
+> Last updated: 2026-06-28 · v0.6.0
 
 ## System Overview
 
@@ -15,7 +15,7 @@ Browser
   │
   ├── Supabase (PostgreSQL + PostGIS)
   │     ├── Auth     — email/password + Google/GitHub OAuth + direct credentials
-  │     ├── Database — cats, events, profiles, gamification, guilds (50 migrations)
+  │     ├── Database — cats, events, profiles, gamification, guilds (59 migrations)
   │     ├── Storage  — Cat photos (EXIF stripped before write)
   │     ├── Realtime — Live cat map, chat, guilds subscriptions
   │     └── system_settings — Dynamic key-value configuration store
@@ -225,6 +225,11 @@ MeowNet uses a role-based access control (RBAC) model to partition volunteer, mo
 - Optional: `max_usages` — account auto-locks after N successful sign-ins
 - DB trigger `on_auth_user_login` enforces both constraints server-side
 - `clerk_synced: true` metadata flag distinguishes Clerk users from direct credential users
+
+### Cryptographic Signature Validation Architecture (v0.6.0)
+MeowNet utilizes stateless cryptographic signatures to provide verifiable volunteer and staff impact certificates without database storage overhead:
+- **Generation:** On the certificate page, metrics are hashed with the server-private `SUPABASE_SERVICE_ROLE_KEY` using HMAC-SHA256, generating a signature token.
+- **Verification:** The public `/verify` portal takes the query parameters (user stats) and signature, performs the same hash calculation, and compares the result. This guarantees that any tampered statistics are rejected immediately.
 
 ---
 

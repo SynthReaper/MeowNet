@@ -1,4 +1,4 @@
-# MeowNet — Hackathon Judge Guide 🐾👑 · v0.5.0
+# MeowNet — Hackathon Judge Guide 🐾👑 · v0.6.0
 
 > **Welcome!** This guide is written specifically for hackathon judges. It explains every feature in plain language, how to try it, and exactly where the code lives. No developer experience required.
 
@@ -214,6 +214,13 @@ The breed estimation AI runs in a separate Docker container (Python FastAPI). Th
 | Colony Tycoon | [`TycoonInterface/index.tsx`](../components/empire/TycoonInterface/index.tsx) |
 | System settings | [`lib/supabase/settings.ts`](../lib/supabase/settings.ts) |
 | Maintenance mode | [`proxy.ts`](../proxy.ts) · [`app/maintenance/page.tsx`](../app/maintenance/page.tsx) |
+| Certificate verification | [`app/verify/volunteer/[id]/page.tsx`](../app/verify/volunteer/%5Bid%5D/page.tsx) · [`app/verify/page.tsx`](../app/verify/page.tsx) |
+
+### 🌟 New in v0.6.0: Cryptographic Certificate Verification Registry
+To add maximum civic trust and platforms transparency, we introduced a cryptographic certificate verification ecosystem:
+- **Verifier Portal:** A new public page `/verify` is linked directly under the Resources column in the global footer. Judges can input any certificate token or Proof of Neuter UUID to verify records.
+- **Volunteer & Staff Certificates:** Users can now click **"Volunteer Certificate"** (or **"Staff Certificate"** if signed-in as a moderator/admin) from their profile dashboard to view, download, and print background-free certificates. The print output dynamically renders in landscape on a single page.
+- **Zero-DB Validation:** The certificate verification is powered by HMAC SHA256 cryptographic signatures using the server's private secret, ensuring metrics cannot be tampered with.
 
 ---
 
@@ -243,4 +250,4 @@ Python FastAPI (Docker → Render)
 
 *Built with 🐾 for every stray cat that deserves a better life.*
 
-*MeowNet — #hackthekitty 2026 · v0.5.0 · Author: [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com*
+*MeowNet — #hackthekitty 2026 · v0.6.0 · Author: [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com*

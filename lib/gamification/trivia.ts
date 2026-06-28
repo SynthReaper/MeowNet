@@ -1,5 +1,4 @@
 // lib/gamification/trivia.ts — Predefined Educational Trivia Questions
-
 export const TRIVIA_QUESTIONS = [
   {
     id: 'q1',
@@ -35,5 +34,40 @@ export const TRIVIA_QUESTIONS = [
     options: ['Blankets and towels', 'Straw', 'Shredded newspaper', 'Cardboard shreds'],
     correctIndex: 1,
     explanation: 'Straw is excellent because it repels moisture. Blankets and towels absorb moisture from the air and freeze, making the shelter colder.'
+  },
+  {
+    id: 'q6',
+    question: 'At what time of day are feral cats typically most active and best targeted for trapping?',
+    options: ['Middle of the day', 'Dawn and dusk (crepuscular)', 'Late morning', 'Mid-afternoon'],
+    correctIndex: 1,
+    explanation: 'Feral cats are crepuscular, meaning they are most active during dawn and dusk, which are the optimal times for trapping.'
+  },
+  {
+    id: 'q7',
+    question: 'What is the recommended period of time to hold a feral cat post-surgery before releasing them back to their colony?',
+    options: ['No hold time, release immediately', '24 to 48 hours depending on gender', '1 week', '2 weeks'],
+    correctIndex: 1,
+    explanation: 'Male cats can typically be released 24 hours post-surgery if fully awake. Females require 48 hours of recovery to ensure internal sutures remain intact.'
+  },
+  {
+    id: 'q8',
+    question: 'What should you do if you trap a wild animal (like a raccoon or opossum) instead of a cat during a TNR run?',
+    options: ['Keep them in the trap for 24 hours', 'Carefully release them immediately at the site', 'Relocate them to a park', 'Take them to the veterinary clinic'],
+    correctIndex: 1,
+    explanation: 'If a non-target wild animal is trapped, carefully release them immediately at the same location. Never relocate wildlife without proper permits.'
+  },
+  {
+    id: 'q9',
+    question: 'Which of the following is NOT a benefit of spaying/neutering stray and feral cats?',
+    options: ['Reduces fighting and noise in the neighborhood', 'Eliminates marking and spraying behavior', 'Increases their hunting efficiency and aggression', 'Prevents unwanted kitten litters and population spikes'],
+    correctIndex: 2,
+    explanation: 'TNR reduces aggressive behavior, mating drives, and noise. It does not make cats more aggressive or alter their natural hunting instinct.'
+  },
+  {
+    id: 'q10',
+    question: 'What is a "community cat"?',
+    options: ['A cat that belongs to a specific family', 'An outdoor, unowned free-roaming cat cared for by neighbors', 'A cat that lives inside a community center', 'A purebred cat registry group'],
+    correctIndex: 1,
+    explanation: 'Community cats are outdoor, unowned, free-roaming cats. They are usually cared for by one or more compassionate community members.'
   }
 ];

@@ -191,49 +191,59 @@ export default function StaffProfileView({
         style={{ background: 'linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-elevated) 100%)' }}>
         <div className="absolute inset-0 opacity-20 pointer-events-none"
           style={{ background: `radial-gradient(ellipse at 70% 50%, ${accentColor} 0%, transparent 65%)` }} />
-        <div className="relative p-8 flex flex-col md:flex-row items-center md:items-start gap-6">
-          {/* Avatar */}
-          <div className="w-28 h-28 rounded-2xl overflow-hidden border-2 flex-shrink-0 shadow-xl relative"
-            style={{ borderColor: accentColor }}>
-            {profile.avatar_url ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-[var(--bg-elevated)]" style={{ background: accentBg }}>
-                <span className="material-symbols-outlined text-5xl" style={{ color: accentColor, fontVariationSettings: "'FILL' 1" }}>
+        <div className="relative p-8 flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+            {/* Avatar */}
+            <div className="w-28 h-28 rounded-2xl overflow-hidden border-2 flex-shrink-0 shadow-xl relative"
+              style={{ borderColor: accentColor }}>
+              {profile.avatar_url ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-[var(--bg-elevated)]" style={{ background: accentBg }}>
+                  <span className="material-symbols-outlined text-5xl" style={{ color: accentColor, fontVariationSettings: "'FILL' 1" }}>
+                    {roleIcon}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Info */}
+            <div className="flex flex-col gap-2 text-center md:text-left">
+              <div className="flex items-center gap-2 justify-center md:justify-start">
+                <span className="material-symbols-outlined text-sm" style={{ color: accentColor, fontVariationSettings: "'FILL' 1" }}>
                   {roleIcon}
                 </span>
+                <span className="font-body text-xs font-bold uppercase tracking-wider" style={{ color: accentColor }}>
+                  {roleLabel}
+                </span>
               </div>
-            )}
+              <h1 className="font-display text-3xl font-extrabold text-[var(--empire-cream)]">
+                {profile.display_name ?? 'Anonymous Staff'}
+              </h1>
+              <div className="flex items-center gap-2 justify-center md:justify-start">
+                <span className="material-symbols-outlined text-lg animate-pulse" style={{ color: currentRank.color, fontVariationSettings: "'FILL' 1" }}>
+                  {currentRank.icon}
+                </span>
+                <span className="font-display text-base font-bold" style={{ color: currentRank.color }}>
+                  {currentRank.title}
+                </span>
+                <span className="text-[var(--empire-cream)]/30 text-sm">|</span>
+                <span className="font-body text-xs text-[var(--empire-cream)]/50">{totalActions} total actions</span>
+              </div>
+              <p className="font-body text-xs text-[var(--empire-cream)]/50 mt-1">
+                {email} · Member since {formatDate(profile.created_at)}
+              </p>
+            </div>
           </div>
 
-          {/* Info */}
-          <div className="flex flex-col gap-2 flex-grow text-center md:text-left">
-            <div className="flex items-center gap-2 justify-center md:justify-start">
-              <span className="material-symbols-outlined text-sm" style={{ color: accentColor, fontVariationSettings: "'FILL' 1" }}>
-                {roleIcon}
-              </span>
-              <span className="font-body text-xs font-bold uppercase tracking-wider" style={{ color: accentColor }}>
-                {roleLabel}
-              </span>
-            </div>
-            <h1 className="font-display text-3xl font-extrabold text-[var(--empire-cream)]">
-              {profile.display_name ?? 'Anonymous Staff'}
-            </h1>
-            <div className="flex items-center gap-2 justify-center md:justify-start">
-              <span className="material-symbols-outlined text-lg animate-pulse" style={{ color: currentRank.color, fontVariationSettings: "'FILL' 1" }}>
-                {currentRank.icon}
-              </span>
-              <span className="font-display text-base font-bold" style={{ color: currentRank.color }}>
-                {currentRank.title}
-              </span>
-              <span className="text-[var(--empire-cream)]/30 text-sm">|</span>
-              <span className="font-body text-xs text-[var(--empire-cream)]/50">{totalActions} total actions</span>
-            </div>
-            <p className="font-body text-xs text-[var(--empire-cream)]/50 mt-1">
-              {email} · Member since {formatDate(profile.created_at)}
-            </p>
-          </div>
+          <Link
+            href="/profile/certificate"
+            className="bg-[var(--empire-gold)] text-white hover:bg-[#e6b020] px-4 py-2.5 rounded-xl text-xs font-bold uppercase transition-all shadow-md flex items-center gap-1.5 no-underline md:self-start md:mt-2 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-base">workspace_premium</span>
+            <span>Staff Certificate</span>
+          </Link>
         </div>
       </div>
 

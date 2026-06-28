@@ -1,6 +1,6 @@
 # MeowNet Security Documentation
 
-> Last updated: 2026-06-28 · v0.5.0
+> Last updated: 2026-06-28 · v0.6.0
 
 ---
 
@@ -27,7 +27,7 @@ Server          Auth check on every API route + Server Action
                 No secrets in client bundle
                 External APIs proxied server-side only
 ─────────────────────────────────────────────────────
-Database        Row-Level Security on every table (50 migrations)
+Database        Row-Level Security on every table (59 migrations)
                 SECURITY DEFINER for privileged ops
                 Location fuzzing trigger (BEFORE INSERT)
                 Role escalation prevention trigger
@@ -244,11 +244,31 @@ Entity encoding covers all six high-risk characters: `< > & " ' \``.
 
 ---
 
+## Cryptographic Validation & Scalable Auth Sync (v0.6.0)
+
+The following security architecture enhancements were added in version 0.6.0:
+
+### 1. Zero-Database Cryptographic Verification
+To ensure certificate validation is fast, tamper-proof, and scales infinitely, MeowNet employs a mathematical HMAC verification pattern. Instead of writing issued certificates to a database table and querying them:
+- Volunteer and staff certificate metadata (User ID, Sightings, Ops, Points) is hashed on the server side using the SHA256 HMAC algorithm, signed by the server's private `SUPABASE_SERVICE_ROLE_KEY`.
+- The short signature is displayed as the Cryptographic Verification Token on printed/digital certificates.
+- The public `/verify` portal re-hashes the incoming query parameters with the secret key to confirm data integrity. If a user tries to alter their feline sightings or XP points, the signature validation fails immediately.
+
+### 2. Isolated Auth Synchronization via SECURITY DEFINER Helper
+To prevent the client application from listing other users' metadata during authentication sync runs, the codebase was updated to bypass PostgREST's internal schema isolation:
+- Declared a database-native helper `get_user_by_email` in migration `0059` running as `SECURITY DEFINER` with search path configured to `public, auth`.
+- This RPC queries and returns only the single matching target user object instead of exposing user listing capabilities to the client, preventing leakage.
+
+### 3. WebP Image Format Upload Sanity Check
+Expanded the EXIF tags validation engine (`lib/security/exif.ts`) to permit WebP image buffers. The engine validates the file header's magic bytes (checking for `RIFF` and `WEBP` headers) and passes the file safely to the EXIF sanitization wrapper, preventing format injection attempts.
+
+---
+
 ## Security Audits
 
 An independent automated security audit was performed via Aikido Security. The full report is available in the repository at [security-audit-report.pdf](../aikido-security-audit/security-audit-report.pdf).
 
-An internal security audit was performed on 2026-06-28 (v0.5.0) covering XSS, SQL injection, CSRF, file upload injection, IDOR, auth bypass, and secret exposure. Five controls were added as a result — see [Input Validation Hardening](#input-validation-hardening-v050) above.
+An internal security audit was performed on 2026-06-28 (v0.6.0) covering XSS, SQL injection, CSRF, file upload injection, IDOR, auth bypass, and secret exposure. Six controls were added/updated as a result — see [Input Validation Hardening](#input-validation-hardening-v050) and [Cryptographic Validation & Scalable Auth Sync](#cryptographic-validation--scalable-auth-sync-v060) above.
 
 ---
 

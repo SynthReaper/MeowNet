@@ -4,6 +4,7 @@
 // app/(app)/moderator/ModeratorDashboardClient.tsx — Interactive Moderator Dashboard
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
   AreaChart,
@@ -43,6 +44,7 @@ import {
   getAuditLogs,
   getUserActivitySummary,
 } from '@/lib/actions/admin';
+import FuturisticAuditDashboard from '@/components/admin/FuturisticAuditDashboard';
 
 interface Cat {
   id: string;
@@ -87,9 +89,10 @@ interface Query {
   moderator_id: string | null;
   volunteer_id: string;
   message: string;
-  status: 'pending' | 'resolved';
+  status: 'pending' | 'solved' | 'closed' | 'resolved';
   response: string | null;
   created_at: string;
+  chat_messages?: any[];
 }
 
 interface Profile {
@@ -122,6 +125,7 @@ interface Props {
   initialEvents: TNREvent[];
   initialQueries: Query[];
   initialProfiles: Profile[];
+  initialAuditLogs?: AuditLog[];
   currentUser: {
     id: string;
     role: string;
@@ -162,13 +166,15 @@ export default function ModeratorDashboardClient({
   initialEvents,
   initialQueries,
   initialProfiles,
+  initialAuditLogs,
   currentUser,
 }: Props) {
   const [cats, setCats] = useState<Cat[]>(initialCats);
   const [events, setEvents] = useState<TNREvent[]>(initialEvents);
   const [queries, setQueries] = useState<Query[]>(initialQueries);
   const [profiles, setProfiles] = useState<Profile[]>(initialProfiles);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(initialAuditLogs ?? []);
+  const router = useRouter();
 
   // Navigation / Tabs
   const [activeTab, setActiveTab] = useState<'map' | 'cats' | 'events' | 'queries' | 'profiles' | 'audits' | 'live'>('map');
@@ -436,7 +442,7 @@ export default function ModeratorDashboardClient({
   const [eventStatusFilter, setEventStatusFilter] = useState<string>('all');
 
   const [querySearch, setQuerySearch] = useState('');
-  const [queryStatusFilter, setQueryStatusFilter] = useState<string>('all');
+  const [queryStatusFilter, setQueryStatusFilter] = useState<string>('active');
 
   const [profileSearch, setProfileSearch] = useState('');
 
@@ -492,19 +498,29 @@ export default function ModeratorDashboardClient({
 
   // Fetch Audit Logs when audits tab becomes active
   useEffect(() => {
+    let active = true;
     if (activeTab === 'audits') {
       setLoadingAudits(true);
       getAuditLogs()
         .then((logs) => {
-          setAuditLogs(logs as AuditLog[]);
+          if (active) {
+            setAuditLogs(logs as AuditLog[]);
+          }
         })
         .catch(() => {
-          showNotification('error', 'Failed to fetch audit logs.');
+          if (active) {
+            showNotification('error', 'Failed to fetch audit logs.');
+          }
         })
         .finally(() => {
-          setLoadingAudits(false);
+          if (active) {
+            setLoadingAudits(false);
+          }
         });
     }
+    return () => {
+      active = false;
+    };
   }, [activeTab]);
 
   // Moderate Cat (Approve / Delete)
@@ -650,11 +666,10 @@ export default function ModeratorDashboardClient({
       try {
         const res = await resolveModeratorQuery(queryId, queryResolutionText || undefined);
         if (res.success) {
-          setQueries(
-            queries.map((q) =>
-              q.id === queryId ? { ...q, status: 'resolved', response: queryResolutionText || null } : q
-            )
+          const updated = queries.map((q) =>
+            q.id === queryId ? ({ ...q, status: 'resolved', response: queryResolutionText || null } as Query) : q
           );
+          setQueries(updated);
           setResolvingQueryId(null);
           setQueryResolutionText('');
           showNotification('success', 'Query marked as resolved.');
@@ -680,11 +695,10 @@ export default function ModeratorDashboardClient({
       try {
         const res = await shiftQueryToAdmin(queryId, shiftReasonText);
         if (res.success) {
-          setQueries(
-            queries.map((q) =>
-              q.id === queryId ? { ...q, message: `${q.message}\n\n[SHIFTED_TO_ADMIN: ${shiftReasonText}]` } : q
-            )
+          const updated = queries.map((q) =>
+            q.id === queryId ? ({ ...q, message: `${q.message}\n\n[SHIFTED_TO_ADMIN: ${shiftReasonText}]` } as Query) : q
           );
+          setQueries(updated);
           setShiftingQueryId(null);
           setShiftReasonText('');
           showNotification('success', 'Query successfully shifted to Admin.');
@@ -851,7 +865,14 @@ export default function ModeratorDashboardClient({
   const filteredQueries = queries.filter((q) => {
     const term = querySearch.toLowerCase();
     const msgMatch = q.message?.toLowerCase().includes(term) || q.volunteer_id.toLowerCase().includes(term);
-    const statusMatch = queryStatusFilter === 'all' || q.status === queryStatusFilter;
+    let statusMatch = true;
+    if (queryStatusFilter === 'active') {
+      statusMatch = q.status === 'pending' || q.status === 'solved';
+    } else if (queryStatusFilter === 'archive') {
+      statusMatch = q.status === 'closed' || q.status === 'resolved';
+    } else if (queryStatusFilter !== 'all') {
+      statusMatch = q.status === queryStatusFilter;
+    }
     return msgMatch && statusMatch;
   });
 
@@ -939,10 +960,10 @@ export default function ModeratorDashboardClient({
             <span className="material-symbols-outlined text-2xl">event</span>
           </div>
           <div>
-            <div className="text-2xl font-black text-[var(--empire-cream)] font-data">
+            <div className="text-2xl font-black text-[var(--text-primary)] font-data">
               {events.filter((e) => e.status === 'pending').length}
             </div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40 mt-0.5">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mt-0.5">
               Pending Events
             </div>
           </div>
@@ -953,11 +974,11 @@ export default function ModeratorDashboardClient({
             <span className="material-symbols-outlined text-2xl">question_answer</span>
           </div>
           <div>
-            <div className="text-2xl font-black text-[var(--empire-cream)] font-data">
-              {queries.filter((q) => q.status === 'pending').length}
+            <div className="text-2xl font-black text-[var(--text-primary)] font-data">
+              {queries.filter((q) => q.status !== 'closed' && q.status !== 'resolved').length}
             </div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40 mt-0.5">
-              Pending Inquiries
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mt-0.5">
+              Active Inquiries
             </div>
           </div>
         </div>
@@ -967,8 +988,8 @@ export default function ModeratorDashboardClient({
             <span className="material-symbols-outlined text-2xl">volunteer_activism</span>
           </div>
           <div>
-            <div className="text-2xl font-black text-[var(--empire-cream)] font-data">{profiles.length}</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40 mt-0.5">
+            <div className="text-2xl font-black text-[var(--text-primary)] font-data">{profiles.length}</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mt-0.5">
               Monitored Volunteers
             </div>
           </div>
@@ -981,7 +1002,7 @@ export default function ModeratorDashboardClient({
           { key: 'map', label: 'Interactive Map' },
           { key: 'cats', label: 'Stray Cats', count: cats.length },
           { key: 'events', label: 'TNR Events', count: events.length },
-          { key: 'queries', label: 'Queries Log', count: queries.length },
+          { key: 'queries', label: 'Queries Log', count: queries.filter((q) => q.status !== 'closed' && q.status !== 'resolved').length },
           { key: 'profiles', label: 'Volunteers', count: profiles.length },
           { key: 'audits', label: 'Audit Trail' },
           { key: 'live', label: 'Live User Feed' },
@@ -1050,7 +1071,7 @@ export default function ModeratorDashboardClient({
                     Verification Audit Queue
                   </h4>
                   <div className="w-full h-40 flex justify-center items-center">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                       <RechartsPieChart>
                         <Tooltip content={<CustomTooltip />} />
                         <Pie
@@ -1082,7 +1103,7 @@ export default function ModeratorDashboardClient({
                     {healthFlagsData.length === 0 ? (
                       <div className="h-full flex items-center justify-center text-[10px] text-[var(--empire-cream)]/35 italic">No active health flags reported.</div>
                     ) : (
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <RechartsBarChart data={healthFlagsData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-border)" opacity={0.1} />
                           <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={8} fontFamily="var(--font-body)" />
@@ -1260,7 +1281,7 @@ export default function ModeratorDashboardClient({
                   {eventCapacityData.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-[10px] text-[var(--empire-cream)]/35 italic">No active TNR events planned.</div>
                   ) : (
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                       <RechartsBarChart data={eventCapacityData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-border)" opacity={0.1} />
                         <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={8} fontFamily="var(--font-body)" />
@@ -1411,7 +1432,7 @@ export default function ModeratorDashboardClient({
         {/* MODERATOR QUERIES TAB */}
         {activeTab === 'queries' && (
           <div className="flex flex-col gap-6">
-            <div className="flex flex-wrap gap-4 items-center justify-between">
+            <div className="flex flex-wrap gap-4 items-center justify-between border-b border-[var(--bg-border)]/20 pb-4">
               <div>
                 <h3 className="font-display text-base font-bold text-[var(--empire-gold)] flex items-center gap-2">
                   <span className="material-symbols-outlined">question_answer</span>
@@ -1459,9 +1480,13 @@ export default function ModeratorDashboardClient({
                 onChange={(e) => setQueryStatusFilter(e.target.value)}
                 className="bg-[var(--bg-elevated)] border border-[var(--bg-border)]/50 rounded-xl px-3 py-1.5 font-body text-xs text-[var(--empire-cream)] outline-none"
               >
+                <option value="active">Active (Pending/Proposed)</option>
+                <option value="archive">Archived (Closed/Resolved)</option>
                 <option value="all">All Resolutions</option>
-                <option value="pending">Pending</option>
-                <option value="resolved">Resolved</option>
+                <option value="pending">Pending Only</option>
+                <option value="solved">Proposed Only</option>
+                <option value="closed">Closed Only</option>
+                <option value="resolved">Resolved Only</option>
               </select>
             </div>
 
@@ -1490,7 +1515,8 @@ export default function ModeratorDashboardClient({
                   return (
                     <div
                       key={q.id}
-                      className="bg-[var(--bg-elevated)]/40 border border-[var(--bg-border)]/45 p-5 rounded-2xl flex flex-col gap-4 shadow-sm"
+                      onClick={() => router.push(`/support/${q.id}`)}
+                      className="bg-[var(--bg-elevated)]/40 border border-[var(--bg-border)]/45 p-5 rounded-2xl flex flex-col gap-4 shadow-sm cursor-pointer hover:bg-[var(--bg-border)]/10 transition-colors"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="w-full">
@@ -1500,7 +1526,11 @@ export default function ModeratorDashboardClient({
                             </span>
                             <span
                               className={`px-2 py-0.5 border text-[9px] font-bold uppercase rounded-md ${
-                                q.status === 'resolved'
+                                q.status === 'closed'
+                                  ? 'bg-zinc-500/10 border-zinc-500/25 text-zinc-500'
+                                  : q.status === 'solved'
+                                  ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600 animate-pulse'
+                                  : q.status === 'resolved'
                                   ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600'
                                   : 'bg-amber-500/10 border-amber-500/25 text-amber-600'
                               }`}
@@ -1530,23 +1560,19 @@ export default function ModeratorDashboardClient({
                                 <span className="material-symbols-outlined text-[14px]">gavel</span> 
                                 Escalated to Admin by Moderator
                               </span>
-                              <span>Reason: &ldquo;{shiftReason}&rdquo;</span>
+                              {shiftReason && <p className="mt-1 leading-relaxed">{shiftReason}</p>}
                             </div>
                           )}
-                          <div className="text-[10px] font-semibold text-[var(--empire-cream)]/50 mt-1">
-                            Sent to User: <span className="font-data text-[var(--empire-cream)]/80">{q.volunteer_id}</span> •{' '}
-                            {fmtDate(q.created_at)}
-                          </div>
                         </div>
                       </div>
 
-                      {q.status === 'resolved' ? (
+                      {q.status === 'resolved' || q.status === 'closed' ? (
                         <div className="bg-emerald-500/5 border border-emerald-500/15 p-3 rounded-xl">
                           <div className="text-[9px] font-bold uppercase tracking-wider text-emerald-600">
                             Resolution Action Details
                           </div>
                           <p className="font-body text-xs text-[var(--empire-cream)]/75 mt-1 leading-relaxed">
-                            {q.response || 'Inquiry resolved without special notes.'}
+                            {q.response || 'Inquiry resolved and closed.'}
                           </p>
                         </div>
                       ) : (
@@ -1562,13 +1588,19 @@ export default function ModeratorDashboardClient({
                               />
                               <div className="flex gap-2 justify-end">
                                 <button
-                                  onClick={() => setResolvingQueryId(null)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setResolvingQueryId(null);
+                                  }}
                                   className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-700 text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer"
                                 >
                                   Cancel
                                 </button>
                                 <button
-                                  onClick={() => handleResolveQuery(q.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleResolveQuery(q.id);
+                                  }}
                                   disabled={actionLoadingId === `query-resolve-${q.id}`}
                                   className="px-3 py-1.5 bg-[var(--empire-gold)] hover:bg-[#e6b020] text-white text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                                 >
@@ -1587,13 +1619,19 @@ export default function ModeratorDashboardClient({
                               />
                               <div className="flex gap-2 justify-end">
                                 <button
-                                  onClick={() => setShiftingQueryId(null)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShiftingQueryId(null);
+                                  }}
                                   className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-700 text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer"
                                 >
                                   Cancel
                                 </button>
                                 <button
-                                  onClick={() => handleShiftQuery(q.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleShiftQuery(q.id);
+                                  }}
                                   disabled={actionLoadingId === `query-shift-${q.id}`}
                                   className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
                                 >
@@ -1613,7 +1651,8 @@ export default function ModeratorDashboardClient({
                                 <>
                                   {currentUser?.role === 'moderator' && !isShifted && !isModToAdmin && (
                                     <button
-                                      onClick={() => {
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         setShiftingQueryId(q.id);
                                         setShiftReasonText('');
                                       }}
@@ -1624,13 +1663,24 @@ export default function ModeratorDashboardClient({
                                     </button>
                                   )}
                                   <button
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       setResolvingQueryId(q.id);
                                       setQueryResolutionText('');
                                     }}
                                     className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/35 text-emerald-600 hover:bg-emerald-500/20 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer"
                                   >
                                     Resolve Inquiry
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/support/${q.id}`);
+                                    }}
+                                    className="px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-white/10 text-[var(--empire-cream)] text-xs font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1"
+                                  >
+                                    <span className="material-symbols-outlined text-[14px]">chat</span>
+                                    Open Chat
                                   </button>
                                 </>
                               )}
@@ -1727,90 +1777,10 @@ export default function ModeratorDashboardClient({
 
         {/* AUDIT LOG TAB */}
         {activeTab === 'audits' && (
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-wrap gap-4 items-center justify-between">
-              <div className="flex gap-3 items-center flex-1 max-w-md bg-[var(--bg-elevated)] px-3 py-2 rounded-xl border border-[var(--bg-border)]/50">
-                <span className="material-symbols-outlined text-[var(--empire-cream)]/30 text-sm">search</span>
-                <input
-                  type="text"
-                  placeholder="Search logs by action or description details..."
-                  value={auditSearch}
-                  onChange={(e) => setAuditSearch(e.target.value)}
-                  className="w-full bg-transparent border-0 font-body text-xs outline-none text-[var(--empire-cream)] placeholder-[var(--empire-cream)]/35"
-                />
-              </div>
-            </div>
-
-            {loadingAudits ? (
-              <div className="py-16 text-center text-[var(--empire-cream)]/50 font-body text-xs flex flex-col items-center justify-center gap-2">
-                <span className="material-symbols-outlined text-2xl animate-spin text-[var(--empire-gold)]">
-                  progress_activity
-                </span>
-                <span>Loading latest logs...</span>
-              </div>
-            ) : filteredAudits.length === 0 ? (
-              <div className="py-16 text-center text-[var(--empire-cream)]/40 font-body text-xs">
-                No logs recorded in this filter.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-[var(--bg-border)]/45 text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
-                      <th className="py-3 px-4">Timestamp</th>
-                      <th className="py-3 px-4">Staff Actor</th>
-                      <th className="py-3 px-4">Action Type</th>
-                      <th className="py-3 px-4">Target User</th>
-                      <th className="py-3 px-4">Details</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAudits.map((log) => (
-                      <tr
-                        key={log.id}
-                        className="border-b border-[var(--bg-border)]/20 hover:bg-[var(--bg-elevated)]/20 transition-colors text-xs font-body text-[var(--empire-cream)]"
-                      >
-                        <td className="py-3.5 px-4 font-data text-[10px] text-[var(--empire-cream)]/50">
-                          {fmtDateTime(log.created_at)}
-                        </td>
-                        <td className="py-3.5 px-4 font-bold text-[var(--empire-cream)]">
-                          <button
-                            onClick={() => handleOpenProfileById(log.actor_id)}
-                            className="font-body text-xs font-bold text-[var(--empire-cream)] hover:underline border-none bg-transparent cursor-pointer p-0 text-left outline-none"
-                          >
-                            {log.actor_name}
-                          </button>
-                          <span className="ml-1.5 px-1.5 py-0.5 border border-[var(--bg-border)]/65 bg-[var(--bg-surface)] text-[8px] font-bold rounded text-[var(--empire-gold)] uppercase font-display">
-                            {log.actor_role}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <code className="px-2 py-0.5 bg-[var(--bg-elevated)] rounded border border-[var(--bg-border)]/40 font-data text-[10px]">
-                            {log.action}
-                          </code>
-                        </td>
-                        <td className="py-3.5 px-4 font-mono text-[10px] select-all">
-                          {log.target_id ? (
-                            <button
-                              onClick={() => handleOpenProfileById(log.target_id!)}
-                              className="font-body text-[10px] font-mono text-[var(--empire-cream)]/75 hover:underline border-none bg-transparent cursor-pointer p-0 text-left outline-none"
-                            >
-                              {log.target_id}
-                            </button>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
-                        <td className="py-3.5 px-4 text-[var(--empire-cream)]/75 max-w-sm truncate" title={log.details ?? ''}>
-                          {log.details || '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          <FuturisticAuditDashboard 
+            initialAuditLogs={auditLogs as any} 
+            currentUserRole="moderator" 
+          />
         )}
 
         {activeTab === 'live' && (

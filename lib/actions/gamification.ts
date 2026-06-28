@@ -4,6 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { makeActionKey } from '@/lib/gamification/points';
+import { TRIVIA_QUESTIONS } from '@/lib/gamification/trivia';
 
 // ── TYPES & INTERFACES ───────────────────────────────────────────────────────
 
@@ -110,15 +111,24 @@ export async function getTriviaStats() {
     }
 
     // Fetch trivia questions dynamically from Supabase
-    const { data: dbQuestions, error: questionsError } = await supabase
-      .from('trivia_questions' as never)
-      .select('*');
-
-    if (questionsError) throw questionsError;
-    const questionsList = (dbQuestions ?? []) as any[];
+    let questionsList: any[] = [];
+    try {
+      const { data: dbQuestions, error: questionsError } = await supabase
+        .from('trivia_questions' as never)
+        .select('*');
+      if (!questionsError && dbQuestions && dbQuestions.length > 0) {
+        questionsList = dbQuestions;
+      }
+    } catch {}
 
     if (questionsList.length === 0) {
-      return { success: true, stats, question: null, playedToday: true };
+      questionsList = TRIVIA_QUESTIONS.map(q => ({
+        id: q.id,
+        question: q.question,
+        options: q.options,
+        correct_index: q.correctIndex,
+        explanation: q.explanation
+      }));
     }
 
     // Determine current day question based on date
@@ -163,14 +173,29 @@ export async function submitTriviaAnswer(questionId: string, answerIndex: number
     if (playedToday) return { success: false, error: 'already_played_today' };
 
     // Fetch active question from Supabase
-    const { data: dbQuestion, error: qError } = await supabase
-      .from('trivia_questions' as never)
-      .select('*')
-      .eq('id', questionId)
-      .single();
+    let activeQuestion: any = null;
+    try {
+      const { data: dbQuestion, error: qError } = await supabase
+        .from('trivia_questions' as never)
+        .select('*')
+        .eq('id', questionId)
+        .maybeSingle();
+      if (!qError && dbQuestion) {
+        activeQuestion = dbQuestion;
+      }
+    } catch {}
 
-    if (qError || !dbQuestion) return { success: false, error: 'invalid_question' };
-    const activeQuestion = dbQuestion as any;
+    if (!activeQuestion) {
+      const localQ = TRIVIA_QUESTIONS.find(q => q.id === questionId);
+      if (!localQ) return { success: false, error: 'invalid_question' };
+      activeQuestion = {
+        id: localQ.id,
+        question: localQ.question,
+        options: localQ.options,
+        correct_index: localQ.correctIndex,
+        explanation: localQ.explanation
+      };
+    }
 
     const isCorrect = activeQuestion.correct_index === answerIndex;
     const newStreak = isCorrect ? stats.current_streak + 1 : 0;
@@ -210,6 +235,13 @@ export async function submitTriviaAnswer(questionId: string, answerIndex: number
         p_action_key: actionKey,
       });
     }
+
+    // Log to system audit trail
+    await (supabase as any).rpc('log_system_activity', {
+      p_action: 'TRIVIA_ANSWER_SUBMITTED',
+      p_target_id: questionId,
+      p_details: `Submitted trivia answer index ${answerIndex} (Result: ${isCorrect ? 'CORRECT' : 'INCORRECT'}). Earned +${pointsAwarded} XP (Streak: ${newStreak} days)`
+    });
 
     revalidatePath('/empire');
     return {
@@ -304,6 +336,40 @@ export async function claimBingoSquare(squareIndex: number) {
     const squares = [...card.squares];
     if (squares[squareIndex].completed) {
       return { success: false, error: 'already_completed' };
+    }
+
+    // Verify the square task is completed
+    const square = squares[squareIndex];
+    let isVerified = false;
+
+    if (square.type === 'log_cat') {
+      const { count } = await supabase.from('cats' as never).select('*', { count: 'exact', head: true }).eq('owner_id', user.id);
+      if (count && count > 0) isVerified = true;
+    } else if (square.type === 'trivia_complete') {
+      const { data: stats } = await supabase.from('trivia_stats' as never).select('total_played').eq('user_id', user.id).maybeSingle() as any;
+      if (stats && stats.total_played > 0) isVerified = true;
+    } else if (square.type === 'join_chat') {
+      const { count } = await supabase.from('community_messages' as never).select('*', { count: 'exact', head: true }).eq('user_id', user.id);
+      if (count && count > 0) isVerified = true;
+    } else if (square.type === 'view_map' || square.type === 'check_weather' || square.type === 'read_notice') {
+      // Client-side interactions
+      isVerified = true;
+    } else if (square.type === 'fuzz_location' || square.type === 'clean_exif') {
+      const { count } = await supabase.from('cats' as never).select('*', { count: 'exact', head: true }).eq('owner_id', user.id);
+      if (count && count > 0) isVerified = true;
+    } else if (square.type === 'colony_check') {
+      const { count: countCreated } = await supabase.from('colonies' as never).select('*', { count: 'exact', head: true }).eq('created_by', user.id);
+      const { count: countCaretaker } = await supabase.from('colonies' as never).select('*', { count: 'exact', head: true }).eq('caretaker_id', user.id);
+      if ((countCreated && countCreated > 0) || (countCaretaker && countCaretaker > 0)) isVerified = true;
+    } else if (square.type === 'point_transfer') {
+      const { count } = await supabase.from('point_log' as never).select('*', { count: 'exact', head: true }).eq('user_id', user.id).lt('points', 0);
+      if (count && count > 0) isVerified = true;
+    } else {
+      isVerified = true;
+    }
+
+    if (!isVerified) {
+      return { success: false, error: `Verification failed. You haven't completed the task: "${square.label}" yet.` };
     }
 
     // Toggle complete
@@ -872,6 +938,37 @@ export async function userCreateGuild(
 
     revalidatePath('/empire');
     return { success: true, guild };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function awardMeowTranslationPoints() {
+  const { supabase, user } = await getAuthUser();
+  if (!user) return { success: false, error: 'unauthorized' };
+
+  try {
+    const admin = createServiceClient();
+    const actionKey = makeActionKey(user.id, 'MEOW_TRANSLATION' as any, `meow-translation:${Date.now()}`);
+    const { error } = await (admin as any).rpc('award_points', {
+      p_user_id: user.id,
+      p_activity: 'LEND_A_PAW',
+      p_points: 10,
+      p_related_id: user.id,
+      p_action_key: actionKey,
+    });
+
+    if (error) throw error;
+
+    // Log to system audit trail
+    await (supabase as any).rpc('log_system_activity', {
+      p_action: 'MEOW_TRANSLATION_COMPLETED',
+      p_target_id: user.id,
+      p_details: 'Translated cat vocalization using AI Meow Translator (+10 XP)'
+    });
+
+    revalidatePath('/empire');
+    return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
   }

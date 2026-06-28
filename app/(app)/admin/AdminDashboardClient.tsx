@@ -37,6 +37,7 @@ import {
   adminDeleteGuild,
   type SystemSetting,
 } from '@/lib/actions/admin';
+import FuturisticAuditDashboard from '@/components/admin/FuturisticAuditDashboard';
 
 
 export interface Profile {
@@ -1193,7 +1194,7 @@ export default function AdminDashboardClient({
                     Volunteer Signups (Cumulative Registration Trend)
                   </h4>
                   <div className="w-full h-80">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                       <AreaChart data={registrationGrowthData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <defs>
                           <linearGradient id="regGrad" x1="0" y1="0" x2="0" y2="1">
@@ -1220,7 +1221,7 @@ export default function AdminDashboardClient({
                         Community Role Distribution
                       </h4>
                       <div className="w-full h-64 flex justify-center items-center">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                           <RechartsPieChart>
                             <Tooltip content={<CustomTooltip />} />
                             <Pie
@@ -1250,7 +1251,7 @@ export default function AdminDashboardClient({
                       Top Volunteers (Points Leaderboard Preview)
                     </h4>
                     <div className="w-full h-64">
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <RechartsBarChart data={topVolunteersData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-border)" opacity={0.2} />
                           <XAxis type="number" stroke="var(--text-muted)" fontSize={10} fontFamily="var(--font-data)" />
@@ -1543,121 +1544,10 @@ export default function AdminDashboardClient({
             )}
           </div>
         ) : activeTab === 'audits' ? (
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-wrap gap-4 items-center justify-between">
-              <div>
-                <h3 className="font-display text-base font-bold text-[var(--empire-gold)] flex items-center gap-2">
-                  <span className="material-symbols-outlined">receipt_long</span>
-                  <span>Staff Activity Audit Logs</span>
-                </h3>
-                <p className="font-body text-xs text-[var(--empire-cream)]/50 mt-1">
-                  Track and review all administrative and moderation operations performed by MeowNet staff.
-                </p>
-              </div>
-              <button
-                onClick={handleExportAuditsToCSV}
-                disabled={filteredAuditLogs.length === 0}
-                className="bg-[var(--life-teal)] text-white hover:bg-[var(--life-teal-dim)] px-4 py-2 rounded-xl text-xs font-bold uppercase transition-all shrink-0 cursor-pointer shadow-sm flex items-center gap-1.5 disabled:opacity-50"
-              >
-                <span className="material-symbols-outlined text-sm">download</span>
-                Export CSV
-              </button>
-            </div>
-
-            {/* Filters Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-[var(--bg-elevated)]/30 p-4 rounded-xl border border-[var(--bg-border)]/20">
-              <div className="flex gap-2.5 items-center bg-[var(--bg-surface)] px-3 py-1.5 rounded-lg border border-[var(--bg-border)]/50">
-                <span className="material-symbols-outlined text-sm text-[var(--empire-cream)]/35">search</span>
-                <input
-                  type="text"
-                  placeholder="Filter by action (e.g. edit_profile)..."
-                  value={auditActionFilter}
-                  onChange={(e) => setAuditActionFilter(e.target.value)}
-                  className="w-full bg-transparent border-0 font-body text-xs outline-none text-[var(--empire-cream)] placeholder-[var(--empire-cream)]/30"
-                />
-              </div>
-              <div className="flex gap-2.5 items-center bg-[var(--bg-surface)] px-3 py-1.5 rounded-lg border border-[var(--bg-border)]/50">
-                <span className="material-symbols-outlined text-sm text-[var(--empire-cream)]/35">person</span>
-                <input
-                  type="text"
-                  placeholder="Filter by staff name..."
-                  value={auditStaffFilter}
-                  onChange={(e) => setAuditStaffFilter(e.target.value)}
-                  className="w-full bg-transparent border-0 font-body text-xs outline-none text-[var(--empire-cream)] placeholder-[var(--empire-cream)]/30"
-                />
-              </div>
-              <div className="flex gap-2.5 items-center bg-[var(--bg-surface)] px-3 py-1.5 rounded-lg border border-[var(--bg-border)]/50">
-                <span className="material-symbols-outlined text-sm text-[var(--empire-cream)]/35">calendar_today</span>
-                <input
-                  type="date"
-                  value={auditDateFilter}
-                  onChange={(e) => setAuditDateFilter(e.target.value)}
-                  className="w-full bg-transparent border-0 font-body text-xs outline-none text-[var(--empire-cream)] cursor-pointer"
-                />
-              </div>
-            </div>
-
-            {filteredAuditLogs.length === 0 ? (
-              <div className="py-12 text-center text-[var(--empire-cream)]/40 font-body text-xs">
-                No activity logged in the audit trail matching your filters.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-[var(--bg-border)]/40 text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
-                      <th className="py-3 px-4">Staff Member</th>
-                      <th className="py-3 px-4">Role</th>
-                      <th className="py-3 px-4">Action</th>
-                      <th className="py-3 px-4">Target User</th>
-                      <th className="py-3 px-4">Details</th>
-                      <th className="py-3 px-4">Timestamp</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAuditLogs.map((log) => (
-                      <tr key={log.id} className="border-b border-[var(--bg-border)]/30 hover:bg-[var(--bg-elevated)]/20 transition-colors">
-                        <td className="py-4 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">
-                          <button
-                            onClick={() => handleOpenProfileById(log.actor_id)}
-                            className="font-body text-xs font-bold text-[var(--empire-cream)] hover:underline border-none bg-transparent cursor-pointer p-0 text-left outline-none"
-                          >
-                            {log.actor_name}
-                          </button>
-                        </td>
-                        <td className="py-4 px-4 font-body text-xs capitalize text-[var(--empire-cream)]/75">
-                          {log.actor_role}
-                        </td>
-                        <td className="py-4 px-4 font-body text-xs">
-                          <span className="px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] uppercase font-bold border border-zinc-200 dark:border-zinc-700">
-                            {log.action.replace('_', ' ')}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4 font-body text-xs text-[var(--empire-cream)]/75 font-mono select-all">
-                          {log.target_id ? (
-                            <button
-                              onClick={() => handleOpenProfileById(log.target_id!)}
-                              className="font-body text-xs font-mono text-[var(--empire-cream)]/75 hover:underline border-none bg-transparent cursor-pointer p-0 text-left outline-none"
-                            >
-                              {log.target_id}
-                            </button>
-                          ) : (
-                            '-'
-                          )}
-                        </td>
-                        <td className="py-4 px-4 font-body text-xs text-[var(--empire-cream)]/75">
-                          {log.details || '-'}
-                        </td>
-                        <td className="py-4 px-4 font-body text-[10px] text-[var(--empire-cream)]/50 font-semibold">
-                          {formatUTCDateTime(log.created_at)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          <FuturisticAuditDashboard 
+            initialAuditLogs={audits as any} 
+            currentUserRole="admin" 
+          />
         ) : activeTab === 'gdpr' ? (
           <>
             {/* Audits info alert */}
@@ -1715,7 +1605,7 @@ export default function AdminDashboardClient({
                 <div className="bg-[var(--bg-elevated)]/40 border border-[var(--bg-border)]/45 p-5 rounded-2xl shadow-sm">
                   <h4 className="font-display text-xs font-bold text-[var(--empire-cream)]/75 mb-3">Relative Size by Row Count</h4>
                   <div className="w-full h-48">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                       <RechartsBarChart data={databaseSizeData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-border)" opacity={0.2} />
                         <XAxis type="number" stroke="var(--text-muted)" fontSize={10} fontFamily="var(--font-data)" />

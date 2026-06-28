@@ -1,6 +1,6 @@
 # MeowNet Database Documentation
 
-> Last updated: 2026-06-28 · v0.5.0 · Migrations: 0001–0050
+> Last updated: 2026-06-28 · v0.6.0 · Migrations: 0001–0059
 
 ---
 
@@ -27,7 +27,8 @@ public schema
 ├── moderator_applications — Moderator role applications
 ├── cat_reports       — Moderator report queue for cat content
 ├── staff_audit_log   — Admin + moderator action audit trail
-└── safety_guides     — Stray colony safety guide content
+├── safety_guides     — Stray colony safety guide content
+└── safety_disputes   — User support dispute log associated with audit entries
 
 Views (Materialized)
 ├── leaderboard_weekly  — Weekly Empire Points rankings
@@ -91,6 +92,15 @@ Auth schema (Supabase managed)
 | 0048 | `0048_guild_join_conditions.sql` | Added min_points_required, category, and creator_id columns to guilds table |
 | 0049 | `0049_enable_guild_realtime.sql` | Registered guilds, guild_members, and guild_quests in supabase_realtime publication |
 | 0050 | `0050_system_settings.sql` | Created system_settings key-value config store, RLS (admin-write / authenticated-read), realtime publication, seeded initial settings |
+| 0051 | `0051_medical_logs_and_features.sql` | Colony medical logs table, schemas, and RLS policies |
+| 0052 | `0052_proof_of_neuter.sql` | Proof of neuter verification records, signature values, and RLS |
+| 0053 | `0053_unify_audit_logs.sql` | Dropped old selection policies, updated staff_audit_logs RLS for roles |
+| 0054 | `0054_query_chat_system.sql` | Realtime support ticket chat messages table and message length RLS constraints |
+| 0055 | `0055_enable_realtime_queries.sql` | Registered moderator_queries in supabase_realtime publication |
+| 0056 | `0056_auto_audit_logging.sql` | Auto audit triggers for cats, points, and support query logs |
+| 0057 | `0057_realtime_replica_identity.sql` | REPLICA IDENTITY FULL configuration for moderator_queries |
+| 0058 | `0058_auto_audit_profiles.sql` | Auto audit triggers for user role changes, suspends, and profile updates |
+| 0059 | `0059_get_user_by_email.sql` | SECURITY DEFINER helper get_user_by_email to bypass internal auth schema constraints |
 
 ---
 

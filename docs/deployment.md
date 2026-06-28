@@ -1,6 +1,6 @@
 # MeowNet Deployment Guide
 
-> Last updated: 2026-06-28 · v0.5.0
+> Last updated: 2026-06-28 · v0.6.0
 
 ---
 
@@ -23,7 +23,7 @@
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key   # NEVER in NEXT_PUBLIC_*
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key   # NEVER in NEXT_PUBLIC_*. Used for auth sync RPC and certificate signature validation.
 
 # Clerk
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...

@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import ModeratorDashboardClient from '@/app/(app)/moderator/ModeratorDashboardClient';
+import { getAuditLogs } from '@/lib/actions/admin';
 
 export const metadata: Metadata = {
   title: 'Moderator Dashboard | MeowNet',
@@ -41,7 +42,7 @@ export default async function ModeratorPage() {
   }
 
   // Fetch initial moderation data
-  const [catsRes, eventsRes, queriesRes, profilesRes] = await Promise.all([
+  const [catsRes, eventsRes, queriesRes, profilesRes, auditLogs] = await Promise.all([
     supabase
       .from('cats' as never)
       .select('id, name, status, breed_estimate, age_estimate, owner_id, created_at, photo_url, is_verified, health_flags, health_notes, sterilized, vaccinated, microchipped, contact_info, bcs_estimate, color, shelter_url, breed_confidence, location')
@@ -55,7 +56,8 @@ export default async function ModeratorPage() {
       .select('id, target_type, target_id, moderator_id, volunteer_id, message, status, response, created_at')
       .order('created_at', { ascending: false })
       .then(res => res, () => ({ data: [], error: null })),
-    profilesQuery
+    profilesQuery,
+    getAuditLogs()
   ]);
 
   return (
@@ -64,6 +66,7 @@ export default async function ModeratorPage() {
       initialEvents={(eventsRes.data ?? []) as any[]}
       initialQueries={(queriesRes?.data ?? []) as any[]}
       initialProfiles={(profilesRes.data ?? []) as any[]}
+      initialAuditLogs={auditLogs as any[]}
       currentUser={profile ? {
         id: profile.id,
         role: profile.role ?? 'user',

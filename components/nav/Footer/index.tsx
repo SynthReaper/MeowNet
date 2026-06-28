@@ -50,6 +50,7 @@ export default function Footer() {
             <Link href="/privacy" className="text-xs font-body text-[var(--text-primary)]/70 hover:text-[var(--empire-gold)] hover:translate-x-1 no-underline transition-all inline-block">Privacy Policy</Link>
             <Link href="/terms" className="text-xs font-body text-[var(--text-primary)]/70 hover:text-[var(--empire-gold)] hover:translate-x-1 no-underline transition-all inline-block">Terms of Service</Link>
             <Link href="/rules" className="text-xs font-body text-[var(--text-primary)]/70 hover:text-[var(--empire-gold)] hover:translate-x-1 no-underline transition-all inline-block">Rules & Regulations</Link>
+            <Link href="/verify" className="text-xs font-body text-[var(--text-primary)]/70 hover:text-[var(--empire-gold)] hover:translate-x-1 no-underline transition-all inline-block">Verify Certificate</Link>
             <a href="https://github.com/SynthReaper/MeowNet" target="_blank" rel="noopener noreferrer" className="text-xs font-body text-[var(--text-primary)]/70 hover:text-[var(--empire-gold)] hover:translate-x-1 no-underline transition-all inline-block">GitHub Codebase</a>
           </nav>
         </div>

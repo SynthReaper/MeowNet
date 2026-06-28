@@ -7,6 +7,7 @@ import { BCS_SCALE, BCS_RISK_COLORS } from '@/lib/veterinary/bcsScale';
 import { VETERINARY_DISCLAIMER } from '@/lib/veterinary/triageRules';
 import { getBreedProfile } from '@/lib/veterinary/breedProfiles';
 import CatActions from '@/components/cats/CatActions';
+import NeuterBadge from '@/components/cats/NeuterBadge';
 
 export const revalidate = 300;
 
@@ -222,6 +223,13 @@ export default async function CatProfilePage({ params }: { params: Promise<{ id:
 
         {/* Diagnostic/Pledge sidebar - 5 columns */}
         <section className="lg:col-span-5 flex flex-col gap-6">
+          {/* Neuter verification badge */}
+          <NeuterBadge 
+            catId={cat.id} 
+            isSterilized={cat.sterilized} 
+            canRequest={!!user} 
+          />
+
           {/* Care Pledges */}
           <div className="bg-white p-6 rounded-2xl shadow-ambient border border-[var(--bg-border)]">
             <h2 className="font-display text-base text-[var(--empire-gold)] font-bold mb-4 flex items-center gap-2">

@@ -39,6 +39,8 @@ export interface CommunityMessage {
   reactions?: Reaction[];
   parent_id?: string | null;
   edited_at?: string | null;
+  active_badge_id?: string | null;
+  custom_title?: string | null;
 }
 
 /**
@@ -71,7 +73,7 @@ export async function getCommunityMessages(): Promise<CommunityMessage[]> {
     // 1. Fetch messages with profiles and channel slugs
     const { data: messagesData, error: messagesError } = await supabase
       .from('community_messages' as never)
-      .select('id, user_id, message, created_at, is_flagged, channel_id, parent_id, edited_at, community_channels:community_channels(slug), profiles:profiles(display_name, avatar_url, role)' as never)
+      .select('id, user_id, message, created_at, is_flagged, channel_id, parent_id, edited_at, community_channels:community_channels(slug), profiles:profiles(display_name, avatar_url, role, active_badge_id, custom_title)' as never)
       .order('created_at', { ascending: true })
       .limit(100);
 
@@ -103,7 +105,7 @@ export async function getCommunityMessages(): Promise<CommunityMessage[]> {
       parent_id: string | null;
       edited_at: string | null;
       community_channels: { slug: string } | null;
-      profiles: { display_name: string | null; avatar_url: string | null; role: string | null } | null;
+      profiles: { display_name: string | null; avatar_url: string | null; role: string | null; active_badge_id: string | null; custom_title: string | null } | null;
     }
 
     const messages = (messagesData as unknown as RawCommunityMessage[]).filter(
@@ -163,6 +165,8 @@ export async function getCommunityMessages(): Promise<CommunityMessage[]> {
       avatar_url: msg.profiles?.avatar_url ?? null,
       role: msg.profiles?.role ?? 'user',
       reactions: reactionsMap[msg.id] ?? [],
+      active_badge_id: msg.profiles?.active_badge_id ?? null,
+      custom_title: msg.profiles?.custom_title ?? null,
     }));
   } catch {
     return [];

@@ -61,7 +61,7 @@ interface Props {
   initialMessages: CommunityMessage[];
   initialChannels: Channel[];
   isSignedIn: boolean;
-  currentUser: { id: string; role: string; displayName: string; avatarUrl: string | null } | null;
+  currentUser: { id: string; role: string; displayName: string; avatarUrl: string | null; activeBadgeId: string | null; customTitle: string | null } | null;
 }
 
 
@@ -607,7 +607,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Profile cache for resolving realtime message sender details
-  const profileCache = useRef<Record<string, { display_name: string; avatar_url: string | null; role: string }>>({});
+  const profileCache = useRef<Record<string, { display_name: string; avatar_url: string | null; role: string; active_badge_id: string | null; custom_title: string | null }>>({});
 
   useEffect(() => {
     initialMessages.forEach(msg => {
@@ -615,7 +615,9 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
         profileCache.current[msg.user_id] = {
           display_name: msg.display_name,
           avatar_url: msg.avatar_url,
-          role: msg.role ?? 'user'
+          role: msg.role ?? 'user',
+          active_badge_id: msg.active_badge_id ?? null,
+          custom_title: msg.custom_title ?? null
         };
       }
     });
@@ -905,6 +907,8 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
             display_name: isOwn ? (currentUser?.displayName ?? 'You') : (cached?.display_name ?? 'Anonymous Volunteer'),
             avatar_url: isOwn ? (currentUser?.avatarUrl ?? null) : (cached?.avatar_url ?? null),
             role: isOwn ? (currentUser?.role ?? 'user') : (cached?.role ?? 'user'),
+            active_badge_id: isOwn ? (currentUser?.activeBadgeId ?? null) : (cached?.active_badge_id ?? null),
+            custom_title: isOwn ? (currentUser?.customTitle ?? null) : (cached?.custom_title ?? null),
             reactions: [],
           }];
         });
@@ -913,16 +917,18 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
         if (!isOwn && !cached) {
           supabase
             .from('profiles' as never)
-            .select('display_name, avatar_url, role')
+            .select('display_name, avatar_url, role, active_badge_id, custom_title')
             .eq('id', incoming.user_id)
             .single()
             .then((res) => {
-              const data = res.data as unknown as Profile | null;
+              const data = res.data as unknown as any | null;
               if (data) {
                 const resolved = {
                   display_name: data.display_name ?? 'Anonymous Volunteer',
                   avatar_url: data.avatar_url ?? null,
-                  role: data.role ?? 'user'
+                  role: data.role ?? 'user',
+                  active_badge_id: data.active_badge_id ?? null,
+                  custom_title: data.custom_title ?? null
                 };
                 profileCache.current[incoming.user_id] = resolved;
                 setMessages((prev) => prev.map((m) => m.user_id === incoming.user_id ? {
@@ -930,6 +936,8 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
                   display_name: resolved.display_name,
                   avatar_url: resolved.avatar_url,
                   role: resolved.role,
+                  active_badge_id: resolved.active_badge_id,
+                  custom_title: resolved.custom_title,
                 } : m));
               }
             });
@@ -1453,6 +1461,17 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
         {/* Scrollable channels & DM lists */}
         <div className="flex-grow overflow-y-auto px-3.5 py-4 flex flex-col gap-4">
           <div className="flex flex-col gap-1">
+            <Link
+              href="/community/specialists"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-[#b87333] bg-amber-50 hover:bg-amber-100/70 border border-amber-200/50 transition-all select-none mb-3 no-underline shrink-0"
+            >
+              <span className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">workspace_premium</span>
+                <span>Specialist Directory</span>
+              </span>
+              <span className="material-symbols-outlined text-xs">arrow_forward</span>
+            </Link>
+
             {/* Render Public & Private Groups */}
             {channelsList.map((ch) => {
               const active = !activeDMUser && activeChannel?.id === ch.id;
@@ -2098,15 +2117,37 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
 
                     <div className={`flex flex-col max-w-[70%] ${isOwn ? 'items-end' : 'items-start'}`}>
                       {!isSameAuthor && (
-                        <div className="flex items-center gap-2 mb-1 text-[11px] text-[#6b5a4d]/45 font-bold">
+                        <div className="flex items-center gap-2 mb-1 text-[11px] text-[#6b5a4d]/45 font-bold flex-wrap">
                           {isOwn ? (
                             <>
                               <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                              {currentUser?.activeBadgeId && (
+                                <span className="px-1.5 py-0.5 rounded bg-teal-50 text-[8px] text-teal-700 border border-teal-100 font-extrabold flex items-center gap-0.5 uppercase tracking-wider">
+                                  <span>🎖️</span>
+                                  <span>{currentUser.activeBadgeId.replace(/_/g, ' ')}</span>
+                                </span>
+                              )}
+                              {currentUser?.customTitle && (
+                                <span className="px-1.5 py-0.5 rounded bg-amber-50 text-[8px] text-[#b87333] border border-amber-200 font-extrabold uppercase tracking-wider">
+                                  {currentUser.customTitle}
+                                </span>
+                              )}
                               <span className="text-[#eb8424] font-bold">You</span>
                             </>
                           ) : (
                             <>
                               <span className="font-bold text-[#5c4a3c]">{msg.display_name ?? 'Anonymous'}</span>
+                              {msg.custom_title && (
+                                <span className="px-1.5 py-0.5 rounded bg-amber-50 text-[8px] text-[#b87333] border border-amber-200 font-extrabold uppercase tracking-wider">
+                                  {msg.custom_title}
+                                </span>
+                              )}
+                              {msg.active_badge_id && (
+                                <span className="px-1.5 py-0.5 rounded bg-teal-50 text-[8px] text-teal-700 border border-teal-100 font-extrabold flex items-center gap-0.5 uppercase tracking-wider">
+                                  <span>🎖️</span>
+                                  <span>{msg.active_badge_id.replace(/_/g, ' ')}</span>
+                                </span>
+                              )}
                               <RoleBadge role={msg.role} />
                               <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             </>

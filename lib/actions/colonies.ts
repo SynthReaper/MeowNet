@@ -105,3 +105,53 @@ export async function updateColonyStats(
     return { success: false, error: 'internal_error' };
   }
 }
+
+export async function addWinterShelter(
+  colonyId: string,
+  material: string,
+  capacityCats: number,
+  insulationR: number
+) {
+  try {
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'unauthorized' };
+
+    const { error } = await supabase
+      .from('winter_shelters' as never)
+      .insert({
+        colony_id: colonyId,
+        material: sanitizeText(material, 100),
+        capacity_cats: capacityCats,
+        insulation_r: insulationR,
+        last_inspected: new Date().toISOString()
+      } as never) as unknown as { error: { message: string } | null };
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath(`/colonies/${colonyId}`);
+    return { success: true };
+  } catch {
+    return { success: false, error: 'internal_error' };
+  }
+}
+
+export async function inspectWinterShelter(shelterId: string, colonyId: string) {
+  try {
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'unauthorized' };
+
+    const { error } = await supabase
+      .from('winter_shelters' as never)
+      .update({ last_inspected: new Date().toISOString() } as never)
+      .eq('id', shelterId) as unknown as { error: { message: string } | null };
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath(`/colonies/${colonyId}`);
+    return { success: true };
+  } catch {
+    return { success: false, error: 'internal_error' };
+  }
+}

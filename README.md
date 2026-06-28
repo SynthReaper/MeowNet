@@ -63,6 +63,8 @@ MeowNet changes that. It's a full-stack, privacy-first web platform that turns u
 | 🔒 **EXIF Stripping** | Client-side metadata removal before any photo upload | `lib/security/exif.ts` |
 | 📍 **Location Fuzzing** | PostGIS `ST_SnapToGrid(0.005°)` — colony GPS never stored raw | `supabase/migrations` |
 | 🗑️ **GDPR Erasure** | One-click account deletion cascading all tables + signs out all sessions | `app/api/privacy` |
+| 📜 **Verification Registry** | Public portal for authenticating Proof of Neuter UUIDs and Volunteer/Staff impact reports | `app/verify` |
+| 🏆 **Verifiable Certificates** | Dynamic certificates (Volunteer/Staff) with print scaling (landscape, single page) and HMAC SHA256 verify tokens | `app/(app)/profile/certificate` |
 
 ---
 
@@ -199,7 +201,7 @@ MeowNet/
 git clone https://github.com/SynthReaper/MeowNet.git && cd MeowNet
 npm install
 cp .env.example .env.local          # Fill in your Supabase + Clerk keys
-npx supabase db push                 # Apply all 33 migrations
+npx supabase db push                 # Apply all 59 migrations
 npm run dev                          # Start at localhost:3000
 ```
 
@@ -224,7 +226,7 @@ npm run build         # Production build
 |----------|---------|
 | [docs/HACKATHON.md](docs/HACKATHON.md) | **Start here** — Judge guide, demo walkthrough |
 | [docs/architecture.md](docs/architecture.md) | System design, ADRs, data flow |
-| [docs/database.md](docs/database.md) | 50 migrations, schema, RLS matrix |
+| [docs/database.md](docs/database.md) | 59 migrations, schema, RLS matrix |
 | [docs/api.md](docs/api.md) | API route reference |
 | [docs/security.md](docs/security.md) | Threat model, GDPR compliance |
 | [docs/deployment.md](docs/deployment.md) | Vercel + Railway + Docker guide |
@@ -251,5 +253,5 @@ Created for **#hackthekitty 2026** 🐾 by [SynthReaper](https://github.com/Synt
 
 ---
 
-**Author:** [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com · **Version:** 0.5.0 · **License:** [MIT with Custom Disclaimer](LICENSE)
+**Author:** [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com · **Version:** 0.6.0 · **License:** [MIT with Custom Disclaimer](LICENSE)
 

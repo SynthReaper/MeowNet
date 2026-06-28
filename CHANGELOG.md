@@ -13,6 +13,24 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 
 ---
 
+## [0.6.0] — 2026-06-28 · Cryptographic Verification Registry, Dynamic Staff Certificates, and Audit Log Dispute Panel
+
+### Added
+- **Dynamic Certificate Verification Portal** (`app/verify/page.tsx`): A general validation portal where anyone can verify certificates (Proof of Neuter UUID or Volunteer Impact Token) by entering their token ID.
+- **Cryptographic Volunteer & Staff Verification** (`app/verify/volunteer/[id]/page.tsx`): Dynamic validation page for volunteer/staff certificates. Re-hashes query parameters (cats, events, points) server-side via HMAC-SHA256 signed by the `SUPABASE_SERVICE_ROLE_KEY` to verify record authenticity without database lookups.
+- **Dynamic Staff Certificate Layouts**: The certificate page (`app/(app)/profile/certificate/page.tsx`) automatically adapts for moderators and admins. It changes headers to "Staff Impact Report" and showcases resolved support queries and audited actions instead of sightings/TNR stats.
+- **Staff Certificate Navigation**: Added a direct access link to view certificates inside the header card of the staff profile view (`components/profile/StaffProfileView/index.tsx`).
+- **Footer Verification link**: Inserted a "Verify Certificate" item under the Resources column in the global footer layout.
+- **Unique UUID Indicators on Audit Logs**: The Timestamp column on `FuturisticAuditDashboard.tsx` renders short UUID badges of every log ID, supporting individual transaction tracing.
+- **Realtime Audit Log Disputes Panel**: A cybernetic dispute pane integrated inside the audit logs dashboard drawer, backed by `raiseAuditLogDispute` server action, allowing moderators to raise questions on specific log IDs.
+
+### Changed
+- **Certificate Print Directives**: Configured print CSS media queries to set `size: landscape; margin: 0mm` and bound container layout to `100vw/100vh`, ensuring that certificates fit exactly on a single landscape sheet with pure white background.
+- **Credentials Persistence**: Bypassed inefficient user listing page loops in Auth synchronizations (`lib/actions/auth.ts`) by introducing a database-native `SECURITY DEFINER` RPC helper `get_user_by_email` targeting isolated user record lookup.
+- **Image Upload Allowlist**: Expanded the EXIF stripping validation (`lib/security/exif.ts`) to verify WebP files by parsing their magic bytes.
+
+---
+
 ## [0.5.0] — 2026-06-28 · Supreme Admin Controls, Maintenance Mode & Dynamic Gamification
 
 ### Added

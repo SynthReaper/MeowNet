@@ -3,6 +3,7 @@
 // app/(app)/weather/page.tsx — Feline Weather Watch & Shelter Safety Index
 
 import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
 interface WeatherReport {
@@ -90,6 +91,8 @@ export default function WeatherPage() {
   const [loadingLive, setLoadingLive] = useState(true);
   const [thresholdF, setThresholdF] = useState(41); // default 5°C
   const [rawWeatherList, setRawWeatherList] = useState<any[]>([]);
+  const [colonies, setColonies] = useState<any[]>([]);
+  const [loadingColonies, setLoadingColonies] = useState(true);
 
   useEffect(() => {
     const stored = localStorage.getItem('meownet_weather_reports');
@@ -162,6 +165,35 @@ export default function WeatherPage() {
 
     fetchLiveWeather();
 
+    async function fetchColonies() {
+      try {
+        const { data: cols } = await supabase
+          .from('colonies' as never)
+          .select('id, name, location, population_estimate');
+        
+        if (cols && cols.length > 0) {
+          const { data: shelters } = await supabase
+            .from('winter_shelters' as never)
+            .select('colony_id, capacity_cats, insulation_r');
+            
+          const mapped = cols.map((col: any) => {
+            const colShelters = (shelters || []).filter((s: any) => s.colony_id === col.id);
+            return {
+              ...col,
+              shelters: colShelters
+            };
+          });
+          setColonies(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to load colonies for weather risk analysis', err);
+      } finally {
+        setLoadingColonies(false);
+      }
+    }
+
+    fetchColonies();
+
     return () => {
       supabase.removeChannel(channel);
     };
@@ -189,6 +221,78 @@ export default function WeatherPage() {
   }, [rawWeatherList, thresholdF]);
 
   const alert = buildAlertText(districts);
+
+  const vulnerableColonies = useMemo(() => {
+    if (colonies.length === 0 || rawWeatherList.length === 0) return [];
+    
+    const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+      return Math.hypot(lat1 - lat2, lon1 - lon2);
+    };
+
+    return colonies.map(colony => {
+      let lat = 40.75, lng = -73.99;
+      if (colony.location && typeof colony.location === 'string') {
+        const matches = colony.location.match(/POINT\(([^ ]+)\s+([^)]+)\)/);
+        if (matches && matches[1] && matches[2]) {
+          lng = parseFloat(matches[1]);
+          lat = parseFloat(matches[2]);
+        }
+      }
+
+      let closestIdx = 0;
+      let minDist = Infinity;
+      DISTRICT_COORDS.forEach((coord, i) => {
+        const d = getDistance(lat, lng, coord.lat, coord.lng);
+        if (d < minDist) {
+          minDist = d;
+          closestIdx = i;
+        }
+      });
+
+      const weather = rawWeatherList[closestIdx] || { temp: 65, windspeed: 0, precipProb: 0, todayPrecipIn: 0 };
+      
+      const temp = weather.temp || 65;
+      const wind = weather.windspeed || 0;
+      const precipP = weather.precipProb || 0;
+      const precipIn = weather.todayPrecipIn || 0;
+      
+      let coldHazard = 0;
+      if (temp < 32) {
+        coldHazard = Math.min(50, (32 - temp) * 3);
+      }
+      let heatHazard = 0;
+      if (temp > 90) {
+        heatHazard = Math.min(50, (temp - 90) * 3);
+      }
+      const precipHazard = Math.min(30, (precipP * 0.1) + (precipIn * 15));
+      let windHazard = 0;
+      if (wind > 15) {
+        windHazard = Math.min(20, (wind - 15) * 1);
+      }
+
+      const baseRisk = Math.min(100, coldHazard + heatHazard + precipHazard + windHazard);
+
+      const sheltersList = colony.shelters || [];
+      const totalCapacity = sheltersList.reduce((acc: number, s: any) => acc + (s.capacity_cats || 2), 0);
+      const validShelters = sheltersList.filter((s: any) => s.insulation_r !== null);
+      const avgRVal = validShelters.length > 0 
+        ? validShelters.reduce((acc: number, s: any) => acc + (s.insulation_r || 3.5), 0) / validShelters.length
+        : 3.5;
+      
+      const safetyRatio = Math.min(1, totalCapacity / Math.max(1, colony.population_estimate || 1));
+      const mitigationScore = safetyRatio * avgRVal * 10;
+
+      const vulnerabilityScore = Math.max(0, Math.min(100, Math.round(baseRisk - mitigationScore)));
+
+      return {
+        ...colony,
+        vulnerabilityScore,
+        temp,
+        description: weather.description || 'Unknown'
+      };
+    }).filter((c: any) => c.vulnerabilityScore > 20)
+      .sort((a, b) => b.vulnerabilityScore - a.vulnerabilityScore);
+  }, [colonies, rawWeatherList]);
 
   const [form, setForm]       = useState({ neighborhood: 'Northside District', condition: '', notes: '' });
   const [success, setSuccess] = useState(false);
@@ -245,6 +349,58 @@ export default function WeatherPage() {
               </p>
             </div>
           </div>
+
+          {/* Feline Vulnerability Warnings */}
+          {vulnerableColonies.length > 0 && (
+            <div className="bg-white border-2 border-amber-400 rounded-2xl p-6 shadow-ambient flex flex-col gap-4 text-[#5c4a3c] animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-amber-500 font-bold animate-pulse">warning</span>
+                <h3 className="font-display text-sm font-black text-[#3b2d23] uppercase tracking-wider">
+                  Vulnerable Colonies Alert ({vulnerableColonies.length})
+                </h3>
+              </div>
+              <p className="font-body text-xs text-[#5c4a3c]/70 leading-relaxed">
+                The following managed colonies have low shelter capacity or poor insulation ratings for the current localized weather conditions. Caretakers are advised to inspect immediately.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
+                {vulnerableColonies.map((col: any) => (
+                  <div 
+                    key={col.id} 
+                    className={`p-3.5 rounded-xl border flex flex-col gap-2 ${
+                      col.vulnerabilityScore > 50 
+                        ? 'bg-red-50/50 border-red-200' 
+                        : 'bg-amber-50/50 border-amber-200'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <span className="font-display text-xs font-bold text-[#3b2d23] truncate max-w-[150px]">
+                        {col.name}
+                      </span>
+                      <span className={`font-data text-xs font-black ${
+                        col.vulnerabilityScore > 50 ? 'text-red-600' : 'text-amber-600'
+                      }`}>
+                        Risk: {col.vulnerabilityScore}/100
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between text-[10px] text-[#5c4a3c]/60 font-body">
+                      <span>Nearest Weather:</span>
+                      <strong className="text-[#3b2d23]">{col.temp}°F · {col.description}</strong>
+                    </div>
+
+                    <Link 
+                      href={`/colonies/${col.id}`}
+                      className="font-body text-[10px] font-bold text-[var(--empire-gold)] hover:underline flex items-center gap-0.5 mt-1 border-t border-[#dbc2b2]/20 pt-2 no-underline"
+                    >
+                      <span>Deploy Shelters / Inspect</span>
+                      <span className="material-symbols-outlined text-[10px]">arrow_forward</span>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* District Comfort Index Grid */}
           <div className="bg-white p-6 rounded-2xl shadow-ambient border border-[var(--bg-border)]">

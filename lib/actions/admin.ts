@@ -454,7 +454,7 @@ export async function getModeratorQueries() {
 
   const { data, error } = await supabase
     .from('moderator_queries' as never)
-    .select('id, target_type, target_id, moderator_id, volunteer_id, message, status, response, created_at')
+    .select('id, target_type, target_id, moderator_id, volunteer_id, message, status, response, created_at, chat_messages')
     .order('created_at', { ascending: false });
 
   if (error) throw new Error(error.message);
@@ -504,7 +504,7 @@ export async function resolveModeratorQuery(queryId: string, responseText?: stri
  * Submits a general moderator query from a user's profile.
  * Accessible to any authenticated user.
  */
-export async function submitUserProfileQuery(message: string): Promise<ActionResponse> {
+export async function submitUserProfileQuery(message: string): Promise<ActionResponse & { query?: any }> {
   try {
     const supabase = await createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -513,8 +513,27 @@ export async function submitUserProfileQuery(message: string): Promise<ActionRes
     const trimmed = message.trim();
     if (!trimmed) return { success: false, error: 'Query message cannot be empty.' };
 
+    // Fetch user profile display name
+    const { data: profile } = await supabase
+      .from('profiles' as never)
+      .select('display_name')
+      .eq('id', user.id)
+      .single() as any;
+
+    const displayName = profile?.display_name || 'Volunteer';
+
     const serviceClient = createServiceClient();
-    const { error } = await serviceClient
+    const initialMessages = [
+      {
+        sender_id: user.id,
+        sender_name: displayName,
+        sender_role: 'volunteer',
+        message: trimmed,
+        timestamp: new Date().toISOString()
+      }
+    ];
+
+    const { data, error } = await serviceClient
       .from('moderator_queries' as never)
       .insert({
         target_type: 'general',
@@ -522,14 +541,147 @@ export async function submitUserProfileQuery(message: string): Promise<ActionRes
         volunteer_id: user.id,
         message: trimmed,
         status: 'pending',
-      } as never);
+        chat_messages: initialMessages
+      } as never)
+      .select()
+      .single();
 
     if (error) return { success: false, error: error.message };
 
+    return { success: true, query: data };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Internal server error';
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Appends a message to the query's chat thread.
+ */
+export async function addQueryChatMessage(
+  queryId: string,
+  messageText: string,
+  setSolved: boolean = false
+): Promise<ActionResponse & { chat_messages?: any[] }> {
+  try {
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const trimmed = messageText.trim();
+    if (!trimmed) return { success: false, error: 'Message cannot be empty.' };
+
+    const { data: ticket, error: getError } = await supabase
+      .from('moderator_queries' as never)
+      .select('*')
+      .eq('id', queryId)
+      .single() as any;
+
+    if (getError || !ticket) return { success: false, error: 'Ticket not found.' };
+
+    const { data: profile } = await supabase
+      .from('profiles' as never)
+      .select('display_name, role')
+      .eq('id', user.id)
+      .single() as any;
+
+    const role = profile?.role || 'user';
+    const isStaff = role === 'admin' || role === 'moderator';
+
+    if (ticket.volunteer_id !== user.id && !isStaff) {
+      return { success: false, error: 'Unauthorized to reply to this ticket.' };
+    }
+
+    const senderName = profile?.display_name || (isStaff ? 'Staff' : 'Volunteer');
+    const senderRole = isStaff ? 'moderator' : 'volunteer';
+
+    const currentMessages = Array.isArray(ticket.chat_messages) ? ticket.chat_messages : [];
+    const newMessages = [
+      ...currentMessages,
+      {
+        sender_id: user.id,
+        sender_name: senderName,
+        sender_role: senderRole,
+        message: trimmed,
+        timestamp: new Date().toISOString()
+      }
+    ];
+
+    let nextStatus = ticket.status;
+    if (isStaff && setSolved) {
+      nextStatus = 'solved';
+    } else if (!isStaff && ticket.status === 'solved') {
+      nextStatus = 'pending';
+    }
+
+    const { error: updateError } = await supabase
+      .from('moderator_queries' as never)
+      .update({
+        chat_messages: newMessages,
+        status: nextStatus,
+        updated_at: new Date().toISOString(),
+        ...(isStaff ? { moderator_id: user.id } : {})
+      } as never)
+      .eq('id', queryId);
+
+    if (updateError) return { success: false, error: updateError.message };
+
+    revalidatePath('/moderator');
+    revalidatePath('/profile');
+    return { success: true, chat_messages: newMessages };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Internal server error';
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Closes a query ticket. Only allowed for the ticket creator.
+ */
+export async function closeModeratorQuery(queryId: string): Promise<ActionResponse> {
+  try {
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const { data: ticket, error: getError } = await supabase
+      .from('moderator_queries' as never)
+      .select('volunteer_id')
+      .eq('id', queryId)
+      .single() as any;
+
+    if (getError || !ticket) return { success: false, error: 'Ticket not found.' };
+
+    const { data: profile } = await supabase
+      .from('profiles' as never)
+      .select('role')
+      .eq('id', user.id)
+      .single() as any;
+
+    const role = profile?.role || 'user';
+    const isStaff = role === 'admin' || role === 'moderator';
+    const isOwner = ticket.volunteer_id === user.id;
+
+    if (!isOwner && !isStaff) {
+      return { success: false, error: 'Only the volunteer who raised this ticket or staff can close it.' };
+    }
+
+    const { error: updateError } = await supabase
+      .from('moderator_queries' as never)
+      .update({
+        status: 'closed',
+        updated_at: new Date().toISOString()
+      } as never)
+      .eq('id', queryId);
+
+    if (updateError) return { success: false, error: updateError.message };
+
+    revalidatePath('/moderator');
+    revalidatePath('/profile');
     return { success: true };
   } catch (err) {
-    const message = err instanceof Error ? (err as { message?: string })?.message : 'Internal server error';
-    return { success: false, error: message };
+    const msg = err instanceof Error ? err.message : 'Internal server error';
+    return { success: false, error: msg };
   }
 }
 
@@ -1092,10 +1244,6 @@ export async function getAuditLogs() {
       .select('id, actor_id, actor_role, action, target_id, details, created_at, profiles:profiles!actor_id(display_name)' as never)
       .order('created_at', { ascending: false });
 
-    if (caller.role === 'moderator') {
-      query = query.eq('actor_id', user.id);
-    }
-
     const { data, error } = await query;
     if (error) throw new Error(error.message);
 
@@ -1109,6 +1257,7 @@ export async function getAuditLogs() {
         target_id: l.target_id,
         details: l.details,
         created_at: l.created_at,
+        profiles: l.profiles,
         actor_name: l.profiles?.display_name ?? 'Anonymous Staff',
       };
     });
@@ -1612,6 +1761,62 @@ export async function adminDeleteGuild(guildId: string): Promise<ActionResponse>
   } catch (err) {
     const message = err instanceof Error ? (err as { message?: string })?.message : 'Internal server error';
     return { success: false, error: message };
+  }
+}
+
+/**
+ * Creates a support query dispute for a specific audit log entry (Transparency System).
+ */
+export async function raiseAuditLogDispute(
+  logId: string,
+  messageText: string
+): Promise<ActionResponse & { query?: any }> {
+  try {
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const trimmed = messageText.trim();
+    if (!trimmed) return { success: false, error: 'Dispute reason cannot be empty.' };
+
+    const { data: profile } = await supabase
+      .from('profiles' as never)
+      .select('display_name, role')
+      .eq('id', user.id)
+      .single() as any;
+
+    const senderName = profile?.display_name || 'Staff Member';
+    const senderRole = profile?.role || 'moderator';
+
+    const { data, error } = await supabase
+      .from('moderator_queries' as never)
+      .insert({
+        volunteer_id: user.id,
+        target_type: 'general',
+        target_id: logId,
+        message: `[AUDIT DISPUTE] Log ID: ${logId}\nDispute Message: ${trimmed}`,
+        status: 'pending',
+        chat_messages: [
+          {
+            sender_id: user.id,
+            sender_name: senderName,
+            sender_role: senderRole,
+            message: `Disputing Log ID: ${logId}. Reason: ${trimmed}`,
+            timestamp: new Date().toISOString()
+          }
+        ]
+      } as never)
+      .select()
+      .single() as any;
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath('/moderator');
+    revalidatePath('/profile');
+    return { success: true, query: data };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Error raising dispute';
+    return { success: false, error: msg };
   }
 }
 

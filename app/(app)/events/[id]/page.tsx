@@ -100,7 +100,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             <h1 className="font-display text-2xl font-extrabold text-[var(--empire-cream)] mt-3">
               {event.title}
             </h1>
-            <div className="flex flex-wrap gap-4 text-xs font-semibold text-[var(--empire-cream)]/50 mt-2">
+            <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-[var(--empire-cream)]/50 mt-2">
               <span className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm text-[var(--empire-gold)]">calendar_today</span>
                 <span>{eventDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
@@ -109,6 +109,14 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                 <span className="material-symbols-outlined text-sm text-[var(--empire-gold)]">schedule</span>
                 <span>{eventDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
               </span>
+              <a
+                href={`/api/events/${event.id}/ics`}
+                download
+                className="flex items-center gap-1 text-[var(--life-teal)] hover:text-teal-700 transition-colors no-underline font-bold text-xs"
+              >
+                <span className="material-symbols-outlined text-sm">calendar_add_on</span>
+                <span>Add to Calendar</span>
+              </a>
             </div>
           </div>
         </div>

@@ -36,18 +36,15 @@ export async function syncSupabasePassword(): Promise<SyncResult> {
     // 3. Initialize Supabase Service Role client to access Admin Auth API
     const admin = createServiceClient();
 
-    // 4. Find if the user already exists in Supabase Auth by email
-    const { data, error: listError } = await admin.auth.admin.listUsers({
-      page: 1,
-      perPage: 1000
-    });
+    // 4. Find if the user already exists in Supabase Auth by email using the secure RPC helper
+    const { data: userList, error: queryError } = await admin.rpc('get_user_by_email' as never, { p_email: email } as never) as unknown as { data: { id: string; email: string }[] | null, error: any };
 
-    if (listError) {
-      console.error('Supabase admin listUsers error:', listError.message);
+    if (queryError) {
+      console.error('Supabase admin get_user_by_email query error:', queryError.message);
       return { success: false, error: 'database_query_failed' };
     }
 
-    const existingUser = data.users.find((u) => u.email === email);
+    const existingUser = userList && userList[0] ? userList[0] : null;
 
     if (existingUser) {
       const { data: profile } = await admin

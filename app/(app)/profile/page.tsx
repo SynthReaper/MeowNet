@@ -5,9 +5,11 @@ import { auth } from '@clerk/nextjs/server';
 import Link from 'next/link';
 import ProfileCard from '@/components/profile/ProfileCard';
 import DataDeletion from '@/components/profile/DataDeletion';
+import DataPortability from '@/components/profile/DataPortability';
 import StaffProfileView, { StaffProfile } from '@/components/profile/StaffProfileView';
 import ModeratorApplicationCard from '@/components/profile/ModeratorApplicationCard';
 import ProfileQueries from '@/components/profile/ProfileQueries';
+import ProfileActivityLogs from '@/components/profile/ProfileActivityLogs';
 
 export const metadata: Metadata = {
   title: '👤 My Profile',
@@ -83,7 +85,7 @@ export default async function ProfilePage() {
     );
   }
 
-  const [profileRes, badgesRes, recentRes, sightingsRes, pledgesRes, activeAppRes, queriesRes] = await Promise.all([
+  const [profileRes, badgesRes, recentRes, sightingsRes, pledgesRes, activeAppRes, queriesRes, auditLogsRes] = await Promise.all([
     supabase.from('profiles' as never).select('*').eq('id', user.id).single(),
     supabase.from('user_badges' as never).select('badge_id, earned_at').eq('user_id', user.id).order('earned_at', { ascending: false }),
     supabase.from('point_log' as never).select('activity, points, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
@@ -91,6 +93,7 @@ export default async function ProfilePage() {
     supabase.from('cat_caregivers' as never).select('pledge, created_at, cats:cats(id, name, photo_url, status)' as never).eq('user_id', user.id).order('created_at', { ascending: false }),
     supabase.from('moderator_applications' as never).select('id').eq('user_id', user.id).eq('status', 'pending').maybeSingle(),
     supabase.from('moderator_queries' as never).select('id, target_type, target_id, message, status, response, created_at').eq('volunteer_id', user.id).order('created_at', { ascending: false }).then(res => res, () => ({ data: [], error: null })),
+    supabase.from('staff_audit_logs' as never).select('action, details, created_at').eq('actor_id', user.id).order('created_at', { ascending: false }).limit(20).then(res => res, () => ({ data: [], error: null })),
   ]);
 
   const profile = (profileRes.data ?? { id: user.id, display_name: null, avatar_url: null, empire_points: 0, weekly_points: 0, created_at: user.created_at }) as Profile;
@@ -100,6 +103,7 @@ export default async function ProfilePage() {
   const pledges = (pledgesRes.data ?? []) as Pledge[];
   const hasPendingApp = !!activeAppRes?.data;
   const userQueries = (queriesRes?.data ?? []) as any[];
+  const auditLogs = (auditLogsRes?.data ?? []) as any[];
 
   // ── STAFF PROFILE PATH ─────────────────────────────────────────────────────
   const userRole = profile.role ?? 'user';
@@ -139,14 +143,23 @@ export default async function ProfilePage() {
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-12 py-8 flex flex-col gap-8">
       {/* Header */}
-      <div>
-        <h1 className="font-display text-3xl font-extrabold text-[var(--empire-gold)] flex items-center gap-2">
-          <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>account_circle</span>
-          <span>My Profile</span>
-        </h1>
-        <p className="font-body text-sm text-[var(--empire-cream)]/60">
-          Manage your account information, review your contributions history, and download data.
-        </p>
+      <div className="flex justify-between items-start gap-4 flex-wrap">
+        <div>
+          <h1 className="font-display text-3xl font-extrabold text-[var(--empire-gold)] flex items-center gap-2">
+            <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>account_circle</span>
+            <span>My Profile</span>
+          </h1>
+          <p className="font-body text-sm text-[var(--empire-cream)]/60 mt-1">
+            Manage your account information, review your contributions history, and download data.
+          </p>
+        </div>
+        <Link
+          href="/profile/certificate"
+          className="bg-[var(--empire-gold)] text-white hover:bg-[#e6b020] px-4 py-2.5 rounded-xl text-xs font-bold uppercase transition-all shadow-md flex items-center gap-1.5 no-underline mt-2 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-base">workspace_premium</span>
+          <span>Volunteer Certificate</span>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -321,39 +334,7 @@ export default async function ProfilePage() {
           </div>
 
           {/* Points/Activity History */}
-          <div className="bg-white p-6 rounded-2xl shadow-ambient border border-[var(--bg-border)]">
-            <h2 className="font-display text-lg text-[var(--empire-cream)] font-bold mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined">analytics</span>
-              <span>Recent Activity Log</span>
-            </h2>
-
-            {recentPoints.length === 0 ? (
-              <p className="font-body text-xs text-[var(--empire-cream)]/50 py-4">No activity logged yet. Help map stray cats or join TNR operations to earn points!</p>
-            ) : (
-              <div className="flex flex-col">
-                {recentPoints.map((log, i) => (
-                  <div 
-                    key={i} 
-                    className={`flex justify-between items-center py-3 ${
-                      i < recentPoints.length - 1 ? 'border-b border-[var(--bg-border)]/40' : ''
-                    }`}
-                  >
-                    <div>
-                      <div className="font-body text-xs font-bold text-[var(--empire-cream)] capitalize">
-                        {log.activity.replace(/_/g, ' ').toLowerCase()}
-                      </div>
-                      <div className="font-body text-[10px] text-[var(--empire-cream)]/40 mt-0.5 font-semibold">
-                        {new Date(log.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                    <div className="font-data text-xs font-bold text-[var(--life-teal)]">
-                      +{log.points} pts
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ProfileActivityLogs recentPoints={recentPoints} auditLogs={auditLogs} />
         </div>
 
         {/* Sidebar Area (4 columns) */}
@@ -388,10 +369,11 @@ export default async function ProfilePage() {
 
           {/* Profile Queries and Support */}
           {userRole === 'user' && (
-            <ProfileQueries initialQueries={userQueries} />
+            <ProfileQueries initialQueries={userQueries} userId={profile.id} />
           )}
 
           {/* GDPR / Data Deletion */}
+          <DataPortability />
           <DataDeletion />
         </div>
       </div>
