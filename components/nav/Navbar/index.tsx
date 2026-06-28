@@ -39,6 +39,17 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: 'Feline Empire',
+    icon: 'military_tech',
+    links: [
+      { href: '/empire', label: 'Empire Dashboard', id: 'nav-empire-hub', icon: 'military_tech' },
+      { href: '/empire/trivia', label: 'Daily Trivia', id: 'nav-trivia', icon: 'quiz' },
+      { href: '/empire/bingo', label: 'Stray Bingo', id: 'nav-bingo', icon: 'grid_on' },
+      { href: '/empire/guilds', label: 'Volunteer Guilds', id: 'nav-guilds', icon: 'groups' },
+      { href: '/empire/tycoon', label: 'Colony Tycoon', id: 'nav-tycoon', icon: 'castle' },
+    ],
+  },
+  {
     label: 'TNR & Community',
     icon: 'group',
     links: [
@@ -309,31 +320,40 @@ export default function Navbar() {
   return (
     <header
       suppressHydrationWarning
-      className="bg-[var(--bg-surface)] border-b border-[var(--bg-border)] shadow-[0_2px_8px_rgba(0,0,0,0.08)] sticky top-0 z-[9999] w-full h-16 flex items-center transition-colors duration-300"
+      className="sticky top-0 z-[9999] w-full h-16 flex items-center transition-colors duration-300"
+      style={{
+        background: 'var(--navbar-bg)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: '1px solid var(--navbar-border)',
+        boxShadow: '0 1px 20px rgba(0,0,0,0.07)'
+      }}
     >
       <div className="flex justify-between items-center px-4 md:px-10 w-full max-w-screen-xl mx-auto gap-3" ref={dropdownRef}>
 
         {/* Logo */}
-        <Link href="/" id="nav-logo" className="flex items-center gap-2 no-underline shrink-0">
-          <div className="w-7 h-7 flex items-center justify-center p-0.5 bg-[var(--bg-elevated)]/40 rounded-md border border-[var(--bg-border)]/20 shadow-sm overflow-hidden">
+        <Link href="/" id="nav-logo" className="flex items-center gap-2 no-underline shrink-0 group">
+          <div className="w-8 h-8 flex items-center justify-center rounded-xl overflow-hidden shadow-md border border-[var(--bg-border)]/20 transition-transform group-hover:scale-110 group-hover:rotate-3 duration-200" style={{background:'linear-gradient(135deg,#fbbf24,#f97316)'}}>
             <img
               src="/pet-logo.png"
               alt="MeowNet Logo"
-              className="w-full h-full object-cover rounded"
+              className="w-full h-full object-cover"
             />
           </div>
-          <span className="font-display text-base font-bold tracking-tight text-[var(--empire-gold)]">
-            {logoText}
-          </span>
-          {staffBadge && (
-            <span className="hidden sm:inline text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--empire-gold)]/10 text-[var(--empire-gold)] border border-[var(--empire-gold)]/20 uppercase tracking-widest">
-              {staffBadge}
+          <div className="flex flex-col leading-none">
+            <span className="font-display text-base font-black tracking-tight" style={{background:'linear-gradient(135deg,var(--empire-gold),#f97316)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
+              {logoText}
             </span>
-          )}
+            {staffBadge && (
+              <span className="text-[8px] font-bold uppercase tracking-widest" style={{color:'var(--empire-gold)',opacity:0.7}}>
+                {staffBadge}
+              </span>
+            )}
+          </div>
         </Link>
 
-        {/* Desktop Nav (High-Density Grouped Dropdowns) */}
-        <nav className="hidden lg:flex gap-4 xl:gap-6 items-center flex-1 justify-center relative">
+        {/* Desktop Nav */}
+        <nav className="hidden lg:flex gap-1 xl:gap-1.5 items-center flex-1 justify-center relative">
           {groupsToRender.map((group) => {
             const isGroupActive = group.links.some(
               (link) => pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))
@@ -344,93 +364,103 @@ export default function Navbar() {
               <div key={group.label} className="relative">
                 <button
                   onClick={() => setOpenDropdown(isOpen ? null : group.label)}
-                  className={`font-body text-sm font-semibold flex items-center gap-1 py-1.5 px-2.5 rounded-lg transition-all border-none bg-transparent cursor-pointer ${
+                  className={`font-body text-[13px] font-semibold flex items-center gap-1 py-1.5 px-3 rounded-lg transition-all border-none cursor-pointer relative ${
                     isGroupActive
-                      ? 'text-[var(--empire-gold)] font-bold'
-                      : 'text-[var(--text-primary)]/70 hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'
+                      ? 'font-bold'
+                      : 'text-[var(--text-primary)] opacity-65 hover:opacity-100'
                   }`}
+                  style={isGroupActive ? {background:'linear-gradient(135deg,rgba(217,119,6,0.12),rgba(249,115,22,0.08))',color:'var(--empire-gold)'} : {background:'transparent'}}
                   aria-expanded={isOpen}
                 >
-                  <span className="material-symbols-outlined text-base shrink-0">{group.icon}</span>
+                  {isGroupActive && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full" style={{background:'linear-gradient(90deg,var(--empire-gold),#f97316)'}}/>}
+                  <span className="material-symbols-outlined text-[15px] shrink-0" style={{fontVariationSettings:"'FILL' " + (isGroupActive?'1':'0')}}>{group.icon}</span>
                   <span>{group.label}</span>
-                  <span className={`material-symbols-outlined text-xs transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
-                    expand_more
-                  </span>
+                  <span className={`material-symbols-outlined text-[12px] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>expand_more</span>
                 </button>
 
-                {/* Dropdown Menu Container */}
+                {/* Premium Dropdown */}
                 {isOpen && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 bg-[var(--bg-surface)] border border-[var(--bg-border)] rounded-xl shadow-2xl p-2 z-50 flex flex-col gap-0.5 animate-fade-in backdrop-blur-md">
-                    {group.links.map((link) => {
-                      const isLinkActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
-                      const isGuestAllowed = ['/map', '/cats', '/events', '/colonies', '/stories'].includes(link.href);
+                  <div
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2.5 w-60 rounded-2xl z-50 flex flex-col overflow-hidden"
+                    style={{
+                      background: 'var(--dropdown-bg)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid var(--dropdown-border)',
+                      boxShadow: '0 20px 60px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08)'
+                    }}
+                  >
+                    {/* Dropdown header */}
+                    <div className="px-4 py-3 flex items-center gap-2 border-b" style={{borderColor:'var(--dropdown-border)',background:'linear-gradient(135deg,rgba(217,119,6,0.06),rgba(249,115,22,0.03))'}}>
+                      <span className="material-symbols-outlined text-sm" style={{color:'var(--empire-gold)',fontVariationSettings:"'FILL' 1"}}>{group.icon}</span>
+                      <span className="font-display text-[11px] font-black uppercase tracking-widest" style={{color:'var(--empire-gold)'}}>{group.label}</span>
+                    </div>
+                    <div className="p-1.5 flex flex-col gap-0.5">
+                      {group.links.map((link) => {
+                        const isLinkActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
+                        const isGuestAllowed = ['/map', '/cats', '/events', '/colonies', '/stories'].includes(link.href);
 
-                      if (!isUserLoggedIn && !isGuestAllowed) {
+                        if (!isUserLoggedIn && !isGuestAllowed) {
+                          return (
+                            <Link
+                              key={link.href}
+                              href="/auth/login"
+                              title="Sign in required"
+                              onClick={() => setOpenDropdown(null)}
+                              className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold no-underline transition-all"
+                              style={{color:'var(--text-primary)',opacity:0.35}}
+                            >
+                              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{background:'rgba(var(--bg-border-rgb,0,0,0),0.06)'}}>
+                                <span className="material-symbols-outlined text-sm">lock</span>
+                              </div>
+                              <span className="flex-1 truncate">{link.label}</span>
+                              <span className="text-[8px] uppercase tracking-wider font-bold" style={{color:'var(--empire-gold)',opacity:0.5}}>Join</span>
+                            </Link>
+                          );
+                        }
+
                         return (
                           <Link
                             key={link.href}
-                            href="/auth/login"
-                            title="Sign in required"
+                            href={link.href}
+                            id={link.id}
                             onClick={() => setOpenDropdown(null)}
-                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-[var(--text-primary)]/40 hover:bg-[var(--bg-elevated)] no-underline transition-all"
+                            className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold no-underline transition-all"
+                            style={isLinkActive ? {
+                              background:'linear-gradient(135deg,rgba(217,119,6,0.12),rgba(249,115,22,0.07))',
+                              color:'var(--empire-gold)'
+                            } : {color:'var(--text-primary)',opacity:0.75}}
                           >
-                            <span className="material-symbols-outlined text-sm shrink-0">lock</span>
-                            <span className="flex-1 truncate">{link.label}</span>
-                            <span className="text-[9px] uppercase tracking-wider font-bold text-[var(--empire-gold)]/50">Join</span>
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all" style={isLinkActive ? {background:'linear-gradient(135deg,rgba(217,119,6,0.2),rgba(249,115,22,0.12))'} : {background:'rgba(var(--bg-border-rgb,0,0,0),0.05)'}}>
+                              <span className="material-symbols-outlined text-sm" style={{fontVariationSettings:"'FILL' " + (isLinkActive?'1':'0')}}>{link.icon}</span>
+                            </div>
+                            <span className="truncate font-semibold">{link.label}</span>
+                            {isLinkActive && <span className="material-symbols-outlined text-xs ml-auto" style={{color:'var(--empire-gold)'}}>arrow_forward_ios</span>}
                           </Link>
                         );
-                      }
-
-                      return (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          id={link.id}
-                          onClick={() => setOpenDropdown(null)}
-                          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold no-underline transition-all ${
-                            isLinkActive
-                              ? 'bg-[var(--empire-gold)]/10 text-[var(--empire-gold)]'
-                              : 'text-[var(--text-primary)]/75 hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'
-                          }`}
-                        >
-                          <span className="material-symbols-outlined text-sm shrink-0">{link.icon}</span>
-                          <span className="truncate">{link.label}</span>
-                        </Link>
-                      );
-                    })}
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
             );
           })}
 
-          {/* Direct link for Leaderboard */}
-          <Link
-            href="/empire"
-            id="nav-empire"
-            className={`font-body text-sm font-semibold flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg transition-all no-underline ${
-              pathname === '/empire'
-                ? 'text-[var(--empire-gold)] font-bold'
-                : 'text-[var(--text-primary)]/70 hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            <span className="material-symbols-outlined text-base shrink-0">leaderboard</span>
-            <span>Leaderboard</span>
-          </Link>
+
         </nav>
 
         {/* Right Controls */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
 
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             type="button"
             id="nav-theme-toggle"
-            className="h-8 w-8 rounded-lg border border-[var(--bg-border)] bg-transparent text-[var(--text-primary)]/70 hover:bg-[var(--bg-elevated)] flex items-center justify-center transition-all cursor-pointer"
+            className="h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer"
+            style={{background:'rgba(var(--bg-border-rgb,0,0,0),0.06)',color:'var(--text-primary)',opacity:0.65}}
             aria-label="Toggle theme"
           >
-            <span className="material-symbols-outlined text-base">
+            <span className="material-symbols-outlined text-[17px]">
               {theme === 'light' ? 'dark_mode' : 'light_mode'}
             </span>
           </button>
@@ -441,9 +471,10 @@ export default function Navbar() {
                 <Link
                   href="/cats/new"
                   id="nav-log-cat"
-                  className="bg-[var(--empire-gold)] text-white hover:opacity-90 px-3 py-1.5 rounded-lg text-xs font-bold no-underline transition-all hidden sm:flex items-center gap-1"
+                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-extrabold no-underline transition-all hover:scale-105 active:scale-95 text-white shadow-md"
+                  style={{background:'linear-gradient(135deg,var(--empire-gold),#f97316)',boxShadow:'0 4px 14px rgba(217,119,6,0.35)'}}
                 >
-                  <span className="material-symbols-outlined text-sm">add</span>
+                  <span className="material-symbols-outlined text-sm" style={{fontVariationSettings:"'FILL' 1"}}>add_location_alt</span>
                   Log Sighting
                 </Link>
               )}
@@ -454,69 +485,86 @@ export default function Navbar() {
                   onClick={() => setIsNotifOpen(!isNotifOpen)}
                   type="button"
                   id="nav-notifications-toggle"
-                  className="h-8 w-8 rounded-lg border border-[var(--bg-border)] bg-transparent text-[var(--text-primary)]/70 hover:bg-[var(--bg-elevated)] flex items-center justify-center transition-all cursor-pointer relative"
+                  className="h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer relative"
+                  style={{background:'rgba(var(--bg-border-rgb,0,0,0),0.06)',color:'var(--text-primary)',opacity:0.7}}
                   aria-label="Notifications"
                 >
-                  <span className="material-symbols-outlined text-base">notifications</span>
+                  <span className="material-symbols-outlined text-[17px]" style={{fontVariationSettings:unreadCount>0?"'FILL' 1":"'FILL' 0"}}>notifications</span>
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-[8px] font-bold flex items-center justify-center shadow-sm">
-                      {unreadCount}
+                    <span className="absolute -top-1 -right-1 w-4.5 h-4.5 min-w-[18px] min-h-[18px] rounded-full text-white text-[8px] font-black flex items-center justify-center shadow-lg animate-pulse" style={{background:'linear-gradient(135deg,#ef4444,#dc2626)',fontSize:'7px',padding:'2px 3px'}}>
+                      {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
                 </button>
 
                 {isNotifOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-[var(--bg-surface)] border border-[var(--bg-border)] rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[350px]">
-                    <div className="px-4 py-3 border-b border-[var(--bg-border)] flex items-center justify-between bg-[var(--bg-elevated)]">
-                      <span className="font-display text-xs font-bold text-[var(--text-primary)]">Notifications</span>
+                  <div
+                    className="absolute right-0 mt-2.5 w-80 rounded-2xl z-50 overflow-hidden flex flex-col max-h-[380px]"
+                    style={{
+                      background: 'var(--dropdown-bg)',
+                      backdropFilter: 'blur(20px)',
+                      border: '1px solid var(--dropdown-border)',
+                      boxShadow: '0 24px 60px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)'
+                    }}
+                  >
+                    <div className="px-4 py-3 flex items-center justify-between" style={{borderBottom:'1px solid var(--dropdown-border)',background:'linear-gradient(135deg,rgba(217,119,6,0.06),rgba(249,115,22,0.03))'}}>
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm" style={{color:'var(--empire-gold)',fontVariationSettings:"'FILL' 1"}}>notifications</span>
+                        <span className="font-display text-xs font-black" style={{color:'var(--text-primary)'}}>Notifications</span>
+                        {unreadCount > 0 && <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full" style={{background:'rgba(217,119,6,0.12)',color:'var(--empire-gold)'}}>{unreadCount} new</span>}
+                      </div>
                       {unreadCount > 0 && (
                         <button
                           onClick={handleMarkAllRead}
-                          className="font-body text-[10px] text-[var(--empire-gold)] hover:text-[#e6b020] font-bold bg-transparent border-none cursor-pointer"
+                          className="font-body text-[10px] font-bold bg-transparent border-none cursor-pointer hover:opacity-70 transition-opacity"
+                          style={{color:'var(--empire-gold)'}}
                           type="button"
                         >
-                          Mark all as read
+                          Mark all read
                         </button>
                       )}
                     </div>
-                    <div className="flex-1 overflow-y-auto divide-y divide-[var(--bg-border)]/40 max-h-[250px]">
+                    <div className="flex-1 overflow-y-auto divide-y divide-[var(--bg-border)]/30 max-h-[270px]">
                       {notifications.length === 0 ? (
-                        <div className="p-6 text-center text-xs text-[var(--text-primary)]/40 font-body">
-                          No notifications yet
+                        <div className="p-8 text-center flex flex-col items-center gap-2">
+                          <span className="material-symbols-outlined text-3xl" style={{color:'var(--text-primary)',opacity:0.2}}>notifications_off</span>
+                          <span className="text-xs font-body" style={{color:'var(--text-primary)',opacity:0.4}}>No notifications yet</span>
                         </div>
                       ) : (
                         notifications.map((n) => (
                           <div
                             key={n.id}
                             onClick={() => handleNotifClick(n)}
-                            className={`p-3 text-left transition-colors cursor-pointer hover:bg-[var(--bg-elevated)] flex gap-2 items-start ${!n.is_read ? 'bg-[var(--empire-gold)]/5' : ''}`}
+                            className="p-3 text-left cursor-pointer flex gap-3 items-start transition-all"
+                            style={!n.is_read ? {background:'rgba(217,119,6,0.04)'} : {}}
                           >
-                            <span className="material-symbols-outlined text-sm text-[var(--empire-gold)] mt-0.5">
-                              {n.type === 'private_message' ? 'mail' : 'info'}
-                            </span>
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{background:n.type==='private_message'?'rgba(217,119,6,0.1)':'rgba(var(--life-teal-rgb,14,165,233),0.1)'}}>
+                              <span className="material-symbols-outlined text-sm" style={{color:n.type==='private_message'?'var(--empire-gold)':'var(--life-teal)',fontVariationSettings:"'FILL' 1"}}>
+                                {n.type === 'private_message' ? 'mail' : 'info'}
+                              </span>
+                            </div>
                             <div className="flex-1 min-w-0">
-                              <div className="font-body text-[11px] font-bold text-[var(--text-primary)] flex justify-between items-center gap-1">
-                                <span>{n.title}</span>
-                                <span className="font-body text-[9px] text-[var(--text-primary)]/30 font-normal">
+                              <div className="font-body text-[11px] font-bold flex justify-between items-center gap-1" style={{color:'var(--text-primary)'}}>
+                                <span className="truncate">{n.title}</span>
+                                <span className="font-body text-[9px] font-normal flex-shrink-0" style={{color:'var(--text-primary)',opacity:0.3}}>
                                   {new Date(n.created_at).toLocaleDateString()}
                                 </span>
                               </div>
-                              <p className="font-body text-[10px] text-[var(--text-primary)]/60 mt-0.5 leading-normal">
+                              <p className="font-body text-[10px] mt-0.5 leading-normal line-clamp-2" style={{color:'var(--text-primary)',opacity:0.6}}>
                                 {n.message}
                               </p>
                               {n.target_url && (
                                 <Link
                                   href={n.target_url}
-                                  className="inline-flex items-center gap-0.5 text-[9px] text-[var(--empire-gold)] font-bold mt-1 no-underline hover:underline"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleNotifClick(n);
-                                  }}
+                                  className="inline-flex items-center gap-0.5 text-[9px] font-bold mt-1 no-underline hover:underline"
+                                  style={{color:'var(--empire-gold)'}}
+                                  onClick={(e) => { e.stopPropagation(); handleNotifClick(n); }}
                                 >
                                   View details <span className="material-symbols-outlined text-[10px]">chevron_right</span>
                                 </Link>
                               )}
                             </div>
+                            {!n.is_read && <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5" style={{background:'var(--empire-gold)'}}/>}
                           </div>
                         ))
                       )}
@@ -525,18 +573,20 @@ export default function Navbar() {
                 )}
               </div>
 
+              {/* Avatar */}
               <Link
                 href="/profile"
                 id="nav-profile-avatar"
-                title="View Profile"
-                className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center border-2 border-[var(--bg-border)] bg-[var(--bg-elevated)] hover:border-[var(--empire-gold)] hover:scale-105 transition-all"
+                title={`View Profile — ${userDisplayName}`}
+                className="relative w-8 h-8 rounded-full overflow-hidden flex items-center justify-center transition-all hover:scale-110"
+                style={{boxShadow:'0 0 0 2px rgba(217,119,6,0.3), 0 0 0 4px rgba(217,119,6,0.08)'}}
               >
                 {avatarSrc ? (
                   <img src={avatarSrc} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-xs font-extrabold text-[var(--empire-gold)]">
+                  <div className="w-full h-full flex items-center justify-center font-extrabold text-xs text-white" style={{background:'linear-gradient(135deg,var(--empire-gold),#f97316)'}}>
                     {userDisplayName[0]?.toUpperCase() || 'U'}
-                  </span>
+                  </div>
                 )}
               </Link>
 
@@ -544,9 +594,10 @@ export default function Navbar() {
                 onClick={handleSignOut}
                 type="button"
                 id="nav-sign-out"
-                className="hidden md:flex border border-[var(--bg-border)] text-[var(--text-primary)]/60 hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all items-center gap-1.5"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all hover:opacity-80"
+                style={{background:'rgba(var(--bg-border-rgb,0,0,0),0.06)',color:'var(--text-primary)',opacity:0.6}}
               >
-                <span className="material-symbols-outlined text-base">logout</span>
+                <span className="material-symbols-outlined text-[15px]">logout</span>
                 <span className="hidden lg:inline">Sign Out</span>
               </button>
             </>
@@ -555,16 +606,18 @@ export default function Navbar() {
               <Link
                 href="/auth/login"
                 id="nav-login"
-                className="border border-[var(--bg-border)] text-[var(--text-primary)]/80 hover:bg-[var(--bg-elevated)] px-3 py-1.5 rounded-lg text-xs font-medium no-underline transition-all"
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold no-underline transition-all hover:opacity-80"
+                style={{background:'rgba(var(--bg-border-rgb,0,0,0),0.07)',color:'var(--text-primary)'}}
               >
                 Sign In
               </Link>
               <Link
                 href="/auth/signup"
                 id="nav-signup"
-                className="bg-[var(--empire-gold)] text-white hover:opacity-90 px-3 py-1.5 rounded-lg text-xs font-bold no-underline transition-all"
+                className="px-4 py-1.5 rounded-xl text-xs font-extrabold no-underline transition-all hover:scale-105 active:scale-95 text-white shadow-md"
+                style={{background:'linear-gradient(135deg,var(--empire-gold),#f97316)',boxShadow:'0 4px 14px rgba(217,119,6,0.35)'}}
               >
-                Join
+                Join Free
               </Link>
             </>
           )}
@@ -574,67 +627,83 @@ export default function Navbar() {
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             type="button"
             id="nav-mobile-toggle"
-            className="lg:hidden h-8 w-8 rounded-lg border border-[var(--bg-border)] text-[var(--text-primary)]/70 hover:bg-[var(--bg-elevated)] flex items-center justify-center transition-all cursor-pointer"
+            className="lg:hidden h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer"
+            style={{background:'rgba(var(--bg-border-rgb,0,0,0),0.06)',color:'var(--text-primary)',opacity:0.7}}
             aria-label="Toggle menu"
           >
-            <span className="material-symbols-outlined text-xl">
+            <span className="material-symbols-outlined text-lg">
               {isMobileMenuOpen ? 'close' : 'menu'}
             </span>
           </button>
         </div>
       </div>
 
-      {/* Mobile Drawer (Accordion-style high density nav) */}
+      {/* Mobile Drawer */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
           <div
-            className="fixed inset-0 bg-black/50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="relative w-72 max-w-[85vw] h-full bg-[var(--bg-surface)] border-l border-[var(--bg-border)] p-5 flex flex-col gap-5 shadow-2xl z-50">
-
-            <div className="flex justify-between items-center">
-              <span className="font-display text-sm font-bold text-[var(--empire-gold)]">
-                {logoText}
-              </span>
+          <div
+            className="relative w-72 max-w-[85vw] h-full flex flex-col shadow-2xl z-50"
+            style={{
+              background: 'var(--dropdown-bg)',
+              backdropFilter: 'blur(20px)',
+              borderLeft: '1px solid var(--dropdown-border)'
+            }}
+          >
+            {/* Mobile drawer header */}
+            <div className="px-5 pt-5 pb-4 flex items-center justify-between" style={{borderBottom:'1px solid var(--dropdown-border)'}}>
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-xl overflow-hidden shadow-sm" style={{background:'linear-gradient(135deg,#fbbf24,#f97316)'}}>
+                  <img src="/pet-logo.png" alt="MeowNet" className="w-full h-full object-cover" />
+                </div>
+                <span className="font-display text-sm font-black" style={{background:'linear-gradient(135deg,var(--empire-gold),#f97316)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
+                  {logoText}
+                </span>
+              </div>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
                 type="button"
-                className="p-1 rounded-lg text-[var(--text-primary)]/60 hover:bg-[var(--bg-elevated)] transition-all cursor-pointer"
+                className="w-8 h-8 rounded-xl flex items-center justify-center cursor-pointer transition-all"
+                style={{background:'rgba(var(--bg-border-rgb,0,0,0),0.06)',color:'var(--text-primary)',opacity:0.6}}
               >
                 <span className="material-symbols-outlined text-lg">close</span>
               </button>
             </div>
 
-            <nav className="flex flex-col gap-2 flex-1 overflow-y-auto pr-1">
+            <nav className="flex flex-col gap-1.5 flex-1 overflow-y-auto p-4">
               {groupsToRender.map((group) => {
                 const isExpanded = !!mobileExpandedGroups[group.label];
-                
+                const isGroupActive = group.links.some(l => pathname === l.href || (l.href !== '/' && pathname.startsWith(l.href)));
+
                 return (
-                  <div key={group.label} className="flex flex-col border border-[var(--bg-border)]/40 rounded-xl overflow-hidden bg-[var(--bg-elevated)]/30">
+                  <div key={group.label} className="flex flex-col rounded-xl overflow-hidden" style={{border:'1px solid rgba(var(--bg-border-rgb,0,0,0),0.07)',background:isGroupActive?'rgba(217,119,6,0.04)':'rgba(var(--bg-border-rgb,0,0,0),0.02)'}}>
                     <button
                       onClick={() => toggleMobileGroup(group.label)}
-                      className="w-full flex items-center justify-between px-3 py-2.5 font-body text-xs font-bold text-[var(--text-primary)]/80 hover:bg-[var(--bg-elevated)] border-none text-left cursor-pointer"
+                      className="w-full flex items-center justify-between px-3.5 py-3 font-body text-xs font-bold border-none text-left cursor-pointer transition-all"
+                      style={{color:isGroupActive?'var(--empire-gold)':'var(--text-primary)',opacity:isGroupActive?1:0.75}}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-base text-[var(--empire-gold)]">{group.icon}</span>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{background:isGroupActive?'rgba(217,119,6,0.12)':'rgba(var(--bg-border-rgb,0,0,0),0.06)'}}>
+                          <span className="material-symbols-outlined text-[15px]" style={{fontVariationSettings:"'FILL' " + (isGroupActive?'1':'0'),color:isGroupActive?'var(--empire-gold)':'inherit'}}>{group.icon}</span>
+                        </div>
                         <span>{group.label}</span>
                       </div>
-                      <span className="material-symbols-outlined text-base">
-                        {isExpanded ? 'expand_less' : 'expand_more'}
-                      </span>
+                      <span className={`material-symbols-outlined text-sm transition-transform duration-200 ${isExpanded?'rotate-180':''}`} style={{opacity:0.5}}>expand_more</span>
                     </button>
 
                     {isExpanded && (
-                      <div className="flex flex-col gap-0.5 px-2 pb-2 bg-[var(--bg-surface)]">
+                      <div className="flex flex-col gap-0.5 px-2 pb-2">
                         {group.links.map((link) => {
                           const active = isUserLoggedIn && (pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href)));
                           const isGuestAllowed = ['/map', '/cats', '/events', '/colonies', '/stories'].includes(link.href);
 
                           if (!isUserLoggedIn && !isGuestAllowed) {
                             return (
-                              <div key={link.href} className="flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-35 select-none text-xs">
-                                <span className="material-symbols-outlined text-base">lock</span>
+                              <div key={link.href} className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs select-none" style={{color:'var(--text-primary)',opacity:0.3}}>
+                                <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{background:'rgba(var(--bg-border-rgb,0,0,0),0.05)'}}><span className="material-symbols-outlined text-sm">lock</span></div>
                                 <span className="font-body">{link.label}</span>
                               </div>
                             );
@@ -646,16 +715,14 @@ export default function Navbar() {
                               href={link.href}
                               id={`mobile-${link.id}`}
                               onClick={() => setIsMobileMenuOpen(false)}
-                              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg font-body text-xs font-semibold no-underline transition-all ${
-                                active
-                                  ? 'bg-[var(--empire-gold)]/10 text-[var(--empire-gold)]'
-                                  : 'text-[var(--text-primary)]/70 hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'
-                              }`}
+                              className="flex items-center gap-3 px-3 py-2 rounded-xl font-body text-xs font-semibold no-underline transition-all"
+                              style={active ? {background:'linear-gradient(135deg,rgba(217,119,6,0.1),rgba(249,115,22,0.06))',color:'var(--empire-gold)'} : {color:'var(--text-primary)',opacity:0.7}}
                             >
-                              <span className="material-symbols-outlined text-base">
-                                {link.icon}
-                              </span>
+                              <div className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0" style={active?{background:'rgba(217,119,6,0.15)'}:{background:'rgba(var(--bg-border-rgb,0,0,0),0.05)'}}>
+                                <span className="material-symbols-outlined text-sm" style={{fontVariationSettings:"'FILL' " + (active?'1':'0')}}>{link.icon}</span>
+                              </div>
                               <span>{link.label}</span>
+                              {active && <span className="material-symbols-outlined text-[11px] ml-auto" style={{color:'var(--empire-gold)'}}>arrow_forward_ios</span>}
                             </Link>
                           );
                         })}
@@ -665,52 +732,36 @@ export default function Navbar() {
                 );
               })}
 
-              {/* Mobile Direct Link for Leaderboard */}
-              <Link
-                href="/empire"
-                id="mobile-nav-empire"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center justify-between border border-[var(--bg-border)]/40 rounded-xl px-3 py-2.5 font-body text-xs font-bold no-underline transition-all ${
-                  pathname === '/empire'
-                    ? 'bg-[var(--empire-gold)]/10 text-[var(--empire-gold)]'
-                    : 'text-[var(--text-primary)]/70 hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-base">leaderboard</span>
-                  <span>Leaderboard</span>
-                </div>
-              </Link>
+
             </nav>
 
             {isUserLoggedIn && (
-              <div className="border-t border-[var(--bg-border)]/50 pt-4 flex flex-col gap-2.5">
-                <div className="flex items-center gap-2.5 px-1">
-                  <div className="w-8 h-8 rounded-full overflow-hidden border border-[var(--bg-border)] bg-[var(--bg-elevated)] flex-shrink-0 flex items-center justify-center">
+              <div className="px-4 pb-5 pt-4 flex flex-col gap-3" style={{borderTop:'1px solid rgba(var(--bg-border-rgb,0,0,0),0.08)'}}>
+                {/* User identity card */}
+                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-2xl no-underline transition-all" style={{background:'linear-gradient(135deg,rgba(217,119,6,0.06),rgba(249,115,22,0.03))',border:'1px solid rgba(217,119,6,0.1)'}}>
+                  <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center" style={{boxShadow:'0 0 0 2px rgba(217,119,6,0.3)',background:'linear-gradient(135deg,var(--empire-gold),#f97316)'}}>
                     {avatarSrc ? (
                       <img src={avatarSrc} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center font-extrabold text-xs text-[var(--empire-gold)]">
+                      <div className="w-full h-full flex items-center justify-center font-extrabold text-sm text-white">
                         {userDisplayName[0]?.toUpperCase() || 'U'}
                       </div>
                     )}
                   </div>
-                  <div className="min-w-0">
-                    <div className="font-body text-xs font-bold truncate text-[var(--text-primary)]">
-                      {userDisplayName}
-                    </div>
-                    <div className="font-body text-[10px] capitalize text-[var(--text-primary)]/45">
-                      {userRole}
-                    </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-display text-xs font-black truncate" style={{color:'var(--text-primary)'}}>{userDisplayName}</div>
+                    <div className="text-[10px] capitalize font-semibold" style={{color:'var(--empire-gold)',opacity:0.8}}>{userRole} · View Profile</div>
                   </div>
-                </div>
+                  <span className="material-symbols-outlined text-sm" style={{color:'var(--empire-gold)',opacity:0.5}}>arrow_forward_ios</span>
+                </Link>
                 <button
                   onClick={() => { setIsMobileMenuOpen(false); handleSignOut(); }}
                   type="button"
                   id="mobile-sign-out"
-                  className="w-full border border-[var(--bg-border)] text-[var(--text-primary)]/60 hover:bg-[var(--bg-elevated)] py-2 rounded-lg text-xs font-medium cursor-pointer transition-all flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl text-xs font-semibold cursor-pointer transition-all flex items-center justify-center gap-2"
+                  style={{background:'rgba(var(--bg-border-rgb,0,0,0),0.06)',color:'var(--text-primary)',opacity:0.65}}
                 >
-                  <span className="material-symbols-outlined text-base">logout</span>
+                  <span className="material-symbols-outlined text-[15px]">logout</span>
                   <span>Sign Out</span>
                 </button>
               </div>

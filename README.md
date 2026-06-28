@@ -51,8 +51,13 @@ MeowNet changes that. It's a full-stack, privacy-first web platform that turns u
 | 👑 **Empire Points** | Weekly leaderboards, impact badges, idempotent point RPCs | `app/(app)/empire` |
 | 🌤️ **Weather Watch** | Geolocation-aware feline weather safety alerts (proxied Open-Meteo) | `app/(app)/weather` |
 | 🤖 **AI Breed Estimator** | HuggingFace image classification, GDPR gate, vet disclaimers | `app/api/ai/breed` |
-| 🛡️ **Admin Dashboard** | RBAC, Recharts analytics, bento metrics, audit logs, credential management | `app/(app)/admin` |
+| 🛡️ **Admin Dashboard** | RBAC, analytics, audit logs, system settings, supreme data management, live activity feed | `app/(app)/admin` |
 | 🕵️ **Moderator Dashboard** | Moderation queue, Leaflet hotspots, inline verification from map popups | `app/(app)/moderator` |
+| 🏰 **Colony Tycoon** | Idle offline progress engine, real-time accumulation counter, upgradeable virtual sanctuary | `app/(app)/empire/tycoon` |
+| 🎲 **Daily Trivia** | Admin-managed questions, answer streaks, daily educational challenges | `app/(app)/empire/trivia` |
+| 🟩 **Stray Bingo** | Weekly quest board, admin-defined tasks, collaborative bingo cards | `app/(app)/empire/bingo` |
+| 🏘️ **Volunteer Guilds** | Create/join regional guilds, join conditions, realtime sync, rank display, search & filter | `app/(app)/empire/guilds` |
+| 🔧 **Maintenance Mode** | One-click site-wide maintenance gate (admin-bypass), beautiful themed downtime page | `app/maintenance` |
 | 📢 **Targeted Broadcasts** | Notice Board with page-specific banner/popup routing | `components/ui/Broadcasts` |
 | 💬 **Community Chat** | Public and private channels, DMs, moderated with soft-delete + edit log | `app/(app)/community` |
 | 🔒 **EXIF Stripping** | Client-side metadata removal before any photo upload | `lib/security/exif.ts` |
@@ -103,7 +108,8 @@ Browser
   │     ├── Auth            — email/password + Google/GitHub + direct creds
   │     ├── Database        — cats, events, profiles, gamification (42 migrations)
   │     ├── Storage         — Cat photos (EXIF stripped before upload)
-  │     └── Realtime        — Live cat sighting map + community chat
+  │     ├── Realtime        — Live cat sighting map + community chat + guilds
+  │     └── system_settings — Dynamic key-value configuration store
   │
   ├── Python FastAPI (Docker → Railway)
   │     └── /breed + /meow — HuggingFace inference (breed + mood)
@@ -119,11 +125,11 @@ Browser
 MeowNet/
 ├── app/
 │   ├── (app)/              # Auth-gated shell (force-dynamic)
-│   │   ├── admin/          # Admin dashboard + RBAC controls
+│   │   ├── admin/          # Admin dashboard, RBAC, system settings, supreme management
 │   │   ├── cats/           # Cat logging, profiles, edits
 │   │   ├── colonies/       # Stray cat colony management
 │   │   ├── community/      # Public/private chat channels + DMs
-│   │   ├── empire/         # Leaderboard, badges, gamification
+│   │   ├── empire/         # Leaderboard, badges, guilds, trivia, bingo, tycoon
 │   │   ├── events/         # TNR event management
 │   │   ├── map/            # Realtime Leaflet cat map
 │   │   ├── moderator/      # Moderator dashboard + verification map
@@ -140,6 +146,7 @@ MeowNet/
 │   │   ├── privacy/        # GDPR cascading account deletion
 │   │   └── weather/        # Open-Meteo server proxy
 │   ├── auth/               # Login, signup, OAuth callback
+│   ├── maintenance/        # Full-site maintenance mode page
 │   └── rules/              # Community Rules & Regulations page
 ├── components/
 │   ├── auth/AuthBridge/    # Clerk→Supabase session sync
@@ -151,7 +158,7 @@ MeowNet/
 │   ├── actions/            # Server Actions (admin, auth, cats, events)
 │   ├── privacy/            # GDPR consent text (client-safe)
 │   ├── security/           # EXIF stripping + sanitization
-│   └── supabase/           # Browser + server Supabase clients
+│   └── supabase/           # Browser + server Supabase clients + settings helper
 ├── python-ml/              # FastAPI Docker service
 │   ├── Dockerfile
 │   ├── docker-compose.yml
@@ -159,6 +166,7 @@ MeowNet/
 └── supabase/
     ├── migrations/         # 0001–0042 applied migrations
     └── seed.sql
+├── proxy.ts                # Next.js middleware (auth guard + maintenance gate)
 ```
 
 ---
@@ -216,7 +224,7 @@ npm run build         # Production build
 |----------|---------|
 | [docs/HACKATHON.md](docs/HACKATHON.md) | **Start here** — Judge guide, demo walkthrough |
 | [docs/architecture.md](docs/architecture.md) | System design, ADRs, data flow |
-| [docs/database.md](docs/database.md) | 42 migrations, schema, RLS matrix |
+| [docs/database.md](docs/database.md) | 50 migrations, schema, RLS matrix |
 | [docs/api.md](docs/api.md) | API route reference |
 | [docs/security.md](docs/security.md) | Threat model, GDPR compliance |
 | [docs/deployment.md](docs/deployment.md) | Vercel + Railway + Docker guide |
@@ -243,5 +251,5 @@ Created for **#hackthekitty 2026** 🐾 by [SynthReaper](https://github.com/Synt
 
 ---
 
-**Author:** [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com · **Version:** 0.4.0 · **License:** [MIT with Custom Disclaimer](LICENSE)
+**Author:** [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com · **Version:** 0.5.0 · **License:** [MIT with Custom Disclaimer](LICENSE)
 

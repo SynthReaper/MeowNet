@@ -6,6 +6,7 @@ import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { stripExifAndNormalize, validateImageBuffer } from '@/lib/security/exif';
 import { sanitizeText, sanitizeUrl } from '@/lib/security/sanitize';
 import { makeActionKey, POINT_VALUES } from '@/lib/gamification/points';
+import { getSystemSetting } from '@/lib/supabase/settings';
 import { z } from 'zod';
 
 const CatCreateSchema = z.object({
@@ -97,11 +98,12 @@ export async function logCat(formData: FormData): Promise<LogCatResult> {
     // 6. Award points via service_role (RLS bypass required)
     const admin = createServiceClient();
     const actionKey = makeActionKey(user.id, 'CAT_LOGGED', (cat as { id: string }).id);
+    const customPoints = await getSystemSetting<number>('CAT_LOG_POINTS_AWARDED', POINT_VALUES.CAT_LOGGED);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (admin as any).rpc('award_points', {
       p_user_id: user.id,
       p_activity: 'CAT_LOGGED',
-      p_points: POINT_VALUES.CAT_LOGGED,
+      p_points: customPoints,
       p_related_id: (cat as { id: string }).id,
       p_action_key: actionKey,
     });
@@ -110,7 +112,7 @@ export async function logCat(formData: FormData): Promise<LogCatResult> {
     revalidatePath('/cats');
     revalidatePath('/empire');
 
-    return { success: true, catId: (cat as { id: string }).id, pointsAwarded: POINT_VALUES.CAT_LOGGED };
+    return { success: true, catId: (cat as { id: string }).id, pointsAwarded: customPoints };
   } catch {
     return { success: false, error: 'internal_error' };
   }

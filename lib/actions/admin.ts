@@ -1324,3 +1324,295 @@ export async function shiftQueryToAdmin(queryId: string, reason: string): Promis
   }
 }
 
+export interface SystemSetting {
+  key: string;
+  value: any;
+  description: string | null;
+  updated_at: string;
+}
+
+/**
+ * Fetches all system settings from the database (Select allowed for everyone).
+ */
+export async function getSystemSettings(): Promise<SystemSetting[]> {
+  const supabase = await createServerClient();
+  const { data, error } = await supabase
+    .from('system_settings' as never)
+    .select('*')
+    .order('key', { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as SystemSetting[];
+}
+
+/**
+ * Updates a system setting in the database (Admin only).
+ */
+// Allowlist of recognized setting keys — prevents arbitrary key injection
+const ALLOWED_SETTING_KEYS = new Set([
+  'MAINTENANCE_MODE',
+  'TNR_POINTS_AWARDED',
+  'CAT_LOG_POINTS_AWARDED',
+  'WEATHER_WARNING_THRESHOLD',
+  'MAX_EMPIRE_LEADERBOARD_ENTRIES',
+]);
+
+export async function updateSystemSetting(
+  key: string,
+  value: boolean | number | string
+): Promise<ActionResponse> {
+  try {
+    // 1. Key must be in the allowlist
+    if (!ALLOWED_SETTING_KEYS.has(key)) {
+      return { success: false, error: 'invalid_setting_key' };
+    }
+    // 2. Value type guard — booleans and safe numbers/strings only
+    if (typeof value !== 'boolean' && typeof value !== 'number' && typeof value !== 'string') {
+      return { success: false, error: 'invalid_setting_value' };
+    }
+
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const { data: caller } = await supabase
+      .from('profiles' as never)
+      .select('role')
+      .eq('id', user.id)
+      .single() as unknown as { data: { role: string | null } | null };
+
+    if (caller?.role !== 'admin') return { success: false, error: 'Unauthorized' };
+
+    const { error } = await supabase
+      .from('system_settings' as never)
+      .update({ value, updated_at: new Date().toISOString() } as never)
+      .eq('key', key);
+
+    if (error) return { success: false, error: error.message };
+
+    await logAuditActionInternal(
+      user.id,
+      caller.role,
+      'update_setting',
+      key,
+      `Updated setting ${key} to: ${JSON.stringify(value)}`
+    );
+
+    revalidatePath('/admin');
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? (err as { message?: string })?.message : 'Internal server error';
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Supreme admin power to delete a cat sighting from MeowNet.
+ */
+export async function adminDeleteCat(catId: string): Promise<ActionResponse> {
+  try {
+    // UUID format guard — prevents IDOR with crafted IDs or SQL-adjacent strings
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(catId)) return { success: false, error: 'invalid_id' };
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const { data: caller } = await supabase
+      .from('profiles' as never)
+      .select('role')
+      .eq('id', user.id)
+      .single() as unknown as { data: { role: string | null } | null };
+
+    if (caller?.role !== 'admin') return { success: false, error: 'Unauthorized' };
+
+    const serviceClient = createServiceClient();
+    const { error } = await serviceClient.from('cats' as never).delete().eq('id', catId);
+    if (error) return { success: false, error: error.message };
+
+    await logAuditActionInternal(
+      user.id,
+      caller.role,
+      'admin_delete_cat',
+      catId,
+      'Deleted cat sighting'
+    );
+
+    revalidatePath('/admin');
+    revalidatePath('/cats');
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? (err as { message?: string })?.message : 'Internal server error';
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Supreme admin power to update a cat sighting details.
+ */
+export async function adminUpdateCat(
+  catId: string,
+  updates: any
+): Promise<ActionResponse> {
+  try {
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const { data: caller } = await supabase
+      .from('profiles' as never)
+      .select('role')
+      .eq('id', user.id)
+      .single() as unknown as { data: { role: string | null } | null };
+
+    if (caller?.role !== 'admin') return { success: false, error: 'Unauthorized' };
+
+    const serviceClient = createServiceClient();
+    const { error } = await serviceClient
+      .from('cats' as never)
+      .update(updates as never)
+      .eq('id', catId);
+
+    if (error) return { success: false, error: error.message };
+
+    await logAuditActionInternal(
+      user.id,
+      caller.role,
+      'admin_update_cat',
+      catId,
+      `Updated cat details: ${JSON.stringify(updates)}`
+    );
+
+    revalidatePath('/admin');
+    revalidatePath('/cats');
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? (err as { message?: string })?.message : 'Internal server error';
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Supreme admin power to delete a colony.
+ */
+export async function adminDeleteColony(colonyId: string): Promise<ActionResponse> {
+  try {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(colonyId)) return { success: false, error: 'invalid_id' };
+
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const { data: caller } = await supabase
+      .from('profiles' as never)
+      .select('role')
+      .eq('id', user.id)
+      .single() as unknown as { data: { role: string | null } | null };
+
+    if (caller?.role !== 'admin') return { success: false, error: 'Unauthorized' };
+
+    const serviceClient = createServiceClient();
+    const { error } = await serviceClient.from('colonies' as never).delete().eq('id', colonyId);
+    if (error) return { success: false, error: error.message };
+
+    await logAuditActionInternal(
+      user.id,
+      caller.role,
+      'admin_delete_colony',
+      colonyId,
+      'Deleted colony'
+    );
+
+    revalidatePath('/admin');
+    revalidatePath('/colonies');
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? (err as { message?: string })?.message : 'Internal server error';
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Supreme admin power to delete/cancel a TNR event.
+ */
+export async function adminDeleteEvent(eventId: string): Promise<ActionResponse> {
+  try {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(eventId)) return { success: false, error: 'invalid_id' };
+
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const { data: caller } = await supabase
+      .from('profiles' as never)
+      .select('role')
+      .eq('id', user.id)
+      .single() as unknown as { data: { role: string | null } | null };
+
+    if (caller?.role !== 'admin') return { success: false, error: 'Unauthorized' };
+
+    const serviceClient = createServiceClient();
+    const { error } = await serviceClient.from('tnr_events' as never).delete().eq('id', eventId);
+    if (error) return { success: false, error: error.message };
+
+    await logAuditActionInternal(
+      user.id,
+      caller.role,
+      'admin_delete_event',
+      eventId,
+      'Deleted TNR event'
+    );
+
+    revalidatePath('/admin');
+    revalidatePath('/events');
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? (err as { message?: string })?.message : 'Internal server error';
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Supreme admin power to delete a volunteer guild.
+ */
+export async function adminDeleteGuild(guildId: string): Promise<ActionResponse> {
+  try {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(guildId)) return { success: false, error: 'invalid_id' };
+
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const { data: caller } = await supabase
+      .from('profiles' as never)
+      .select('role')
+      .eq('id', user.id)
+      .single() as unknown as { data: { role: string | null } | null };
+
+    if (caller?.role !== 'admin') return { success: false, error: 'Unauthorized' };
+
+    const serviceClient = createServiceClient();
+    const { error } = await serviceClient.from('guilds' as never).delete().eq('id', guildId);
+    if (error) return { success: false, error: error.message };
+
+    await logAuditActionInternal(
+      user.id,
+      caller.role,
+      'admin_delete_guild',
+      guildId,
+      'Deleted volunteer guild'
+    );
+
+    revalidatePath('/admin');
+    revalidatePath('/empire');
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? (err as { message?: string })?.message : 'Internal server error';
+    return { success: false, error: message };
+  }
+}
+
+

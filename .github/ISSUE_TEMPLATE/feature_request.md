@@ -16,12 +16,15 @@ assignees: []
 
 ## Cat Impact
 
-<!-- How does this feature benefit cats or cat rescue volunteers? -->
-- [ ] Helps log/track more cats
+<!-- How does this feature benefit cats or cat rescue volunteers? Check all that apply. -->
+
+- [ ] Helps log / track more cats
 - [ ] Improves TNR coordination
-- [ ] Increases adoption rates
-- [ ] Enhances community engagement
-- [ ] Improves volunteer safety / privacy
+- [ ] Increases adoption / rehoming rates
+- [ ] Enhances community engagement (guilds, chat, stories)
+- [ ] Improves volunteer safety or privacy
+- [ ] Improves admin / moderator workflow
+- [ ] Better gamification / engagement (Empire Points, badges)
 - [ ] Other: ___
 
 ## Alternatives Considered
@@ -30,15 +33,25 @@ assignees: []
 
 ## Implementation Notes
 
-<!-- Optional: technical ideas, affected components, DB changes, API changes. -->
+<!-- Optional: technical ideas, affected components, DB schema changes, API changes. -->
 
 **Affected area(s):**
-- [ ] Frontend (Next.js page/component)
-- [ ] Database (new migration needed)
-- [ ] API (new route or server action)
-- [ ] ML Service (Python)
-- [ ] Documentation
-- [ ] CI/CD
+
+- [ ] Frontend — Next.js page / component
+- [ ] Database — new migration needed (`supabase/migrations/`)
+- [ ] Server Actions (`lib/actions/`)
+- [ ] API route (`app/api/`)
+- [ ] ML service (Python / FastAPI — `python-ml/`)
+- [ ] Admin / Moderator dashboard
+- [ ] Gamification / Empire Points
+- [ ] Volunteer Guilds
+- [ ] Documentation (`docs/`)
+- [ ] CI/CD / deployment
+
+**Does this require new system settings?**
+
+- [ ] No
+- [ ] Yes — needs a new `system_settings` key (add to `ALLOWED_SETTING_KEYS` allowlist in `lib/actions/admin.ts`)
 
 ## Mockups / References
 
@@ -46,7 +59,7 @@ assignees: []
 
 ## Priority
 
-- [ ] 🔴 Critical — blocks core functionality
-- [ ] 🟠 High — significantly improves UX
-- [ ] 🟡 Medium — nice to have
-- [ ] 🟢 Low — minor enhancement
+- [ ] 🔴 Critical — blocks core cat rescue functionality
+- [ ] 🟠 High — significantly improves volunteer or admin UX
+- [ ] 🟡 Medium — nice to have, fits the hackathon roadmap
+- [ ] 🟢 Low — minor enhancement or polish

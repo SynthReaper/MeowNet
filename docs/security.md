@@ -1,6 +1,6 @@
 # MeowNet Security Documentation
 
-> Last updated: 2026-06-27 · v0.4.0
+> Last updated: 2026-06-28 · v0.5.0
 
 ---
 
@@ -16,15 +16,23 @@ Browser         EXIF stripping (sharp WASM)
                 Content Security Policy enforcement
 ─────────────────────────────────────────────────────
 Server          Auth check on every API route + Server Action
+                Role re-read from DB (no client-trusted claims)
+                Zod schema validation on cats / colonies / events / notices
+                sanitizeText() — 3-pass HTML strip + entity encoding
+                sanitizeUrl() — http/https protocol allowlist
+                MIME type allowlist on community uploads + AI breed route
+                UUID format guard on all admin delete/update actions
+                System setting key allowlist (5 known keys only)
                 Service-secret header on ML proxy
                 No secrets in client bundle
                 External APIs proxied server-side only
 ─────────────────────────────────────────────────────
-Database        Row-Level Security on every table
+Database        Row-Level Security on every table (50 migrations)
                 SECURITY DEFINER for privileged ops
                 Location fuzzing trigger (BEFORE INSERT)
                 Role escalation prevention trigger
                 Login expiry + usage limit enforcement
+                system_settings RLS (admin-write / authenticated-read)
 ─────────────────────────────────────────────────────
 Infrastructure  CSP, HSTS, X-Frame-Options headers
                 GitHub Actions secret scan (gitleaks)
@@ -45,6 +53,7 @@ Infrastructure  CSP, HSTS, X-Frame-Options headers
 | Admin endpoint accessed by non-admin | Every Server Action re-reads `role` from DB — no client-trusted claims. |
 | ML service called without authorization | `X-Service-Secret` header required; missing = 401. |
 | Direct credential user forges sign-in count | `usages_count` incremented only by `SECURITY DEFINER` trigger — no client write path. |
+| Crafted `key` param injected into `updateSystemSetting` | Server-side `ALLOWED_SETTING_KEYS` Set allowlist — only 5 known keys accepted; all others rejected. |
 
 ### T — Tampering
 
@@ -54,6 +63,8 @@ Infrastructure  CSP, HSTS, X-Frame-Options headers
 | Points double-awarded via retry | `action_key UNIQUE` in `point_log` — `ON CONFLICT DO NOTHING`. |
 | User upgrades own role | `check_role_update` trigger rejects self-escalation unless caller is `admin` or `service_role`. |
 | EXIF GPS data in uploaded photos | `sharp` WASM strips all EXIF metadata client-side before upload. |
+| Malicious file disguised as image in community upload | Server-side MIME allowlist rejects any type not in `{image/*, video/mp4, video/webm, video/ogg, application/pdf}` before buffer is read. |
+| Admin delete called with non-UUID string (IDOR attempt) | UUID regex guard `/^[0-9a-f]{8}-…-[0-9a-f]{12}$/i` on all four admin delete functions — malformed IDs rejected before DB call. |
 
 ### R — Repudiation
 
@@ -72,6 +83,7 @@ Infrastructure  CSP, HSTS, X-Frame-Options headers
 | Supabase service_role key in bundle | CI gitleaks scan; `SUPABASE_SERVICE_ROLE` never in `NEXT_PUBLIC_*`. |
 | ML API key exposed in client | All ML calls proxied through `/api/ai/breed` — key is server env var only. |
 | User data cross-contamination | RLS `WHERE user_id = auth.uid()` on all user data tables. |
+| HTML tag injection through text fields | `sanitizeText()` applies 3-pass regex strip then HTML-encodes `< > & " ' \`` — nested/malformed tags neutralised. |
 
 ### D — Denial of Service
 
@@ -152,9 +164,91 @@ Permissions-Policy: camera=(), microphone=(), geolocation=(self)
 Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
 ```
 
+---
+
+## Input Validation Hardening (v0.5.0)
+
+The following hardening controls were added in the security audit pass of 2026-06-28:
+
+### 1. System Setting Key Allowlist
+
+**File:** `lib/actions/admin.ts` — `updateSystemSetting`
+
+Only the following five keys are accepted. Any other key string is immediately rejected with `invalid_setting_key`:
+
+```ts
+const ALLOWED_SETTING_KEYS = new Set([
+  'MAINTENANCE_MODE',
+  'TNR_POINTS_AWARDED',
+  'CAT_LOG_POINTS_AWARDED',
+  'WEATHER_WARNING_THRESHOLD',
+  'MAX_EMPIRE_LEADERBOARD_ENTRIES',
+]);
+```
+
+The `value` parameter type was tightened from `any` to `boolean | number | string`.
+
+### 2. UUID Format Guards on Admin Delete Actions
+
+**Files:** `adminDeleteCat`, `adminDeleteColony`, `adminDeleteEvent`, `adminDeleteGuild` — all in `lib/actions/admin.ts`
+
+All admin delete functions validate the ID parameter against a strict UUID regex before making any database call:
+
+```ts
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+if (!UUID_RE.test(id)) return { success: false, error: 'invalid_id' };
+```
+
+This prevents IDOR via crafted non-UUID strings or SQL-adjacent input.
+
+### 3. MIME Type Allowlist — Community File Upload
+
+**File:** `lib/actions/community.ts` — `uploadChatMedia`
+
+Server-side allowlist enforced before the file buffer is allocated:
+
+| Allowed MIME types |
+|--------------------|
+| `image/jpeg`, `image/png`, `image/gif`, `image/webp`, `image/avif` |
+| `video/mp4`, `video/webm`, `video/ogg` |
+| `application/pdf` |
+
+All other types → `{ success: false, error: 'File type not allowed' }`.
+
+### 4. MIME Type Allowlist — AI Breed Endpoint
+
+**File:** `app/api/ai/breed/route.ts`
+
+Only image MIME types are forwarded to the ML service. Non-image uploads receive `HTTP 415 Unsupported Media Type`.
+
+```ts
+const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
+if (!ALLOWED_IMAGE_MIME.has(photo.type)) return NextResponse.json({ error: 'invalid_file_type' }, { status: 415 });
+```
+
+### 5. Three-Pass HTML Strip in `sanitizeText`
+
+**File:** `lib/security/sanitize.ts`
+
+Upgraded from a single-pass regex to a three-pass strip. This closes the nested/malformed tag injection vector:
+
+```
+// Single-pass result (vulnerable):
+"<<script>script>alert(1)<</script>/script>" → "<script>alert(1)</script>"
+
+// Three-pass result (safe):
+"<<script>script>alert(1)<</script>/script>" → "alert(1)"
+```
+
+Entity encoding covers all six high-risk characters: `< > & " ' \``.
+
+---
+
 ## Security Audits
 
-An independent security audit was performed. The full report is available in the repository at [security-audit-report.pdf](../aikido-security-audit/security-audit-report.pdf).
+An independent automated security audit was performed via Aikido Security. The full report is available in the repository at [security-audit-report.pdf](../aikido-security-audit/security-audit-report.pdf).
+
+An internal security audit was performed on 2026-06-28 (v0.5.0) covering XSS, SQL injection, CSRF, file upload injection, IDOR, auth bypass, and secret exposure. Five controls were added as a result — see [Input Validation Hardening](#input-validation-hardening-v050) above.
 
 ---
 

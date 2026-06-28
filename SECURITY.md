@@ -4,7 +4,7 @@
 
 | Version | Supported |
 |---------|-----------|
-| `main` (latest) | ✅ Active |
+| `0.5.0` / `main` (latest) | ✅ Active |
 | Any tagged release | ✅ Supported for 90 days |
 | Older releases | ❌ Not supported |
 
@@ -65,6 +65,11 @@ Suggested fix: (optional)
 - Service-secret header authentication on ML service (`X-Service-Secret`)
 - Rate limiting on ML endpoints (slowapi: 10/min breed, 5/min meow)
 - Input validation via Zod on all server actions
+- `sanitizeText()` — 3-pass HTML strip + HTML entity encoding on all user-supplied text fields
+- `sanitizeUrl()` — `http:`/`https:` protocol allowlist; rejects `javascript:`, `data:`, `vbscript:`
+- MIME type allowlist on community file uploads and AI breed endpoint (image types only for ML route)
+- UUID format guard on all admin delete/update actions (rejects malformed or non-UUID ID strings)
+- System setting key allowlist in `updateSystemSetting` (5 known keys; all others rejected)
 - No raw SQL — all queries via Supabase client with parameterized inputs
 
 ### CI/CD
@@ -77,14 +82,19 @@ Suggested fix: (optional)
 | Threat | Mitigation |
 |--------|-----------|
 | IDOR on cat data | RLS `user_id = auth.uid()` on mutations |
+| IDOR via malformed admin delete ID | UUID regex guard on all admin delete/update actions |
 | GPS de-anonymization | 500m grid snap at insert time |
 | EXIF GPS leak | `sharp` strips before storage write |
 | Empire Points inflation | `action_key UNIQUE` idempotency guard |
 | ML service abuse | Service-secret + rate limiting |
 | Account takeover | Supabase Auth + JWT rotation |
 | SQL injection | Parameterized queries (Supabase client) |
-| XSS | React escaping + CSP |
-| CSRF | SameSite cookies + server actions |
+| XSS via text fields | 3-pass HTML strip + entity encoding in `sanitizeText()` |
+| XSS via React render | React JSX auto-escaping (structural protection) |
+| CSRF | SameSite cookies + Next.js Server Actions |
+| Malicious file upload | MIME type allowlist server-side on community + AI breed endpoints |
+| Arbitrary system setting injection | `ALLOWED_SETTING_KEYS` Set allowlist on `updateSystemSetting` |
+| Nested/malformed HTML tag bypass | 3-pass strip in `sanitizeText()` closes `<<script>script>` pattern |
 
 ## Vulnerability Disclosure Policy
 

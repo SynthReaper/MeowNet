@@ -1,6 +1,6 @@
 # MeowNet Architecture
 
-> Last updated: 2026-06-27 · v0.4.0
+> Last updated: 2026-06-28 · v0.5.0
 
 ## System Overview
 
@@ -15,9 +15,10 @@ Browser
   │
   ├── Supabase (PostgreSQL + PostGIS)
   │     ├── Auth     — email/password + Google/GitHub OAuth + direct credentials
-  │     ├── Database — cats, events, profiles, gamification (33 migrations)
+  │     ├── Database — cats, events, profiles, gamification, guilds (50 migrations)
   │     ├── Storage  — Cat photos (EXIF stripped before write)
-  │     └── Realtime — Live cat map subscriptions
+  │     ├── Realtime — Live cat map, chat, guilds subscriptions
+  │     └── system_settings — Dynamic key-value configuration store
   │
   ├── Python FastAPI (Docker → Railway/Render)
   │     └── /breed + /meow — HuggingFace AI inference

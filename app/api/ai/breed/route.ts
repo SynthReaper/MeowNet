@@ -18,6 +18,12 @@ export async function POST(req: NextRequest) {
   if (!photo) return NextResponse.json({ error: 'photo_required' }, { status: 400 });
   if (photo.size > MAX_SIZE) return NextResponse.json({ error: 'file_too_large' }, { status: 413 });
 
+  // MIME allowlist — only real image types are forwarded to the ML service
+  const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
+  if (!ALLOWED_IMAGE_MIME.has(photo.type)) {
+    return NextResponse.json({ error: 'invalid_file_type' }, { status: 415 });
+  }
+
   // Forward to ML service
   const mlFormData = new FormData();
   mlFormData.append('photo', photo);

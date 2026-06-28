@@ -3,6 +3,7 @@
 // app/(app)/admin/AdminDashboardClient.tsx — Interactive Admin Dashboard
 
 import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import {
   AreaChart,
@@ -28,7 +29,15 @@ import {
   resolveModeratorApplication,
   toggleProfileEnabled,
   logAuditAction,
+  updateSystemSetting,
+  adminDeleteCat,
+  adminUpdateCat,
+  adminDeleteColony,
+  adminDeleteEvent,
+  adminDeleteGuild,
+  type SystemSetting,
 } from '@/lib/actions/admin';
+
 
 export interface Profile {
   id: string;
@@ -90,6 +99,7 @@ interface Props {
   initialAudits: AuditLog[];
   initialApplications: ModeratorApplication[];
   initialAuditLogs: StaffAuditLog[];
+  initialSystemSettings: SystemSetting[];
 }
 
 const formatUTCDate = (dateStr: string) => {
@@ -170,6 +180,7 @@ export default function AdminDashboardClient({
   initialAudits,
   initialApplications,
   initialAuditLogs,
+  initialSystemSettings,
 }: Props) {
   const [stats, setStats] = useState<Stats>(initialStats);
   const [profiles, setProfiles] = useState<Profile[]>(initialProfiles);
@@ -177,13 +188,31 @@ export default function AdminDashboardClient({
   const [applications, setApplications] = useState<ModeratorApplication[]>(initialApplications || []);
   const [auditLogs] = useState<StaffAuditLog[]>(initialAuditLogs || []);
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'applications' | 'audits' | 'gdpr' | 'database' | 'live'>('analytics');
+  const [systemSettings, setSystemSettings] = useState<SystemSetting[]>(initialSystemSettings || []);
+  const [updatingSetting, setUpdatingSetting] = useState<string | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [settingsSuccess, setSettingsSuccess] = useState<string | null>(null);
+
+  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'applications' | 'audits' | 'gdpr' | 'database' | 'live' | 'settings' | 'management'>('analytics');
   const [userSearch, setUserSearch] = useState('');
   const [profileActivity, setProfileActivity] = useState<UserActivitySummary | null>(null);
   const [loadingActivity, setLoadingActivity] = useState(false);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
 
   const [liveActivities, setLiveActivities] = useState<LiveActivityItem[]>([]);
+
+  // Supreme Data Management states
+  const [activeManageEntity, setActiveManageEntity] = useState<'cats' | 'colonies' | 'events' | 'guilds'>('cats');
+  const [catsList, setCatsList] = useState<any[]>([]);
+  const [coloniesList, setColoniesList] = useState<any[]>([]);
+  const [eventsList, setEventsList] = useState<any[]>([]);
+  const [guildsList, setGuildsList] = useState<any[]>([]);
+  const [loadingManageData, setLoadingManageData] = useState(false);
+  const [manageError, setManageError] = useState<string | null>(null);
+  const [manageSuccess, setManageSuccess] = useState<string | null>(null);
+  const [editingCat, setEditingCat] = useState<any | null>(null);
+  const [catForm, setCatForm] = useState<any>({ name: '', breed_estimate: '', status: '', health_notes: '' });
+
 
   // Audit Logs Filter States
   const [auditActionFilter, setAuditActionFilter] = useState('');
@@ -290,6 +319,144 @@ export default function AdminDashboardClient({
   };
 
 
+
+  const handleUpdateSetting = async (key: string, value: any) => {
+    setUpdatingSetting(key);
+    setSettingsError(null);
+    setSettingsSuccess(null);
+    try {
+      const res = await updateSystemSetting(key, value);
+      if (res.success) {
+        setSettingsSuccess(`Setting "${key}" updated successfully!`);
+        setSystemSettings(prev => prev.map(s => s.key === key ? { ...s, value, updated_at: new Date().toISOString() } : s));
+      } else {
+        setSettingsError(res.error || 'Failed to update setting');
+      }
+    } catch (err: any) {
+      setSettingsError(err.message || 'Failed to update setting');
+    } finally {
+      setUpdatingSetting(null);
+    }
+  };
+
+  const fetchManageData = async () => {
+    setLoadingManageData(true);
+    setManageError(null);
+    setManageSuccess(null);
+    const supabase = createClient();
+    try {
+      if (activeManageEntity === 'cats') {
+        const { data } = await supabase.from('cats' as never).select('*').order('created_at', { ascending: false });
+        setCatsList(data ?? []);
+      } else if (activeManageEntity === 'colonies') {
+        const { data } = await supabase.from('colonies' as never).select('*').order('created_at', { ascending: false });
+        setColoniesList(data ?? []);
+      } else if (activeManageEntity === 'events') {
+        const { data } = await supabase.from('tnr_events' as never).select('*').order('created_at', { ascending: false });
+        setEventsList(data ?? []);
+      } else if (activeManageEntity === 'guilds') {
+        const { data } = await supabase.from('guilds' as never).select('*').order('created_at', { ascending: false });
+        setGuildsList(data ?? []);
+      }
+    } catch (err: any) {
+      setManageError(err.message || 'Failed to load management data');
+    } finally {
+      setLoadingManageData(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'management') {
+      fetchManageData();
+    }
+  }, [activeTab, activeManageEntity]);
+
+  const handleDeleteCat = async (catId: string) => {
+    if (!window.confirm('Are you absolutely sure you want to delete this cat sighting? This will remove all associated logs permanently.')) return;
+    try {
+      const res = await adminDeleteCat(catId);
+      if (res.success) {
+        setManageSuccess('Cat sighting deleted successfully!');
+        setCatsList(prev => prev.filter(c => c.id !== catId));
+      } else {
+        setManageError(res.error || 'Failed to delete cat sighting');
+      }
+    } catch (err: any) {
+      setManageError(err.message);
+    }
+  };
+
+  const handleEditCatClick = (cat: any) => {
+    setEditingCat(cat);
+    setCatForm({
+      name: cat.name || '',
+      breed_estimate: cat.breed_estimate || '',
+      status: cat.status || '',
+      health_notes: cat.health_notes || ''
+    });
+  };
+
+  const handleUpdateCatSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCat) return;
+    try {
+      const res = await adminUpdateCat(editingCat.id, catForm);
+      if (res.success) {
+        setManageSuccess('Cat details updated successfully!');
+        setCatsList(prev => prev.map(c => c.id === editingCat.id ? { ...c, ...catForm } : c));
+        setEditingCat(null);
+      } else {
+        setManageError(res.error || 'Failed to update cat details');
+      }
+    } catch (err: any) {
+      setManageError(err.message);
+    }
+  };
+
+  const handleDeleteColony = async (colonyId: string) => {
+    if (!window.confirm('Are you sure you want to delete this colony?')) return;
+    try {
+      const res = await adminDeleteColony(colonyId);
+      if (res.success) {
+        setManageSuccess('Colony deleted successfully!');
+        setColoniesList(prev => prev.filter(c => c.id !== colonyId));
+      } else {
+        setManageError(res.error || 'Failed to delete colony');
+      }
+    } catch (err: any) {
+      setManageError(err.message);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!window.confirm('Are you sure you want to delete this TNR event?')) return;
+    try {
+      const res = await adminDeleteEvent(eventId);
+      if (res.success) {
+        setManageSuccess('TNR event deleted successfully!');
+        setEventsList(prev => prev.filter(e => e.id !== eventId));
+      } else {
+        setManageError(res.error || 'Failed to delete event');
+      }
+    } catch (err: any) {
+      setManageError(err.message);
+    }
+  };
+
+  const handleDeleteGuild = async (guildId: string) => {
+    if (!window.confirm('Are you sure you want to delete this volunteer guild?')) return;
+    try {
+      const res = await adminDeleteGuild(guildId);
+      if (res.success) {
+        setManageSuccess('Guild deleted successfully!');
+        setGuildsList(prev => prev.filter(g => g.id !== guildId));
+      } else {
+        setManageError(res.error || 'Failed to delete guild');
+      }
+    } catch (err: any) {
+      setManageError(err.message);
+    }
+  };
 
   useEffect(() => {
     const fetchInitialActivities = async () => {
@@ -419,6 +586,15 @@ export default function AdminDashboardClient({
         actorName: name,
         actorId: ev.organizer_id
       }, ...prev].slice(0, 100));
+    });
+
+    channel.on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'system_settings'
+    }, (payload) => {
+      const updated = payload.new as SystemSetting;
+      setSystemSettings(prev => prev.map(s => s.key === updated.key ? updated : s));
     });
 
     channel.subscribe();
@@ -825,14 +1001,23 @@ export default function AdminDashboardClient({
       )}
 
       {/* Header */}
-      <div>
-        <h1 className="font-display text-3xl font-extrabold text-[var(--empire-gold)] flex items-center gap-2">
-          <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>admin_panel_settings</span>
-          <span>Admin Control Center</span>
-        </h1>
-        <p className="font-body text-sm text-[var(--empire-cream)]/60">
-          Manage MeowNet users, review compliance logs, audit the points ledger, and monitor system metrics.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="font-display text-3xl font-extrabold text-[var(--empire-gold)] flex items-center gap-2">
+            <span className="material-symbols-outlined text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>admin_panel_settings</span>
+            <span>Admin Control Center</span>
+          </h1>
+          <p className="font-body text-sm text-[var(--empire-cream)]/60">
+            Manage MeowNet users, review compliance logs, audit the points ledger, and monitor system metrics.
+          </p>
+        </div>
+        <Link
+          href="/admin/gamification"
+          className="sm:self-center px-4 py-2.5 bg-gradient-to-r from-[var(--empire-gold)] to-orange-500 hover:shadow text-white rounded-xl font-display text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shrink-0"
+        >
+          <span className="material-symbols-outlined text-sm">sports_esports</span>
+          <span>Gamification Panel</span>
+        </Link>
       </div>
 
       {/* Stats Summary Bento Grid */}
@@ -954,6 +1139,27 @@ export default function AdminDashboardClient({
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
           Live User Feed
+        </button>
+        <button
+          onClick={() => setActiveTab('settings')}
+          className={`pb-3 font-display text-sm font-bold border-b-2 transition-all cursor-pointer shrink-0 ${
+            activeTab === 'settings'
+              ? 'text-[var(--empire-gold)] border-[var(--empire-gold)]'
+              : 'text-[var(--empire-cream)]/50 border-transparent hover:text-[var(--empire-gold)]'
+          }`}
+        >
+          System Settings
+        </button>
+        <button
+          onClick={() => setActiveTab('management')}
+          className={`pb-3 font-display text-sm font-bold border-b-2 transition-all cursor-pointer shrink-0 flex items-center gap-1 ${
+            activeTab === 'management'
+              ? 'text-[var(--empire-gold)] border-[var(--empire-gold)]'
+              : 'text-[var(--empire-cream)]/50 border-transparent hover:text-[var(--empire-gold)]'
+          }`}
+        >
+          <span className="material-symbols-outlined text-sm">shield</span>
+          Supreme Management
         </button>
       </div>
 
@@ -1566,7 +1772,7 @@ export default function AdminDashboardClient({
               </div>
             </div>
           </>
-        ) : (
+        ) : activeTab === 'live' ? (
           <div className="flex flex-col gap-6">
             <div className="flex items-center justify-between gap-4 border-b border-[var(--bg-border)]/25 pb-3">
               <div>
@@ -1622,7 +1828,294 @@ export default function AdminDashboardClient({
               </div>
             )}
           </div>
-        )}
+        ) : activeTab === 'settings' ? (
+          <div className="flex flex-col gap-6">
+            <div className="border-b border-[var(--bg-border)]/25 pb-3">
+              <h3 className="font-display text-base font-bold text-[var(--empire-gold)] flex items-center gap-2">
+                <span className="material-symbols-outlined text-xl">settings</span>
+                <span>Global System Settings</span>
+              </h3>
+              <p className="font-body text-xs text-[var(--empire-cream)]/50 mt-1">Real-time control over application values, weather safety thresholds, and gamification multipliers.</p>
+            </div>
+
+            {settingsError && (
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm font-bold">info</span>
+                <span>{settingsError}</span>
+              </div>
+            )}
+            {settingsSuccess && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm font-bold">check_circle</span>
+                <span>{settingsSuccess}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-5">
+              {systemSettings.map((setting) => {
+                const isUpdatingSetting = updatingSetting === setting.key;
+                return (
+                  <div key={setting.key} className="p-5 rounded-2xl border border-[var(--bg-border)]/30 bg-[var(--bg-elevated)]/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-data text-xs font-extrabold text-[var(--empire-gold)]">{setting.key}</h4>
+                      <p className="font-body text-xs text-[var(--empire-cream)]/60 mt-1">{setting.description}</p>
+                      <span className="text-[9px] font-body text-[var(--empire-cream)]/40 block mt-1.5 uppercase font-medium">Last updated: {new Date(setting.updated_at).toLocaleString()}</span>
+                    </div>
+                    <div className="flex-shrink-0 flex items-center gap-3">
+                      {typeof setting.value === 'boolean' ? (
+                        <button
+                          onClick={() => handleUpdateSetting(setting.key, !setting.value)}
+                          disabled={isUpdatingSetting}
+                          className={`px-4 py-2 rounded-xl font-display text-xs font-bold tracking-wide transition-all cursor-pointer border ${
+                            setting.value 
+                              ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20' 
+                              : 'bg-red-500/15 border-red-500/30 text-red-500 hover:bg-red-500/20'
+                          }`}
+                        >
+                          {isUpdatingSetting ? 'Updating...' : setting.value ? 'Active / Enabled' : 'Inactive / Disabled'}
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            defaultValue={setting.value}
+                            onBlur={(e) => {
+                              const val = parseFloat(e.target.value);
+                              if (!isNaN(val) && val !== setting.value) {
+                                handleUpdateSetting(setting.key, val);
+                              }
+                            }}
+                            disabled={isUpdatingSetting}
+                            className="w-24 p-2 border border-[var(--bg-border)] rounded-xl font-data text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] focus:outline-none focus:border-[var(--empire-gold)] text-center"
+                          />
+                          <span className="text-xs text-[var(--empire-cream)]/50 font-bold font-body">value</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : activeTab === 'management' ? (
+          <div className="flex flex-col gap-6">
+            <div className="border-b border-[var(--bg-border)]/25 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="font-display text-base font-bold text-[var(--empire-gold)] flex items-center gap-2">
+                  <span className="material-symbols-outlined text-xl">shield</span>
+                  <span>Supreme Data Management</span>
+                </h3>
+                <p className="font-body text-xs text-[var(--empire-cream)]/50 mt-1">Direct read/write control and hard deletes for all primary database records.</p>
+              </div>
+              <div className="flex bg-[var(--bg-elevated)]/40 p-1 rounded-xl border border-[var(--bg-border)]/40 shrink-0">
+                {(['cats', 'colonies', 'events', 'guilds'] as const).map((entity) => (
+                  <button
+                    key={entity}
+                    onClick={() => setActiveManageEntity(entity)}
+                    className={`px-3 py-1.5 rounded-lg font-display text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer border-0 ${
+                      activeManageEntity === entity
+                        ? 'bg-[var(--empire-gold)] text-white shadow-sm font-black'
+                        : 'text-[var(--empire-cream)]/60 hover:text-[var(--empire-cream)] hover:bg-[var(--bg-surface)]/20'
+                    }`}
+                  >
+                    {entity}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {manageError && (
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm font-bold">info</span>
+                <span>{manageError}</span>
+              </div>
+            )}
+            {manageSuccess && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-xs font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm font-bold">check_circle</span>
+                <span>{manageSuccess}</span>
+              </div>
+            )}
+
+            {loadingManageData ? (
+              <div className="py-20 text-center text-[var(--empire-cream)]/40 font-body text-xs flex flex-col items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-2xl animate-spin text-[var(--empire-gold)]">progress_activity</span>
+                <span>Querying database records...</span>
+              </div>
+            ) : activeManageEntity === 'cats' ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[var(--bg-border)]/40 text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
+                      <th className="py-3 px-4">Photo</th>
+                      <th className="py-3 px-4">Name</th>
+                      <th className="py-3 px-4">Breed</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4">Medical</th>
+                      <th className="py-3 px-4">Date Logged</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {catsList.map((cat) => (
+                      <tr key={cat.id} className="border-b border-[var(--bg-border)]/20 hover:bg-[var(--bg-elevated)]/10">
+                        <td className="py-3 px-4">
+                          {cat.photo_url ? (
+                            <img src={cat.photo_url} alt={cat.name} className="w-8 h-8 rounded-lg object-cover border border-[var(--bg-border)]/50" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)]/60 flex items-center justify-center text-[var(--empire-cream)]/45">
+                              <span className="material-symbols-outlined text-sm">pets</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">{cat.name || 'Unnamed'}</td>
+                        <td className="py-3 px-4 font-body text-xs text-[var(--empire-cream)]/70">{cat.breed_estimate || 'Unknown'}</td>
+                        <td className="py-3 px-4">
+                          <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[9px] font-bold uppercase tracking-wider ${
+                            cat.status === 'stray' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                            cat.status === 'adopted' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                            'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                          }`}>{cat.status}</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex gap-1">
+                            {cat.sterilized && <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/20 font-bold uppercase">Sterilized</span>}
+                            {cat.vaccinated && <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 font-bold uppercase">Vax</span>}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/65">{formatUTCDate(cat.created_at)}</td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleEditCatClick(cat)}
+                              className="px-2 py-1 rounded bg-[var(--bg-elevated)] hover:bg-[var(--bg-border)] border border-[var(--bg-border)]/50 text-[10px] font-bold text-[var(--empire-cream)] cursor-pointer"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCat(cat.id)}
+                              className="px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-[10px] font-bold text-red-400 cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : activeManageEntity === 'colonies' ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[var(--bg-border)]/40 text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
+                      <th className="py-3 px-4">Colony Name</th>
+                      <th className="py-3 px-4">Caretaker ID</th>
+                      <th className="py-3 px-4">Location</th>
+                      <th className="py-3 px-4">Date Formed</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {coloniesList.map((colony) => (
+                      <tr key={colony.id} className="border-b border-[var(--bg-border)]/20 hover:bg-[var(--bg-elevated)]/10">
+                        <td className="py-3 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">{colony.name}</td>
+                        <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/60">{colony.caretaker_id || 'None'}</td>
+                        <td className="py-3 px-4 font-body text-xs text-[var(--empire-cream)]/75">
+                          {colony.location ? (
+                            <span className="font-data text-[10px]">fuzzed coordinates</span>
+                          ) : (
+                            'No coordinates'
+                          )}
+                        </td>
+                        <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/65">{formatUTCDate(colony.created_at)}</td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            onClick={() => handleDeleteColony(colony.id)}
+                            className="px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-[10px] font-bold text-red-400 cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : activeManageEntity === 'events' ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[var(--bg-border)]/40 text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
+                      <th className="py-3 px-4">Campaign Title</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4">Capacity</th>
+                      <th className="py-3 px-4">Event Date</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {eventsList.map((ev) => (
+                      <tr key={ev.id} className="border-b border-[var(--bg-border)]/20 hover:bg-[var(--bg-elevated)]/10">
+                        <td className="py-3 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">{ev.title}</td>
+                        <td className="py-3 px-4">
+                          <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[9px] font-bold uppercase tracking-wider ${
+                            ev.status === 'scheduled' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
+                            ev.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                            'bg-red-500/10 text-red-400 border border-red-500/20'
+                          }`}>{ev.status}</span>
+                        </td>
+                        <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/70">{ev.capacity} volunteers max</td>
+                        <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/65">{formatUTCDate(ev.event_time)}</td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            onClick={() => handleDeleteEvent(ev.id)}
+                            className="px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-[10px] font-bold text-red-400 cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[var(--bg-border)]/40 text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
+                      <th className="py-3 px-4">Guild Name</th>
+                      <th className="py-3 px-4">Category</th>
+                      <th className="py-3 px-4">Minimum Points</th>
+                      <th className="py-3 px-4">Date Formed</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {guildsList.map((guild) => (
+                      <tr key={guild.id} className="border-b border-[var(--bg-border)]/20 hover:bg-[var(--bg-elevated)]/10">
+                        <td className="py-3 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">{guild.name}</td>
+                        <td className="py-3 px-4 font-body text-xs text-[var(--empire-cream)]/70 capitalize">{guild.category}</td>
+                        <td className="py-3 px-4 font-data text-xs text-emerald-400">{guild.min_points_required} pts required</td>
+                        <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/65">{formatUTCDate(guild.created_at)}</td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            onClick={() => handleDeleteGuild(guild.id)}
+                            className="px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-[10px] font-bold text-red-400 cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {/* Selected Volunteer Profile Modal */}
@@ -2222,6 +2715,91 @@ export default function AdminDashboardClient({
                       <span>Create Account</span>
                     </>
                   )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Cat sighting Modal */}
+      {editingCat && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0" onClick={() => setEditingCat(null)} />
+          <div className="relative w-full max-w-md bg-[var(--bg-surface)] border border-[var(--bg-border)]/50 shadow-[0_0_50px_rgba(212,163,89,0.15)] rounded-2xl overflow-hidden z-10 p-6 flex flex-col gap-5">
+            <div className="flex justify-between items-start border-b border-[var(--bg-border)]/20 pb-3">
+              <div>
+                <h2 className="font-display text-base font-bold text-[var(--empire-gold)] flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base">pets</span>
+                  <span>Edit Cat Details (Admin Override)</span>
+                </h2>
+                <p className="font-body text-[9px] text-[var(--empire-cream)]/50 mt-0.5">ID: {editingCat.id}</p>
+              </div>
+              <button
+                onClick={() => setEditingCat(null)}
+                className="p-1 text-[var(--empire-cream)]/50 hover:text-[var(--empire-cream)] transition-colors cursor-pointer bg-transparent border-0"
+              >
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateCatSubmit} className="flex flex-col gap-4">
+              <div>
+                <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Cat Name</label>
+                <input
+                  type="text"
+                  value={catForm.name}
+                  onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
+                  className="w-full mt-1 p-2 border border-[var(--bg-border)] rounded-xl font-body text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] focus:outline-none focus:border-[var(--empire-gold)]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Breed Sighting Estimate</label>
+                <input
+                  type="text"
+                  value={catForm.breed_estimate}
+                  onChange={(e) => setCatForm({ ...catForm, breed_estimate: e.target.value })}
+                  className="w-full mt-1 p-2 border border-[var(--bg-border)] rounded-xl font-body text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] focus:outline-none focus:border-[var(--empire-gold)]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Status</label>
+                <select
+                  value={catForm.status}
+                  onChange={(e) => setCatForm({ ...catForm, status: e.target.value })}
+                  className="w-full mt-1 p-2 border border-[var(--bg-border)] rounded-xl font-body text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] focus:outline-none focus:border-[var(--empire-gold)]"
+                >
+                  <option value="stray">Stray</option>
+                  <option value="adopted">Adopted</option>
+                  <option value="sheltered">Sheltered</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Health Notes</label>
+                <textarea
+                  value={catForm.health_notes || ''}
+                  onChange={(e) => setCatForm({ ...catForm, health_notes: e.target.value })}
+                  className="w-full mt-1 p-2 border border-[var(--bg-border)] rounded-xl font-body text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] focus:outline-none focus:border-[var(--empire-gold)]"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end mt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingCat(null)}
+                  className="px-4 py-2 border border-[var(--bg-border)] rounded-xl text-xs font-bold text-[var(--empire-cream)]/60 hover:bg-[var(--bg-elevated)] cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-[var(--empire-gold)] to-orange-500 text-white text-xs font-bold cursor-pointer"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>

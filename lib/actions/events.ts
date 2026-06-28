@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { sanitizeText } from '@/lib/security/sanitize';
 import { makeActionKey, POINT_VALUES } from '@/lib/gamification/points';
+import { getSystemSetting } from '@/lib/supabase/settings';
 import { z } from 'zod';
 
 const EventCreateSchema = z.object({
@@ -99,15 +100,16 @@ export async function markEventAttended(eventId: string, attendeeId: string) {
     await supabase.from('event_signups').update({ attended: true } as never).eq('event_id', eventId).eq('user_id', attendeeId);
 
     const actionKey = makeActionKey(attendeeId, 'EVENT_ATTENDED', eventId);
+    const customPoints = await getSystemSetting<number>('TNR_POINTS_AWARDED', POINT_VALUES.EVENT_ATTENDED);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (admin as any).rpc('award_points', {
       p_user_id: attendeeId, p_activity: 'EVENT_ATTENDED',
-      p_points: POINT_VALUES.EVENT_ATTENDED, p_related_id: eventId, p_action_key: actionKey,
+      p_points: customPoints, p_related_id: eventId, p_action_key: actionKey,
     });
 
     revalidatePath(`/events/${eventId}`);
     revalidatePath('/empire');
-    return { success: true, pointsAwarded: POINT_VALUES.EVENT_ATTENDED };
+    return { success: true, pointsAwarded: customPoints };
   } catch {
     return { success: false, error: 'internal_error' };
   }

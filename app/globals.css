@@ -13,8 +13,16 @@
   /* Backgrounds */
   --bg-void:         #fdf9f3; /* Cozy Warm Cream */
   --bg-surface:      #ffffff; /* Surface Container Lowest / Card bg */
+  --bg-surface-rgb:  255, 255, 255;
   --bg-elevated:     #f7f3ed; /* Surface Container Low */
   --bg-border:       #dbc2b2; /* Outline Variant */
+  --bg-border-rgb:    0, 0, 0;
+
+  /* Navbar and Dropdowns */
+  --navbar-bg:       rgba(255, 255, 255, 0.85);
+  --navbar-border:   rgba(0, 0, 0, 0.08);
+  --dropdown-bg:     rgba(255, 255, 255, 0.97);
+  --dropdown-border: rgba(0, 0, 0, 0.1);
 
   /* Empire (gold/terracotta) */
   --empire-gold:     #944a00; /* Deep Terracotta Orange */
@@ -57,8 +65,16 @@
   /* Backgrounds */
   --bg-void:         #141210; /* Deep Dark Espresso */
   --bg-surface:      #1c1a17; /* Dark Card Surface */
+  --bg-surface-rgb:  28, 26, 23;
   --bg-elevated:     #25221e; /* Dark Surface container */
   --bg-border:       #403730; /* Darker outline border */
+  --bg-border-rgb:    255, 255, 255;
+
+  /* Navbar and Dropdowns */
+  --navbar-bg:       rgba(28, 26, 23, 0.85);
+  --navbar-border:   rgba(255, 255, 255, 0.08);
+  --dropdown-bg:     rgba(28, 26, 23, 0.97);
+  --dropdown-border: rgba(255, 255, 255, 0.1);
 
   /* Empire (gold/terracotta) */
   --empire-gold:     #f28c38; /* Terracotta Orange / Sunlit Amber */

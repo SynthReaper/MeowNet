@@ -1,5 +1,6 @@
 // app/(app)/empire/page.tsx — Empire Dashboard (Server Component)
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import EmpireMetrics from '@/components/empire/EmpireMetrics';
 import Leaderboard from '@/components/empire/Leaderboard';
@@ -222,33 +223,63 @@ export default async function EmpirePage() {
           {/* Badges / Achievements Panel */}
           <BadgeDisplay badges={BADGE_REGISTRY as unknown as typeof BADGE_REGISTRY} earnedBadgeIds={userBadges} />
 
-          {/* Active Quests Card */}
-          <div className="bg-white rounded-2xl p-6 shadow-ambient border border-[var(--bg-border)]">
-            <h3 className="font-display text-base text-[var(--empire-cream)] font-bold mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[var(--life-teal)] font-normal" style={{ fontVariationSettings: "'FILL' 1" }}>explore</span>
-              <span>Active Quests</span>
+          {/* Gamification Portals Card */}
+          <div className="bg-white rounded-2xl p-6 shadow-ambient border border-[var(--bg-border)] flex flex-col gap-4">
+            <h3 className="font-display text-base text-[var(--empire-cream)] font-bold flex items-center gap-2">
+              <span className="material-symbols-outlined text-[var(--life-teal)] font-normal" style={{ fontVariationSettings: "'FILL' 1" }}>sports_esports</span>
+              <span>Game Hub</span>
             </h3>
             <div className="flex flex-col gap-3">
-              {/* Quest 1 */}
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/20 hover:bg-[var(--bg-border)]/10 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-[#8bf1e6]/30 flex items-center justify-center flex-shrink-0 text-[var(--life-teal)]">
-                  <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>calendar_month</span>
+              {/* Daily Trivia */}
+              <Link href="/empire/trivia" className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/20 hover:bg-[var(--bg-border)]/10 hover:border-[var(--empire-gold)]/30 transition-all group">
+                <div className="w-10 h-10 rounded-full bg-orange-100/50 flex items-center justify-center flex-shrink-0 text-orange-600 group-hover:scale-105 transition-transform">
+                  <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>quiz</span>
                 </div>
                 <div className="flex-grow min-w-0">
-                  <h4 className="font-body text-xs font-bold text-[var(--empire-cream)] truncate">TNR Tuesday Prep</h4>
-                  <p className="font-body text-[10px] text-[var(--empire-cream)]/50">Assist with 2 traps this week.</p>
+                  <h4 className="font-body text-xs font-bold text-[var(--empire-cream)] truncate flex items-center gap-1.5">
+                    <span>Daily Trivia</span>
+                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-ping" />
+                  </h4>
+                  <p className="font-body text-[10px] text-[var(--empire-cream)]/50">Answer TNR questions & build streaks.</p>
                 </div>
-              </div>
-              {/* Quest 2 */}
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/20 hover:bg-[var(--bg-border)]/10 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-[#ffdcc5] flex items-center justify-center flex-shrink-0 text-[var(--empire-gold)]">
-                  <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>restaurant</span>
+                <span className="material-symbols-outlined text-xs text-[var(--empire-cream)]/30 group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+              </Link>
+              
+              {/* Weekly Bingo */}
+              <Link href="/empire/bingo" className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/20 hover:bg-[var(--bg-border)]/10 hover:border-[var(--life-teal)]/30 transition-all group">
+                <div className="w-10 h-10 rounded-full bg-[#e8fbf7] flex items-center justify-center flex-shrink-0 text-[var(--life-teal)] group-hover:scale-105 transition-transform">
+                  <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>grid_on</span>
                 </div>
                 <div className="flex-grow min-w-0">
-                  <h4 className="font-body text-xs font-bold text-[var(--empire-cream)] truncate">Colony Feeder</h4>
-                  <p className="font-body text-[10px] text-[var(--empire-cream)]/50">Log 3 feeding checklists.</p>
+                  <h4 className="font-body text-xs font-bold text-[var(--empire-cream)] truncate">Stray Bingo</h4>
+                  <p className="font-body text-[10px] text-[var(--empire-cream)]/50">Fill your weekly 5x5 board.</p>
                 </div>
-              </div>
+                <span className="material-symbols-outlined text-xs text-[var(--empire-cream)]/30 group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+              </Link>
+
+              {/* Guilds Portal */}
+              <Link href="/empire/guilds" className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/20 hover:bg-[var(--bg-border)]/10 hover:border-purple-300/30 transition-all group">
+                <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0 text-purple-600 group-hover:scale-105 transition-transform">
+                  <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>groups</span>
+                </div>
+                <div className="flex-grow min-w-0">
+                  <h4 className="font-body text-xs font-bold text-[var(--empire-cream)] truncate">Volunteer Guilds</h4>
+                  <p className="font-body text-[10px] text-[var(--empire-cream)]/50">Cooperate on regional rescue quests.</p>
+                </div>
+                <span className="material-symbols-outlined text-xs text-[var(--empire-cream)]/30 group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+              </Link>
+
+              {/* Colony Tycoon */}
+              <Link href="/empire/tycoon" className="flex items-center gap-3 p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/20 hover:bg-[var(--bg-border)]/10 hover:border-blue-300/30 transition-all group">
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 text-blue-600 group-hover:scale-105 transition-transform">
+                  <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>cottage</span>
+                </div>
+                <div className="flex-grow min-w-0">
+                  <h4 className="font-body text-xs font-bold text-[var(--empire-cream)] truncate">Colony Tycoon</h4>
+                  <p className="font-body text-[10px] text-[var(--empire-cream)]/50">Upgrade virtual stray sanctuaries.</p>
+                </div>
+                <span className="material-symbols-outlined text-xs text-[var(--empire-cream)]/30 group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+              </Link>
             </div>
           </div>
 

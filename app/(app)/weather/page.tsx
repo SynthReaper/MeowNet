@@ -2,7 +2,8 @@
 // Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
 // app/(app)/weather/page.tsx — Feline Weather Watch & Shelter Safety Index
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 interface WeatherReport {
   neighborhood: string;
@@ -44,12 +45,16 @@ const DISTRICT_FALLBACK: DistrictWeather[] = DISTRICT_COORDS.map(d => ({
   description: 'Clear sky', windspeed: 5,
 }));
 
-function classify(temp: number) {
-  if (temp < 35) return { comfort: 'Hazardous', status: 'Alert',   icon: 'severe_cold',     color: 'text-[#ba1a1a]',            bg: 'bg-red-500/10 border-red-500/30' };
-  if (temp < 45) return { comfort: 'Poor',      status: 'Alert',   icon: 'ac_unit',          color: 'text-[#ba1a1a]',            bg: 'bg-red-500/10 border-red-500/30' };
-  if (temp < 55) return { comfort: 'Fair',      status: 'Caution', icon: 'cloud',            color: 'text-[var(--empire-gold)]', bg: 'bg-[var(--empire-gold)]/10 border-[var(--empire-gold)]/30' };
-  if (temp < 85) return { comfort: 'Good',      status: 'Safe',    icon: 'wb_sunny',         color: 'text-[var(--life-teal)]',   bg: 'bg-[var(--life-teal)]/10 border-[var(--life-teal)]/30' };
-  return           { comfort: 'Hot',       status: 'Caution', icon: 'device_thermostat', color: 'text-[var(--empire-gold)]', bg: 'bg-[var(--empire-gold)]/10 border-[var(--empire-gold)]/30' };
+function classify(temp: number, thresholdF: number) {
+  const hazardousLimit = thresholdF - 6;
+  const poorLimit = thresholdF;
+  const fairLimit = thresholdF + 10;
+
+  if (temp < hazardousLimit) return { comfort: 'Hazardous', status: 'Alert',   icon: 'severe_cold',     color: 'text-[#ba1a1a]',            bg: 'bg-red-500/10 border-red-500/30' };
+  if (temp < poorLimit)      return { comfort: 'Poor',      status: 'Alert',   icon: 'ac_unit',          color: 'text-[#ba1a1a]',            bg: 'bg-red-500/10 border-red-500/30' };
+  if (temp < fairLimit)      return { comfort: 'Fair',      status: 'Caution', icon: 'cloud',            color: 'text-[var(--empire-gold)]', bg: 'bg-[var(--empire-gold)]/10 border-[var(--empire-gold)]/30' };
+  if (temp < 85)             return { comfort: 'Good',      status: 'Safe',    icon: 'wb_sunny',         color: 'text-[var(--life-teal)]',   bg: 'bg-[var(--life-teal)]/10 border-[var(--life-teal)]/30' };
+  return                     { comfort: 'Hot',       status: 'Caution', icon: 'device_thermostat', color: 'text-[var(--empire-gold)]', bg: 'bg-[var(--empire-gold)]/10 border-[var(--empire-gold)]/30' };
 }
 
 // Derive the overall alert from first district data
@@ -81,9 +86,10 @@ function buildAlertText(districts: DistrictWeather[]): { title: string; body: st
 }
 
 export default function WeatherPage() {
-  const [districts, setDistricts] = useState<DistrictWeather[]>(DISTRICT_FALLBACK);
   const [reports,   setReports]   = useState<WeatherReport[]>([]);
   const [loadingLive, setLoadingLive] = useState(true);
+  const [thresholdF, setThresholdF] = useState(41); // default 5°C
+  const [rawWeatherList, setRawWeatherList] = useState<any[]>([]);
 
   useEffect(() => {
     const stored = localStorage.getItem('meownet_weather_reports');
@@ -99,6 +105,41 @@ export default function WeatherPage() {
       localStorage.setItem('meownet_weather_reports', JSON.stringify(initial));
     }
 
+    const supabase = createClient();
+
+    async function loadThreshold() {
+      try {
+        const { data } = await supabase
+          .from('system_settings' as never)
+          .select('value')
+          .eq('key', 'WEATHER_WARNING_THRESHOLD')
+          .maybeSingle() as unknown as { data: { value: number } | null };
+        if (data && typeof data.value === 'number') {
+          setThresholdF((data.value * 9/5) + 32);
+        }
+      } catch (err) {
+        console.error('Failed to load warning threshold:', err);
+      }
+    }
+
+    loadThreshold();
+
+    // Subscribe to system settings updates in realtime
+    const channel = supabase
+      .channel('weather-settings')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'system_settings',
+        filter: 'key=eq.WEATHER_WARNING_THRESHOLD'
+      }, (payload) => {
+        const val = (payload.new as any).value;
+        if (typeof val === 'number') {
+          setThresholdF((val * 9/5) + 32);
+        }
+      })
+      .subscribe();
+
     async function fetchLiveWeather() {
       try {
         const lats = DISTRICT_COORDS.map(c => c.lat).join(',');
@@ -111,24 +152,7 @@ export default function WeatherPage() {
           weathercode: number; description: string; icon: string;
         }> } = await res.json();
 
-        const updated: DistrictWeather[] = DISTRICT_COORDS.map((coord, i) => {
-          const w = data.results?.[i];
-          if (!w) return DISTRICT_FALLBACK[i];
-          const cls = classify(w.temp);
-          return {
-            neighborhood: coord.neighborhood,
-            temp:         w.temp,
-            apparentTemp: w.apparentTemp,
-            humidity:     w.humidity,
-            precipProb:   w.precipProb,
-            todayMax:     w.todayMax,
-            todayMin:     w.todayMin,
-            windspeed:    w.windspeed,
-            description:  w.description,
-            ...cls,
-          };
-        });
-        setDistricts(updated);
+        setRawWeatherList(data.results ?? []);
       } catch (err) {
         console.error('Failed to fetch live weather, using fallback data:', err);
       } finally {
@@ -137,7 +161,32 @@ export default function WeatherPage() {
     }
 
     fetchLiveWeather();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
+
+  const districts = useMemo(() => {
+    if (rawWeatherList.length === 0) return DISTRICT_FALLBACK;
+    return DISTRICT_COORDS.map((coord, i) => {
+      const w = rawWeatherList[i];
+      if (!w) return DISTRICT_FALLBACK[i];
+      const cls = classify(w.temp, thresholdF);
+      return {
+        neighborhood: coord.neighborhood,
+        temp:         w.temp,
+        apparentTemp: w.apparentTemp,
+        humidity:     w.humidity,
+        precipProb:   w.precipProb,
+        todayMax:     w.todayMax,
+        todayMin:     w.todayMin,
+        windspeed:    w.windspeed,
+        description:  w.description,
+        ...cls,
+      };
+    });
+  }, [rawWeatherList, thresholdF]);
 
   const alert = buildAlertText(districts);
 

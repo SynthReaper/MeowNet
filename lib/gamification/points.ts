@@ -10,6 +10,9 @@ export const POINT_VALUES = {
   HEALTH_FLAGS_ADDED: 5,
   STREAK_BONUS: 15,
   LEND_A_PAW: 5,
+  DAILY_TRIVIA: 10,
+  BINGO_COMPLETED: 50,
+  GUILD_QUEST_COMPLETED: 30,
 } as const;
 
 export type PointActivity = keyof typeof POINT_VALUES;

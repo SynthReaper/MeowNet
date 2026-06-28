@@ -8,6 +8,8 @@ import {
   getErasureAudits,
   getModeratorApplications,
   getAuditLogs,
+  getSystemSettings,
+  type SystemSetting,
 } from '@/lib/actions/admin';
 import AdminDashboardClient, {
   type Profile,
@@ -42,13 +44,14 @@ export default async function AdminPage() {
     redirect('/cats');
   }
 
-  // Fetch initial dashboard stats, profiles, compliance audits, applications, and logs
-  const [stats, profiles, audits, applications, auditLogs] = await Promise.all([
+  // Fetch initial dashboard stats, profiles, compliance audits, applications, logs, and settings
+  const [stats, profiles, audits, applications, auditLogs, systemSettings] = await Promise.all([
     getAdminDashboardStats(),
     getAllProfiles(),
     getErasureAudits(),
     getModeratorApplications(),
     getAuditLogs(),
+    getSystemSettings(),
   ]);
 
   return (
@@ -58,6 +61,7 @@ export default async function AdminPage() {
       initialAudits={audits as unknown as AuditLog[]}
       initialApplications={applications as unknown as ModeratorApplication[]}
       initialAuditLogs={auditLogs as unknown as StaffAuditLog[]}
+      initialSystemSettings={systemSettings as unknown as SystemSetting[]}
     />
   );
 }

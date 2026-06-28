@@ -1,6 +1,6 @@
 # MeowNet Database Documentation
 
-> Last updated: 2026-06-27 · v0.4.0 · Migrations: 0001–0042
+> Last updated: 2026-06-28 · v0.5.0 · Migrations: 0001–0050
 
 ---
 
@@ -15,6 +15,10 @@ public schema
 ├── point_log         — Idempotent points transaction ledger
 ├── badges            — Badge definitions + user earn status
 ├── community_messages — Community chat messages
+├── community_channels — Community chat channels
+├── channel_members    — Chat channel participants
+├── direct_messages    — Direct messages between users
+├── user_notifications — User in-app notifications
 ├── caregivers        — Colony caregiver assignments
 ├── community_fund    — Colony community fund tracking
 ├── user_consents     — GDPR consent records (Article 6)
@@ -70,6 +74,23 @@ Auth schema (Supabase managed)
 | 0031 | `0031_notice_board.sql` | notices table, triggers enforcing admin-only broadcasts |
 | 0032 | `0032_notice_permissions_hardening.sql` | notices check function trigger extended to DELETE and UPDATE |
 | 0033 | `0033_notice_target_page.sql` | target_page column added to notices to support target routing |
+| 0034 | `0034_update_community_channels.sql` | Updates default community channel slugs and metadata |
+| 0035 | `0035_mix_community_channels.sql` | Mixes both public and staff-only target community channel sets |
+| 0036 | `0036_channels_policy_admin_only.sql` | Restricts public channel creation to Admins; others can create private channels |
+| 0037 | `0037_sub_moderator_limits.sql` | Introduces sub_role and edits tracking columns, checks edit limit triggers |
+| 0038 | `0038_sub_moderator_limits_expand.sql` | Expands sub-moderator edit limit checks to colonies and notices tables |
+| 0039 | `0039_fix_channels_recursion.sql` | Helper bypass functions preventing RLS infinite recursion on channels and members |
+| 0040 | `0040_update_max_edits_default.sql` | Updates sub-moderator max_edits default setting from 5 to 20 |
+| 0041 | `0041_add_edited_at_to_dms.sql` | Adds edited_at column to direct_messages table for editing support |
+| 0042 | `0042_add_rls_policies_for_dm_edits_deletes.sql` | RLS policies for updating, marking read, and deleting sent/received DMs |
+| 0043 | `0043_upcoming_features_schemas.sql` | Foundation tables, RLS, and security policies for Guilds, Bingo, Tycoon, Winter Shelters, and Trivia |
+| 0044 | `0044_admin_gamification_creation.sql` | Dynamic trivia questions, bingo templates tables + Admin-restricted RLS |
+| 0045 | `0045_user_guild_creation.sql` | Allow authenticated users to insert guilds + Seed default guilds with valid UUIDs |
+| 0046 | `0046_tycoon_idle_progress_engine.sql` | Add last_claimed_at timestamp column to colony_tycoon_sanctuaries for offline engine |
+| 0047 | `0047_guild_quests_seed.sql` | Seeded initial default quests mapped to seeded guild UUIDs |
+| 0048 | `0048_guild_join_conditions.sql` | Added min_points_required, category, and creator_id columns to guilds table |
+| 0049 | `0049_enable_guild_realtime.sql` | Registered guilds, guild_members, and guild_quests in supabase_realtime publication |
+| 0050 | `0050_system_settings.sql` | Created system_settings key-value config store, RLS (admin-write / authenticated-read), realtime publication, seeded initial settings |
 
 ---
 
@@ -92,6 +113,9 @@ Auth schema (Supabase managed)
 | `password_expires_at` | `timestamptz` | Nullable — admin-set account expiry |
 | `max_usages` | `int` | Nullable — max successful logins before lock |
 | `usages_count` | `int` | Default `0` — incremented by DB trigger on sign-in |
+| `sub_role` | `text` | `'sub_moderator'` \| `'full_moderator'` |
+| `edits_count` | `int` | Default `0` — incremented on sub-moderator edits |
+| `max_edits` | `int` | Default `20` — max allowed edits for sub-moderator |
 | `created_at` | `timestamptz` | |
 | `updated_at` | `timestamptz` | |
 
@@ -165,6 +189,69 @@ Auth schema (Supabase managed)
 | `created_at` | `timestamptz` | |
 | `updated_at` | `timestamptz` | |
 
+### `public.community_channels`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `uuid` | PK |
+| `slug` | `text` | **UNIQUE** |
+| `name` | `text` | Display name |
+| `description` | `text` | |
+| `icon` | `text` | Material icon name |
+| `is_private` | `bool` | Default `false` |
+| `created_by` | `uuid` | FK → profiles.id |
+| `invite_code` | `text` | **UNIQUE** |
+| `is_archived` | `bool` | Default `false` |
+| `created_at` | `timestamptz` | |
+
+### `public.channel_members`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `channel_id` | `uuid` | PK, FK → community_channels.id |
+| `user_id` | `uuid` | PK, FK → profiles.id |
+| `joined_at` | `timestamptz` | |
+
+### `public.community_messages`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `uuid` | PK |
+| `user_id` | `uuid` | FK → auth.users.id |
+| `channel_id` | `uuid` | FK → community_channels.id |
+| `parent_id` | `uuid` | FK → community_messages.id (thread parent) |
+| `message` | `text` | Max 2000 chars |
+| `is_flagged` | `bool` | Default `false` |
+| `edited_at` | `timestamptz` | Nullable |
+| `created_at` | `timestamptz` | |
+
+### `public.direct_messages`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `uuid` | PK |
+| `sender_id` | `uuid` | FK → profiles.id |
+| `receiver_id` | `uuid` | FK → profiles.id |
+| `message` | `text` | |
+| `media_url` | `text` | Nullable |
+| `media_type` | `text` | Nullable |
+| `is_read` | `bool` | Default `false` |
+| `edited_at` | `timestamptz` | Nullable |
+| `created_at` | `timestamptz` | |
+
+### `public.user_notifications`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `uuid` | PK |
+| `user_id` | `uuid` | FK → profiles.id |
+| `title` | `text` | |
+| `message` | `text` | |
+| `type` | `text` | e.g. `'chat_mention'`, `'private_message'` |
+| `target_url` | `text` | Nullable |
+| `is_read` | `bool` | Default `false` |
+| `created_at` | `timestamptz` | |
+
 ---
 
 ## Security Functions (SECURITY DEFINER)
@@ -178,6 +265,12 @@ GDPR Article 17 cascading deletion. Removes: auth user, profile, cats, event sig
 
 ### `logAuditAction(actor_id, action, target_id, details)`
 Writes to `staff_audit_log`. SECURITY DEFINER so even non-admin callers can log their own actions under admin supervision.
+
+### `is_channel_member(channel_id, user_id)`
+Helper function to check if a user is a member of a channel. Bypasses RLS to prevent infinite recursion.
+
+### `is_channel_creator(channel_id, user_id)`
+Helper function to check if a user is the creator of a channel. Bypasses RLS to prevent infinite recursion.
 
 ---
 
@@ -195,6 +288,11 @@ Writes to `staff_audit_log`. SECURITY DEFINER so even non-admin callers can log 
 | `moderator_applications` | Own + moderator | Authenticated | Moderator/admin | Admin |
 | `colonies` | Anyone (true) | Authenticated | Creator/caretaker/staff | Staff only |
 | `notices` | Authenticated (active/unexpired) | Staff only | Staff only (admin for broadcast) | Staff only (admin for broadcast) |
+| `community_channels` | Public OR member OR staff | Admin (public) / Anyone (private) | Creator / Staff | — |
+| `channel_members` | Self OR channel creator OR staff | Authenticated | — | Self OR creator OR staff |
+| `community_messages` | Channel visible OR staff | Member OR public channel OR staff | Message author OR staff | Message author OR staff |
+| `direct_messages` | Sender OR receiver | Sender only | Sender (edit) / Receiver (read status) | Sender only |
+| `user_notifications` | Notification owner | Anyone (system/trigger) | Notification owner | — |
 
 ---
 
@@ -220,6 +318,9 @@ Fires `AFTER UPDATE ON auth.users` (when `last_sign_in_at` changes). Checks:
 
 ### `check_notice_write` (migration 0031 & 0032)
 Fires `BEFORE INSERT OR UPDATE OR DELETE ON public.notices`. Enforces that only administrators can write, modify, or delete notices where `is_broadcast` or `is_popup` is set to `true`.
+
+### `check_sub_moderator_edit_limit` (migration 0037 & 0038)
+Fires `BEFORE UPDATE OR DELETE ON public.cats, public.tnr_events, public.colonies, public.notices` and `BEFORE UPDATE ON public.moderator_queries`. For users with role `'moderator'` and sub_role `'sub_moderator'`, it tracks and increments edits, blocking action when `edits_count >= max_edits`.
 
 ---
 

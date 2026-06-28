@@ -56,8 +56,48 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   // This will refresh the session token if needed and store it in cookies
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Route Gating for Non-Public pages
+  // Maintenance Mode redirect check
   const pathname = request.nextUrl.pathname;
+  const isMaintenanceBypass = 
+    pathname.startsWith('/maintenance') ||
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/__clerk') ||
+    pathname.startsWith('/_next') ||
+    pathname === '/favicon.ico' ||
+    pathname === '/pet-logo.avif' ||
+    pathname === '/icon.png';
+
+  if (!isMaintenanceBypass) {
+    try {
+      const { data: setting } = await supabase
+        .from('system_settings' as never)
+        .select('value')
+        .eq('key', 'MAINTENANCE_MODE')
+        .maybeSingle() as unknown as { data: { value: boolean } | null };
+
+      if (setting?.value === true) {
+        let isAdmin = false;
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles' as never)
+            .select('role')
+            .eq('id', user.id)
+            .maybeSingle() as unknown as { data: { role: string | null } | null };
+          if (profile?.role === 'admin') {
+            isAdmin = true;
+          }
+        }
+
+        if (!isAdmin) {
+          const maintenanceUrl = new URL('/maintenance', request.url);
+          return NextResponse.redirect(maintenanceUrl);
+        }
+      }
+    } catch (err) {
+      console.error('Maintenance check failed in proxy:', err);
+    }
+  }
   if (!isPublicRoute(pathname)) {
     const authObj = await auth();
     const clerkUserId = authObj?.userId;

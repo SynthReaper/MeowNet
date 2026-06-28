@@ -1,6 +1,6 @@
 # MeowNet API Reference
 
-> Last updated: 2026-06-27 · v0.4.0
+> Last updated: 2026-06-28 · v0.5.0
 
 All API routes live under `app/api/`. Server Actions (in `lib/actions/`) are covered separately.
 
@@ -194,6 +194,36 @@ Write an entry to `staff_audit_log`.
 
 #### `getUserActivitySummary(userId)`
 Fetch a user's cat count, event signups, total points, and last activity date.
+
+#### `getSystemSettings(): Promise<SystemSetting[]>`
+Returns all rows from `public.system_settings`. Accessible by authenticated users; write operations are admin-only.
+
+#### `updateSystemSetting(key, value): Promise<ActionResponse>`
+Update a platform configuration setting. Admin-only.
+
+| Parameter | Type | Notes |
+|-----------|------|-------|
+| `key` | `string` | **Must** be one of: `MAINTENANCE_MODE`, `TNR_POINTS_AWARDED`, `CAT_LOG_POINTS_AWARDED`, `WEATHER_WARNING_THRESHOLD`, `MAX_EMPIRE_LEADERBOARD_ENTRIES` |
+| `value` | `boolean \| number \| string` | Narrowed from `any` — arbitrary types rejected |
+
+> **Security:** Key validated against server-side `ALLOWED_SETTING_KEYS` Set before DB write. Unknown keys return `invalid_setting_key`.
+
+#### `adminDeleteCat(catId: string): Promise<ActionResponse>`
+Hard-delete a cat sighting. Admin-only. UUID format validated before DB call.
+
+#### `adminUpdateCat(catId, updates): Promise<ActionResponse>`
+Update any field on a cat record. Admin-only. Supports `name`, `status`, `health_notes`, `breed_estimate`.
+
+#### `adminDeleteColony(colonyId: string): Promise<ActionResponse>`
+Hard-delete a colony. Admin-only. UUID format validated.
+
+#### `adminDeleteEvent(eventId: string): Promise<ActionResponse>`
+Hard-delete a TNR event. Admin-only. UUID format validated.
+
+#### `adminDeleteGuild(guildId: string): Promise<ActionResponse>`
+Hard-delete a volunteer guild. Admin-only. UUID format validated.
+
+> **Security (UUID guards):** All four delete actions validate the ID parameter against `/^[0-9a-f]{8}-...-[0-9a-f]{12}$/i` before making any DB call. Malformed IDs return `invalid_id` immediately.
 
 ---
 

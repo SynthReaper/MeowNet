@@ -1,4 +1,4 @@
-# MeowNet — Hackathon Judge Guide 🐾👑
+# MeowNet — Hackathon Judge Guide 🐾👑 · v0.5.0
 
 > **Welcome!** This guide is written specifically for hackathon judges. It explains every feature in plain language, how to try it, and exactly where the code lives. No developer experience required.
 
@@ -80,6 +80,34 @@ Here is a plain-language explanation of every major feature, how to test it, and
 
 ---
 
+### 4b. 🏰 Colony Tycoon (Idle Builder)
+
+**What it does:** A virtual offline colony builder. While you're away, stray blessings accumulate in real-time. Come back, watch the counter tick up, and claim your earned Empire Points.
+
+**Try it:** Click **Empire → Colony Tycoon**.
+
+**Code:** [`TycoonInterface/index.tsx`](../components/empire/TycoonInterface/index.tsx)
+
+---
+
+### 4c. 🏘️ Volunteer Guilds
+
+**What it does:** Regional volunteer guilds for coordinated action. Search guilds by name, filter by category (TNR, Feeding, Medical…), sort by points or member count, and join guilds that meet your Empire Points threshold. Any volunteer can create a new guild.
+
+**Try it:** Click **Empire → Volunteer Guilds**.
+
+**Code:** [`GuildsInterface/index.tsx`](../components/empire/GuildsInterface/index.tsx)
+
+---
+
+### 4d. 🎲 Daily Trivia & 🟩 Stray Bingo
+
+**What it does:** Admins manage trivia question banks and weekly bingo task boards. Volunteers answer daily TNR/rescue trivia for streaks and complete bingo squares for point multipliers.
+
+**Try it:** Click **Empire → Daily Trivia** or **Empire → Stray Bingo**.
+
+---
+
 ### 5. 🌤️ Feline Weather Watch
 
 **What it does:** Fetches real-time climate data from Open-Meteo (server-side) and displays localized safety grids showing whether temperatures are safe for outdoor community cats.
@@ -126,14 +154,24 @@ Volunteer raises query → Moderator reviews → If unresolved: Moderator escala
 ### 9. 🛡️ Staff Admin & Moderator Portals
 
 **What it does:**
-- **Admin Dashboard** — tracks user growth, database sizes, role metrics (Recharts). Allows audit log search + CSV export. Can create direct database credential accounts.
+- **Admin Dashboard** — tracks user growth, database sizes, role metrics (Recharts). Allows audit log search + CSV export. Can create direct database credential accounts. Includes a **System Settings** tab to change platform-wide configurations (maintenance mode, point rewards, weather thresholds) and a **Supreme Management** tab for direct CRUD access to all cats, colonies, events, and guilds in the database.
 - **Moderator Dashboard** — interactive Leaflet hotspot map. Inline status editing via map popups. Moderation queue visualization.
 
 **Login:**
 - Admin: `admin@meownet.org` (use Staff Portal → Database Direct)
 - Moderator: `moderator@meownet.org` (use Staff Portal → Database Direct)
 
-**Code:** [`AdminDashboardClient`](../components/admin/AdminDashboardClient/index.tsx) · [`ModeratorDashboardClient`](../components/moderator/ModeratorDashboardClient/index.tsx)
+**Code:** [`app/(app)/admin`](../app/(app)/admin/) · [`app/(app)/moderator`](../app/(app)/moderator/)
+
+---
+
+### 10. 🔧 Maintenance Mode
+
+**What it does:** Admins can enable maintenance mode from the **System Settings** tab. When active, every non-admin visitor is immediately redirected to a themed `/maintenance` page. Admins retain full access and bypass the gate automatically.
+
+**Try it:** Log in as admin, go to the Admin Dashboard → System Settings tab → toggle Maintenance Mode ON. Open an incognito tab and visit any page to see the redirect. Toggle it back OFF when done.
+
+**Code:** [`proxy.ts`](../proxy.ts) · [`app/maintenance/page.tsx`](../app/maintenance/page.tsx)
 
 ---
 
@@ -172,6 +210,10 @@ The breed estimation AI runs in a separate Docker container (Python FastAPI). Th
 | ML Service | [`python-ml/main.py`](../python-ml/main.py) |
 | Auth sliding toggle | [`components/auth/AuthTabs.tsx`](../components/auth/AuthTabs.tsx) |
 | Broadcast system | [`components/ui/Broadcasts.tsx`](../components/ui/Broadcasts.tsx) |
+| Volunteer Guilds | [`GuildsInterface/index.tsx`](../components/empire/GuildsInterface/index.tsx) |
+| Colony Tycoon | [`TycoonInterface/index.tsx`](../components/empire/TycoonInterface/index.tsx) |
+| System settings | [`lib/supabase/settings.ts`](../lib/supabase/settings.ts) |
+| Maintenance mode | [`proxy.ts`](../proxy.ts) · [`app/maintenance/page.tsx`](../app/maintenance/page.tsx) |
 
 ---
 
@@ -190,7 +232,8 @@ Supabase (PostgreSQL + PostGIS)
   ├── RLS on every table
   ├── Location fuzzing trigger
   ├── Login expiry + usage limit triggers
-  └── Realtime subscriptions
+  ├── Realtime subscriptions (guilds, chat, map)
+  └── system_settings (maintenance, point config, weather threshold)
   ↓
 Python FastAPI (Docker → Render)
   └── HuggingFace breed + mood AI
@@ -200,4 +243,4 @@ Python FastAPI (Docker → Render)
 
 *Built with 🐾 for every stray cat that deserves a better life.*
 
-*MeowNet — #hackthekitty 2026 · Author: [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com*
+*MeowNet — #hackthekitty 2026 · v0.5.0 · Author: [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com*

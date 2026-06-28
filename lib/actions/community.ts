@@ -839,6 +839,17 @@ export async function uploadChatMedia(formData: FormData): Promise<ActionRespons
     // Limit to 10MB
     if (file.size > 10 * 1024 * 1024) return { success: false, error: 'File size too large (max 10MB)' };
 
+    // Strict MIME allowlist — prevents uploading executables, scripts, or unknown types.
+    // Client-reported file.type is user-controlled; validate it server-side.
+    const ALLOWED_MIME_TYPES = new Set([
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif',
+      'video/mp4', 'video/webm', 'video/ogg',
+      'application/pdf',
+    ]);
+    if (!ALLOWED_MIME_TYPES.has(file.type)) {
+      return { success: false, error: 'File type not allowed' };
+    }
+
     let buffer: Buffer = Buffer.from(await file.arrayBuffer());
     let contentType = file.type;
 

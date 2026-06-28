@@ -6,6 +6,80 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 
 ## [Unreleased]
 
+### Planned (Future Expansion)
+- **Winter Weather Micro-Shelter Allocator**: Hypothermia warning indicators, location allocation suggestions, and insulative R-value trackings.
+- **AI Feline Facial & Acoustic Translation (On Hold)**: Facial vector embeddings for duplicate merging, and meow acoustics state classifier translation.
+- **Autonomous AI Agent Ecosystem (On Hold)**: Multi-agent council comprising Bastet-Agent, Hermes-Agent, Anubis-Agent, Socrates-Agent, Archimedes-Agent, Freya-Agent, and Odin-Agent.
+
+---
+
+## [0.5.0] — 2026-06-28 · Supreme Admin Controls, Maintenance Mode & Dynamic Gamification
+
+### Added
+- **Maintenance Mode**: Full-site maintenance gate added. When enabled by an admin, all non-admin users are redirected to a beautiful `/maintenance` page featuring an animated sleeping cat SVG. Admins bypass the gate automatically and retain full site access.
+- **Maintenance Page** (`app/maintenance/page.tsx`): Standalone static page with a paw-pattern background, custom SVG grooming cat illustration, animated decorative sparkles, and a "Refresh & Check Signals" button.
+- **System Settings Database** (`supabase/migrations/0050_system_settings.sql`): Created `public.system_settings` key-value configuration store. Added Row-Level Security (RLS: admins write, authenticated read). Seeded initial settings: `MAINTENANCE_MODE`, `TNR_POINTS_AWARDED`, `CAT_LOG_POINTS_AWARDED`, `WEATHER_WARNING_THRESHOLD`, `MAX_EMPIRE_LEADERBOARD_ENTRIES`. Enabled realtime publication.
+- **Settings Utility** (`lib/supabase/settings.ts`): Helper `getSystemSetting<T>(key, defaultValue)` for database-driven configuration lookup.
+- **Dynamic Points Configurations**: Cat logging points (`cats.ts`) and TNR event attendance points (`events.ts`) now read from `system_settings` instead of hardcoded values.
+- **Dynamic Weather Thresholds**: Feline Weather Watch (`app/(app)/weather/page.tsx`) queries `WEATHER_WARNING_THRESHOLD` from the database and subscribes to realtime updates — safety comfort levels recalculate instantly when the threshold is adjusted by an admin.
+- **Admin Settings Tab** (Admin Dashboard): New interactive tab allowing admins to toggle boolean flags and adjust numeric platform parameters directly in the UI, backed by `updateSystemSetting` server action.
+- **Admin Supreme Management Tab** (Admin Dashboard): New tab with tabular lists of Cats, Colonies, Events, and Guilds from the database. Admins can view, edit metadata, or hard-delete any entry via dedicated server actions (`adminDeleteCat`, `adminUpdateCat`, `adminDeleteColony`, `adminDeleteEvent`, `adminDeleteGuild`).
+- **Admin Server Actions** (`lib/actions/admin.ts`): Added `getSystemSettings`, `updateSystemSetting`, `adminDeleteCat`, `adminUpdateCat`, `adminDeleteColony`, `adminDeleteEvent`, `adminDeleteGuild` — all gated to admin role.
+- **Realtime Volunteer Guilds Portal**: Full Supabase Realtime subscriptions for `guilds`, `guild_members`, and `guild_quests` tables. Guild list reflects live state instantly without manual refresh.
+- **Guild Realtime Publication** (`supabase/migrations/0049_enable_guild_realtime.sql`): Added `guilds`, `guild_members`, and `guild_quests` to Supabase realtime publication.
+- **Guild Join Conditions** (`supabase/migrations/0048_guild_join_conditions.sql`): Added `min_points_required`, `category`, and `creator_id` columns to the guilds table. Join validation enforced in Server Actions.
+- **Guild Search & Filters**: Name/description full-text search, category filter (TNR, Feeding, Medical, etc.), and multi-column sort within the guilds browser.
+- **Global Rank Display**: Calculated Empire Points rank across all users shown on each guild card.
+- **User Guild Creation**: Any authenticated volunteer can launch a new guild from the right-hand sidebar. Configurable category, description, and minimum join points required.
+- **Admin Gamification Controls** (`admin/gamification`): Admin-only route with interfaces to create trivia questions, bingo templates, and manage guilds from a dedicated sub-dashboard.
+- **Dynamic Trivia & Bingo** (`supabase/migrations/0044_admin_gamification_creation.sql`): `public.trivia_questions` and `public.bingo_task_templates` tables with admin-only write RLS and pre-seeded data.
+- **Colony Tycoon Idle Engine** (`supabase/migrations/0046_tycoon_idle_progress_engine.sql`): `last_claimed_at` timestamp column. Offline points accumulate over time (capped at 24 hours), visualised with a live real-time counter in the tycoon interface.
+- **Feline Empire Navbar Group**: Dedicated navigation section exposing all gamification routes (Empire Dashboard, Trivia, Bingo, Guilds, Colony Tycoon).
+
+### Changed
+- **Proxy Middleware** (`proxy.ts`): Integrated maintenance mode redirect logic. All non-bypass paths check `system_settings.MAINTENANCE_MODE` before continuing. Admin role bypasses the gate; all others redirect to `/maintenance`.
+- **Migration Count**: All references updated to reflect 50 active migrations (0001–0050).
+- **Guilds Fallback Removal**: Removed static mock fallback arrays in `app/(app)/empire/guilds/page.tsx`; all data sourced live from database.
+- **AuthBridge Clerk Bypass** (`proxy.ts`): Added `/__clerk` to the maintenance bypass whitelist to prevent `unauthorized_clerk` errors during Clerk session sync and user onboarding.
+
+### Fixed
+- **JSX Ternary Parse Error** (`AdminDashboardClient.tsx` line 1831): Converted implicit `else` to explicit `activeTab === 'live' ? (…)` chain to resolve Turbopack JSX parsing failure.
+- **Middleware Conflict**: Removed standalone `middleware.ts` file that conflicted with the existing `proxy.ts` (Next.js only permits one middleware entry point).
+- **Guild UUID Seed** (`supabase/migrations/0045_user_guild_creation.sql`): Seeded guilds with valid static UUIDs to resolve `invalid input syntax for type uuid` cast error.
+- **Search Panel Layout**: Replaced CSS Grid with Flexbox in the guilds filter panel to prevent text truncation and placeholder overflow across all viewports.
+- **Dark Mode Readability**: Fixed `bg-white` containers replaced with translucent glassmorphic tokens across guild cards and search panels.
+
+### Security
+- **System Setting Key Allowlist** (`lib/actions/admin.ts`): `updateSystemSetting` now validates `key` against a strict Set of 5 known setting names before touching the database. Unknown keys are rejected with `invalid_setting_key`. Value type narrowed from `any` to `boolean | number | string`.
+- **UUID Guards on Admin Delete Actions** (`lib/actions/admin.ts`): All four admin delete functions (`adminDeleteCat`, `adminDeleteColony`, `adminDeleteEvent`, `adminDeleteGuild`) now validate the `id` parameter against a UUID regex before any DB call, closing a potential IDOR vector via malformed IDs.
+- **MIME Allowlist — Community File Upload** (`lib/actions/community.ts`): Server-side allowlist enforced before the file buffer is read. Only `image/*` (jpeg/png/gif/webp/avif), `video/mp4`, `video/webm`, `video/ogg`, and `application/pdf` are accepted. All other types return an error immediately.
+- **MIME Allowlist — AI Breed Endpoint** (`app/api/ai/breed/route.ts`): Non-image MIME types are rejected with `HTTP 415` before forwarding to the Python ML service.
+- **Three-Pass HTML Strip** (`lib/security/sanitize.ts`): `sanitizeText()` upgraded from single-pass to three-pass regex strip, closing the nested/malformed tag bypass (e.g. `<<script>script>`). Added `typeof` input guard and cleaned entity map.
+
+---
+
+## [0.4.1] — 2026-06-28 · Dependency Upgrades, Security Disclaimers & Gamification Foundations
+
+### Added
+- **Gamification Schemas**: Created migration `0043_upcoming_features_schemas.sql` defining database schemas, constraints, and Row-Level Security policies for upcoming features:
+  - **Volunteer Guilds**: Tables for guilds, member rosters, and cooperative guild quests.
+  - **Stray Bingo**: Table for tracking weekly bingo cards and completed tasks.
+  - **Colony Tycoon**: Tables for virtual sanctuaries and upgrade levels purchased using Empire Points.
+  - **Winter Shelters**: Table for tracking insulation R-values and capacity limits.
+  - **Daily Trivia**: Table for tracking streaks and overall trivia statistics.
+- **Robust LICENSE with Custom Disclaimers**: Added a comprehensive `LICENSE` file containing the MIT License supplemented with specific liability disclaimers for physical TNR safety, geofuzzing location privacy, AI vet diagnosis, and GDPR erasure backup latency.
+- **Targeted Security Audit Document**: Relocated and integrated the Aikido security report under `aikido-security-audit/security-audit-report.pdf` and linked it directly in `README.md` and `docs/security.md`.
+- **Plans & Ideas Catalog**: Added `plans/ideas.md` containing conceptual designs for multi-agent councils (Bastet, Hermes, Anubis, Socrates, Archimedes, Freya, Odin), territory coverage heatmaps, and CV ear-notch verifiers.
+
+### Changed
+- **Direct Git Deployments**: Deleted redundant `.github/workflows/deploy.yml` and updated `docs/deployment.md` to reflect Vercel (Next.js) and Render (Python ML) direct Git repository integration triggers.
+- **Normalized Migration Audits**: Updated `docs/database.md` to document migrations `0034` through `0043` (detailing private channels, sub-moderator edit limits, recursion fixes, and gamification tables).
+
+### Fixed
+- **Credentials Persistence**: Added `persist-credentials: false` to all actions checkout steps in `.github/workflows/ci.yml` to prevent local GITHUB_TOKEN storage leakage.
+- **Starlette / FastAPI Conflict**: Upgraded `starlette` to `1.0.1` and `fastapi` to `0.133.0` in `python-ml/requirements.txt` to patch CVE-2026-48710.
+- **Clerk/Supabase Race Condition**: Patched session check logic in `JudgeWelcomePopup` (`components/ui/JudgeWelcomePopup/index.tsx`) to query Clerk session email first, preventing incorrect popups during account switching.
+
 ---
 
 ## [0.4.0] — 2026-06-27 · Auth Sliding Toggle, Query Escalation & Documentation
@@ -64,7 +138,9 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 
 ---
 
-[Unreleased]: https://github.com/SynthReaper/MeowNet/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/SynthReaper/MeowNet/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/SynthReaper/MeowNet/compare/v0.4.1...v0.5.0
+[0.4.1]: https://github.com/SynthReaper/MeowNet/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/SynthReaper/MeowNet/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/SynthReaper/MeowNet/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/SynthReaper/MeowNet/compare/v0.1.0...v0.2.0

@@ -1,7 +1,7 @@
 // Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
 import type { Metadata } from 'next';
 import { Inter, DM_Mono } from 'next/font/google';
-import { ClerkProvider, SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import AuthBridge from '@/components/auth/AuthBridge';
 import Broadcasts from '@/components/ui/Broadcasts';
 import Script from 'next/script';
@@ -69,15 +69,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} bg-[var(--bg-void)] text-[var(--empire-cream)] antialiased min-h-screen flex flex-col`}>
         <ClerkProvider telemetry={false}>
           <AuthBridge />
-          <header style={{ display: 'none' }}>
-            <Show when="signed-out">
-              <SignInButton />
-              <SignUpButton />
-            </Show>
-            <Show when="signed-in">
-              <UserButton />
-            </Show>
-          </header>
           <Broadcasts />
           {children}
         </ClerkProvider>
