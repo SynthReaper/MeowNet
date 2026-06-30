@@ -340,7 +340,7 @@ export default function ModeratorDashboardClient({
     fetchInitialActivities();
 
     const supabase = createClient();
-    const channelName = `live-feed-mod-${Math.random().toString(36).substring(2, 9)}`;
+    const channelName = `live-feed-mod-${crypto.randomUUID().slice(0, 7)}`;
     const channel = supabase.channel(channelName);
 
     channel.on('postgres_changes', {
@@ -1679,7 +1679,7 @@ export default function ModeratorDashboardClient({
                   if (isShifted) {
                     const parts = q.message.split('[SHIFTED_TO_ADMIN:');
                     displayMessage = parts[0].trim();
-                    shiftReason = parts[1].replace(']', '').trim();
+                    shiftReason = parts[1].replace(/]/g, '').trim();
                   } else if (isModToAdmin) {
                     displayMessage = q.message.replace('[MODERATOR_QUERY_TO_ADMIN]', '').trim();
                   }

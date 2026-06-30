@@ -1,23 +1,28 @@
-name: "🏥 Health Check — ML + Vercel"
+name: "Health Check — ML + Vercel"
 
 on:
   schedule:
     - cron: "0 */6 * * *"   # Every 6 hours
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   health:
     name: "Ping production services"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Check Vercel (Next.js)
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://meownet-sr.vercel.app/)
           echo "Vercel HTTP: $STATUS"
-          [ "$STATUS" = "200" ] || (echo "❌ Vercel is down!" && exit 1)
+          [ "$STATUS" = "200" ] || (echo "Vercel is down!" && exit 1)
 
       - name: Check ML Service (Render)
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://meownet-ml.onrender.com/health)
           echo "Render ML HTTP: $STATUS"
-          [ "$STATUS" = "200" ] || echo "⚠️  ML service cold (Render free tier) — not a failure"
+          [ "$STATUS" = "200" ] || echo "ML service cold (Render free tier) — not a failure"

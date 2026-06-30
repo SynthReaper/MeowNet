@@ -34,6 +34,10 @@ export async function GET(
   const dtstart = formatICSDate(startDate);
   const dtend = formatICSDate(endDate);
 
+  // Sanitise user-supplied strings: strip CR/LF to prevent ICS line injection,
+  // then escape commas and semicolons per RFC-5545 section 3.3.11
+  const sanitizeICS = (s: string) => s.replace(/[\r\n]+/g, ' ').replace(/[,;\\]/g, '\\$&');
+
   // Build standard RFC-5545 text payload
   const icsLines = [
     'BEGIN:VCALENDAR',
@@ -46,8 +50,8 @@ export async function GET(
     `DTSTAMP:${dtstamp}`,
     `DTSTART:${dtstart}`,
     `DTEND:${dtend}`,
-    `SUMMARY:${title.replace(/[,;]/g, '\\$&')}`,
-    `DESCRIPTION:${description.replace(/\n/g, '\\n').replace(/[,;]/g, '\\$&')}`,
+    `SUMMARY:${sanitizeICS(title)}`,
+    `DESCRIPTION:${sanitizeICS(description)}`,
     'LOCATION:MeowNet Colony Epicenter',
     'STATUS:CONFIRMED',
     'SEQUENCE:0',

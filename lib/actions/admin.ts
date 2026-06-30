@@ -712,17 +712,19 @@ export async function adminCreateUser(
     const serviceClient = createServiceClient();
 
     // Generate secure password if none is provided
+    const secureSuffix = Array.from(crypto.getRandomValues(new Uint8Array(6)))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
     const password = customPassword && customPassword.trim().length >= 6
       ? customPassword.trim()
-      : `sb_${Math.random().toString(36).slice(-8)}_secure_123!`;
+      : `sb_${secureSuffix}_secure_123!`;
 
-    // Derive a clean username slug from displayName (e.g. "Jane Doe" → "jane_doe")
+    // Derive a clean username slug from displayName (e.g. "Jane Doe" -> "jane_doe")
     const usernameSlug = displayName
       .trim()
       .toLowerCase()
       .replace(/\s+/g, '_')
       .replace(/[^a-z0-9_]/g, '')
-      .slice(0, 30) || `user_${Math.random().toString(36).slice(-6)}`;
+      .slice(0, 30) || `user_${crypto.randomUUID().slice(0, 8)}`;
 
     // Create user directly in Supabase Auth
     // skipEmailVerification=true  → email_confirm:true  (no email sent, access immediate)

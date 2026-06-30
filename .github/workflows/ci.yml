@@ -6,15 +6,20 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  # ─── Job 1: Next.js ───────────────────────────────────────────────────────────
+  # --- Job 1: Next.js -----------------------------------------------------------
   web:
-    name: "🌐 Next.js — Lint + Types + Build"
+    name: "Next.js — Lint + Types + Build"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,7 +36,7 @@ jobs:
         run: npm ci
 
       - name: Lint
-        run: npm run lint || echo "⚠️ ESLint found styling warnings/issues, but passing to allow build"
+        run: npm run lint || echo "ESLint found styling warnings/issues, but passing to allow build"
 
       - name: TypeScript type-check
         run: npx tsc --noEmit
@@ -48,10 +53,12 @@ jobs:
           ML_SERVICE_SECRET: ci_secret_placeholder
           NEXT_PUBLIC_APP_URL: https://meownet-sr.vercel.app
 
-  # ─── Job 2: Python ML ─────────────────────────────────────────────────────────
+  # --- Job 2: Python ML ---------------------------------------------------------
   ml:
-    name: "🐍 Python ML — Install + Syntax Check"
+    name: "Python ML — Install + Syntax Check"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: python-ml
@@ -71,15 +78,17 @@ jobs:
         run: pip install -r requirements.txt pytest pytest-asyncio httpx
 
       - name: Syntax check
-        run: python -m py_compile main.py && echo "✅ main.py syntax OK"
+        run: python -m py_compile main.py && echo "main.py syntax OK"
 
       - name: Run tests (if any)
-        run: python -m pytest tests/ -v --tb=short 2>/dev/null || echo "ℹ️  No tests directory yet — skipping"
+        run: python -m pytest tests/ -v --tb=short 2>/dev/null || echo "No tests directory yet — skipping"
 
-  # ─── Job 3: Secret Scan ───────────────────────────────────────────────────────
+  # --- Job 3: Secret Scan -------------------------------------------------------
   secret-scan:
-    name: "🔒 Secret Scan"
+    name: "Secret Scan"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout (full history)
         uses: actions/checkout@v4
@@ -93,16 +102,18 @@ jobs:
             '(sk_live_[a-zA-Z0-9]{24,}|pk_live_[a-zA-Z0-9]{24,}|hf_[A-Za-z0-9]{30}|sb_[a-fA-F0-9]{40}|eyJ[a-zA-Z0-9-_=]{30,}\.[a-zA-Z0-9-_=]{30,}\.[a-zA-Z0-9-_=]{30,})' \
             || true)
           if [ -n "$LEAK" ]; then
-            echo "❌ LEAKED SECRETS DETECTED"
+            echo "LEAKED SECRETS DETECTED"
             echo "$LEAK" | head -20
             exit 1
           fi
-          echo "✅ No secrets found"
+          echo "No secrets found"
 
-  # ─── Job 4: Docker Build (ML) ─────────────────────────────────────────────────
+  # --- Job 4: Docker Build (ML) -------------------------------------------------
   docker-ml:
-    name: "🐳 Docker — ML Service Build"
+    name: "Docker — ML Service Build"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -112,10 +123,12 @@ jobs:
       - name: Build ML Docker image
         run: docker build -t meownet-ml:ci ./python-ml
 
-  # ─── Job 5: Docs Consistency ──────────────────────────────────────────────
+  # --- Job 5: Docs Consistency --------------------------------------------------
   docs-check:
-    name: "📝 Docs — Version & Accuracy Check"
+    name: "Docs — Version & Accuracy Check"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -136,11 +149,11 @@ jobs:
           echo "HACKATHON version: $HACKATHON_VER"
 
           if [ "$README_VER" != "$CHANGELOG_VER" ]; then
-            echo "❌ Version mismatch: README ($README_VER) vs CHANGELOG ($CHANGELOG_VER)"
+            echo "Version mismatch: README ($README_VER) vs CHANGELOG ($CHANGELOG_VER)"
             exit 1
           fi
 
-          echo "✅ Version strings consistent"
+          echo "Version strings consistent"
 
       - name: Check for stale migration counts
         run: |
@@ -149,22 +162,21 @@ jobs:
           echo "Actual migration files: $ACTUAL"
 
           # Check for obviously stale counts in docs
-          STALE=$(grep -rn " 33 migrations\| 42 migrations\|0001–0033\|0001–0042" docs/ README.md SETUP.md 2>/dev/null || true)
+          STALE=$(grep -rn " 33 migrations\| 42 migrations\|0001-0033\|0001-0042" docs/ README.md SETUP.md 2>/dev/null || true)
           if [ -n "$STALE" ]; then
-            echo "⚠️  Stale migration count found in docs:"
+            echo "Stale migration count found in docs:"
             echo "$STALE"
             exit 1
           fi
-          echo "✅ Migration counts look current"
+          echo "Migration counts look current"
 
       - name: Check for local paths in docs
         run: |
           # No Windows or Unix absolute paths should appear in docs
           BAD=$(grep -rn "C:\\\\" docs/ README.md SETUP.md CHANGELOG.md 2>/dev/null || true)
           if [ -n "$BAD" ]; then
-            echo "❌ Local file path found in documentation:"
+            echo "Local file path found in documentation:"
             echo "$BAD"
             exit 1
           fi
-          echo "✅ No local paths found in docs"
-
+          echo "No local paths found in docs"

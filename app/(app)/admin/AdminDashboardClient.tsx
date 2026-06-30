@@ -629,7 +629,7 @@ export default function AdminDashboardClient({
     fetchInitialActivities();
 
     const supabase = createClient();
-    const channelName = `live-feed-${Math.random().toString(36).substring(2, 9)}`;
+    const channelName = `live-feed-${crypto.randomUUID().slice(0, 7)}`;
     const channel = supabase.channel(channelName);
 
     channel.on('postgres_changes', {
@@ -1147,7 +1147,7 @@ export default function AdminDashboardClient({
         // Optimistically add to profiles list
         const newP: Profile = {
           // eslint-disable-next-line react-hooks/purity
-          id: `temp-${Math.random()}`,
+          id: `temp-${crypto.randomUUID()}`,
           display_name: newName.trim(),
           role: newRole,
           empire_points: 0,
@@ -2527,7 +2527,7 @@ export default function AdminDashboardClient({
                     if (isShifted) {
                       const parts = q.message.split('[SHIFTED_TO_ADMIN:');
                       displayMessage = parts[0].trim();
-                      shiftReason = parts[1].replace(']', '').trim();
+                      shiftReason = parts[1].replace(/]/g, '').trim();
                     } else if (isModToAdmin) {
                       displayMessage = q.message.replace('[MODERATOR_QUERY_TO_ADMIN]', '').trim();
                     }

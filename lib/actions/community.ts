@@ -909,12 +909,14 @@ export async function createPrivateChannel(
     const trimmedName = name.trim();
     if (!trimmedName) return { success: false, error: 'Group name cannot be empty.' };
 
-    const suffix = Math.random().toString(36).substring(2, 6);
+    const suffix = Array.from(crypto.getRandomValues(new Uint8Array(3)))
+      .map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 4);
     const slug = trimmedName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + suffix;
     if (!slug) return { success: false, error: 'Invalid group name.' };
 
     // Generate unique random 8 character invite code
-    const inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+    const inviteCode = Array.from(crypto.getRandomValues(new Uint8Array(6)))
+      .map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase().slice(0, 8);
 
     const { data, error } = await supabase
       .from('community_channels' as never)

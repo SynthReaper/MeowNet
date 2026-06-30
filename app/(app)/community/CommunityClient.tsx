@@ -335,7 +335,19 @@ const renderMessageContent = (messageText: string, messageId?: string) => {
   if (messageText.startsWith('![GIF]') || messageText.startsWith('![Image]')) {
     const match = messageText.match(/\((.*?)\)/);
     if (match) {
-      return <img src={match[1]} alt="Chat Media" className="rounded-xl max-h-48 shadow-sm border border-[#dbc2b2]/35 object-cover mt-1" />;
+      const rawUrl = match[1];
+      // Only render images from known safe CDN domains to prevent injection
+      const ALLOWED_HOSTS = ['media.tenor.com', 'c.tenor.com', 'supabase.co', 'supabase.in'];
+      let isSafe = false;
+      try {
+        const parsed = new URL(rawUrl);
+        isSafe = parsed.protocol === 'https:' && ALLOWED_HOSTS.some(h => parsed.hostname === h || parsed.hostname.endsWith('.' + h));
+      } catch {
+        isSafe = false;
+      }
+      if (isSafe) {
+        return <img src={rawUrl} alt="Chat Media" className="rounded-xl max-h-48 shadow-sm border border-[#dbc2b2]/35 object-cover mt-1" />;
+      }
     }
   }
 
@@ -866,7 +878,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
   // Supabase Realtime Channel subscription
   useEffect(() => {
     const supabase = createClient();
-    const channelId = `community-messages-${Math.random().toString(36).substring(2, 9)}`;
+    const channelId = `community-messages-${crypto.randomUUID().slice(0, 7)}`;
     
     const sub = supabase
       .channel(channelId)
