@@ -1,116 +1,139 @@
-# MeowNet — Hackathon Judge Guide 🐾👑 · v0.8.0
+<div align="center">
 
-> **Welcome!** This guide is written specifically for hackathon judges. It explains every feature in plain language, how to try it, and exactly where the code lives. No developer experience required.
+# MeowNet — Hackathon Judge Guide
 
----
+**#hackthekitty 2026 · v0.8.0**
 
-## 🚀 Step 1: Log In (Start Here!)
+*A complete walkthrough for evaluators — no developer setup required.*
 
-MeowNet uses two parallel authentication systems. Standard email sign-in may trigger OTP verification codes from Clerk (email deliverability can be unreliable without a custom domain — approximately 30% chance of issues). To make judging easy, we pre-loaded **Direct Database Login** credentials below.
-
-### Recommended: Direct Database Sign-In (No OTP, No Clerk)
-
-1. Go to the **[Staff Portal](https://meownet-sr.vercel.app/auth/moderator-login)**
-2. You will see judge credential cards at the bottom of the page — click any card to auto-fill the login form
-3. The page automatically switches to **Direct Database** login mode (the **"DATABASE DIRECT"** tab will be selected)
-4. Click **Sign In** — no email verification, no OTP, instant access
-
-> **⚠️ Important Note:** If you use the standard `/auth/login` or `/auth/signup` page (Clerk social login), there is approximately a **30% chance** that the email verification link may fail because this app does not have a custom domain configured with Clerk. **Social logins (Google, GitHub) work perfectly.** To avoid any issues, please use the Direct Database method above.
+</div>
 
 ---
 
-## 🔐 Judge Credentials
+## Start Here — 60-Second Overview
 
-| Role | Email | Password | Login Page | Access |
-|------|-------|----------|------------|--------|
-| 🧑 **Standard Volunteer** | `judge-user@meownet.org` | `JudgeUser2026!` | [/auth/login](https://meownet-sr.vercel.app/auth/login) — use **Database Direct** tab | Full volunteer features: map, cats, events, empire, community |
-| 🛡️ **Sub-Moderator** | `judge-submod@meownet.org` | `JudgeSubMod2026!` | [Staff Portal](https://meownet-sr.vercel.app/auth/moderator-login) | Moderator dashboard + up to 20 edits (DB-enforced) |
+MeowNet is a full-stack urban cat rescue platform. Volunteers log stray cats, coordinate TNR (Trap-Neuter-Return) events, and earn gamification points. Staff moderate via dedicated dashboards. Every piece of sensitive data — GPS coordinates, uploaded photos, user accounts — passes through privacy controls before it is stored.
 
-> **💡 Tip for Database Direct Login:**
-> On the sign-in page, look for the sliding toggle at the top of the login card. Click **"DATABASE DIRECT"** to switch from Clerk Social Login to the direct database form. The judge credential cards at the bottom of the Staff Portal auto-select this mode for you.
+**Stack:** Next.js 16 + React 19 + TypeScript 5 (strict) + Supabase (PostgreSQL + PostGIS) + Clerk + Python FastAPI (Docker)
+
+**Live app:** [meownet-sr.vercel.app](https://meownet-sr.vercel.app/)
 
 ---
 
-## 📱 Feature Tour
+## Step 1: Log In
 
-Here is a plain-language explanation of every major feature, how to test it, and where the code lives.
+MeowNet runs two parallel authentication systems. Standard Clerk email sign-in may trigger an OTP verification code — deliverability can be unreliable without a custom Clerk domain (~30% failure rate). Use **Database Direct** login to avoid any friction.
 
-### 1. 🐱 Landing Page & Interactive Cozy Cat
+### Recommended Method — Database Direct (No OTP)
 
-**What it does:** The home page displays an interactive cozy cat companion that reacts dynamically to the current local temperature. It also shows a real-time local weather alert based on your geolocation.
-
-**Try it:** Visit the [home page](https://meownet-sr.vercel.app/), interact with your cozy cat friend, and check the weather banner at the top of the screen.
-
-**Code:** [`InteractiveCat/index.tsx`](../components/ui/InteractiveCat/index.tsx) — interactive SVG and CSS animations
-
----
-
-### 2. 🐱 Cat Logging & AI Breed Estimator
-
-**What it does:** Volunteers can register new cat sightings with:
-- **AI Breed Analyzer** — upload a photo to estimate the breed via HuggingFace ML model
-- **Privacy Gate (GDPR)** — users must explicitly consent before any AI analysis
-- **EXIF Metadata Stripper** — automatically removes GPS tags from photos before upload
-
-**Try it:** Go to **Cats → Log New Cat**, toggle the consent checkbox, upload a cat photo, and receive a breed estimate with veterinary disclaimer.
-
-**Code:** [`lib/security/exif.ts`](../lib/security/exif.ts) · [`ConsentGate`](../components/forms/ConsentGate/index.tsx)
+1. Open the **[Staff Portal](https://meownet-sr.vercel.app/auth/moderator-login)**
+2. Scroll to the bottom — judge credential cards are pre-loaded
+3. Click any card — the form auto-fills and the **DATABASE DIRECT** tab activates
+4. Click **Sign In** — instant access, no email verification required
 
 ---
 
-### 3. 🗺️ Live Sighting Map
+## Judge Credentials
 
-**What it does:** An interactive Leaflet map showing all logged cats and upcoming TNR events. Cat markers are **fuzzed to a 500-meter grid** — exact colony coordinates are never stored or displayed, protecting cats from harm.
+| Role | Email | Password | Access Level |
+|------|-------|----------|--------------|
+| Standard Volunteer | `judge-user@meownet.org` | `JudgeUser2026!` | Full volunteer features — map, cats, events, empire, community, weather |
+| Sub-Moderator | `judge-submod@meownet.org` | `JudgeSubMod2026!` | All volunteer features + moderator dashboard, query resolution (DB-enforced 20-use limit) |
 
-**Try it:** Click **Map** in the navigation bar to explore the live map.
+> **Admin access** is available on request — contact synthreaperx@gmail.com. The admin dashboard includes system settings, audit logs, user management, and live activity feed.
 
-**Code:** [`0003_cats.sql`](../supabase/migrations/0003_cats.sql) — PostGIS fuzzing trigger
+> **Auth note:** The sliding toggle at the top of the login card switches between Clerk Social Login and Database Direct. The judge credential cards at the bottom of the Staff Portal select this automatically.
 
 ---
 
-### 4. 👑 Empire Dashboard (Gamification)
+## Feature Tour
 
-**What it does:** Rewards volunteers for helpful actions (logging cats, joining TNR events). Features:
-- **Live leaderboard** refreshing every 30 seconds
-- **Locked and unlocked badges** based on points history
+### 1. Landing Page and Interactive Cat Companion
+
+**What it does:** The home page displays an interactive SVG cat companion that reacts dynamically to the current local temperature — it shivers in cold weather and fans itself in heat. A real-time weather safety banner appears based on your geolocation.
+
+**Try it:** Visit [meownet-sr.vercel.app](https://meownet-sr.vercel.app/). Interact with the cat. Check the weather strip at the top.
+
+**Code:** [`components/ui/InteractiveCat/index.tsx`](../components/ui/InteractiveCat/index.tsx)
+
+---
+
+### 2. Cat Logging and AI Breed Estimator
+
+**What it does:** Volunteers register new cat sightings through a multi-step form:
+
+- **GDPR Consent Gate** — users must explicitly consent before AI analysis runs
+- **AI Breed Analyzer** — uploads the photo to a HuggingFace model via a secure server-side proxy
+- **EXIF Metadata Stripper** — removes GPS tags from the photo before it ever reaches the server
+- **Cat Welfare Score** — calculates a 0-100 welfare score based on TNR status, vaccination, BCS rating, and health flags
+
+**Try it:** Go to **Cats → Log New Cat**. Toggle the consent checkbox. Upload a cat photo. Receive a breed estimate with veterinary disclaimer.
+
+**Code:**
+- [`lib/security/exif.ts`](../lib/security/exif.ts) — EXIF stripping
+- [`components/forms/ConsentGate/index.tsx`](../components/forms/ConsentGate/index.tsx) — GDPR gate
+- [`lib/welfare/welfare-score.ts`](../lib/welfare/welfare-score.ts) — welfare algorithm
+- [`app/api/ai/breed/route.ts`](../app/api/ai/breed/route.ts) — ML proxy
+
+---
+
+### 3. Live Sighting Map
+
+**What it does:** An interactive Leaflet map showing all logged cat sightings and upcoming TNR events. Key privacy feature: cat markers are **fuzzed to a ~500-metre grid** — exact colony coordinates are never stored or displayed, protecting cats from harm. A heatmap density toggle is available for an at-a-glance view of high-activity areas.
+
+**Try it:** Click **Map** in the navigation bar. Toggle between point markers and the heatmap layer using the toolbar button.
+
+**Code:**
+- [`supabase/migrations/0002_production_schema.sql`](../supabase/migrations/0002_production_schema.sql) — PostGIS fuzzing trigger
+- [`components/map/CatMap/index.tsx`](../components/map/CatMap/index.tsx) — map component
+
+---
+
+### 4. Empire Dashboard (Gamification)
+
+**What it does:** Rewards volunteers for completing helpful actions. Points are awarded server-side through an idempotent PostgreSQL RPC — the same action can never award points twice.
+
+- **Live leaderboard** — auto-refreshes every 30 seconds
+- **Impact badges** — unlocked based on cumulative point history
+- **Empire Points** — awarded for cat logging, TNR event attendance, and daily challenges
 
 **Try it:** Click **Empire** in the navigation bar.
 
-**Code:** [`0005_gamification.sql`](../supabase/migrations/0005_gamification.sql)
+**Code:** [`lib/actions/empire.ts`](../lib/actions/empire.ts) · [`app/(app)/empire`](../app/(app)/empire/)
 
 ---
 
-### 4b. 🏰 Colony Tycoon (Idle Builder)
+### 4a. Colony Tycoon (Idle Builder)
 
-**What it does:** A virtual offline colony builder. While you're away, stray blessings accumulate in real-time. Come back, watch the counter tick up, and claim your earned Empire Points.
+**What it does:** An offline idle progression builder. Stray blessings accumulate in real-time while the user is away, capped at 24 hours. The counter ticks live when the user returns; claiming converts the offline progress into Empire Points.
 
 **Try it:** Click **Empire → Colony Tycoon**.
 
-**Code:** [`TycoonInterface/index.tsx`](../components/empire/TycoonInterface/index.tsx)
+**Code:** [`components/empire/TycoonInterface/index.tsx`](../components/empire/TycoonInterface/index.tsx)
 
 ---
 
-### 4c. 🏘️ Volunteer Guilds
+### 4b. Volunteer Guilds
 
-**What it does:** Regional volunteer guilds for coordinated action. Search guilds by name, filter by category (TNR, Feeding, Medical…), sort by points or member count, and join guilds that meet your Empire Points threshold. Any volunteer can create a new guild.
+**What it does:** Regional volunteer guilds for coordinated action. Guilds have configurable Empire Points join thresholds. Users can search by name, filter by category (TNR, Feeding, Medical, General), and sort by points or member count. Supabase Realtime keeps the guild list live.
 
 **Try it:** Click **Empire → Volunteer Guilds**.
 
-**Code:** [`GuildsInterface/index.tsx`](../components/empire/GuildsInterface/index.tsx)
+**Code:** [`components/empire/GuildsInterface/index.tsx`](../components/empire/GuildsInterface/index.tsx)
 
 ---
 
-### 4d. 🎲 Daily Trivia & 🟩 Stray Bingo
+### 4c. Daily Trivia and Stray Bingo
 
-**What it does:** Admins manage trivia question banks and weekly bingo task boards. Volunteers answer daily TNR/rescue trivia for streaks and complete bingo squares for point multipliers.
+**What it does:** Admins manage a trivia question bank and weekly bingo task boards through the gamification sub-dashboard. Volunteers answer daily rescue/TNR trivia questions for streak bonuses and complete bingo squares for point multipliers.
 
 **Try it:** Click **Empire → Daily Trivia** or **Empire → Stray Bingo**.
 
 ---
 
-### 5. 🌤️ Feline Weather Watch
+### 5. Feline Weather Watch
 
-**What it does:** Fetches real-time climate data from Open-Meteo (server-side) and displays localized safety grids showing whether temperatures are safe for outdoor community cats.
+**What it does:** Fetches real-time climate data from Open-Meteo via a server-side proxy (never directly from the browser — this avoids ad-blocker interference). Displays localised safety grids showing whether outdoor temperatures are safe for community cats, with configurable thresholds controlled by admin system settings.
 
 **Try it:** Click **Weather** in the navigation bar.
 
@@ -118,19 +141,19 @@ Here is a plain-language explanation of every major feature, how to test it, and
 
 ---
 
-### 6. 📢 Targeted Announcements (Notice Board)
+### 6. Targeted Announcements (Notice Board)
 
-**What it does:** Staff can write announcements targeted to specific pages (e.g. `/map`, `/auth/login`). The system uses Supabase Realtime subscriptions to display banners or modals only on the relevant page.
+**What it does:** Staff write announcements targeted to specific pages — for example, a notice only appearing on `/map` or `/auth/login`. Supabase Realtime subscriptions deliver banners or modals to only the relevant page instantly.
 
-**Try it:** As an admin, create a notice targeted to the `login` page, log out, and see the banner on the login screen.
+**Try it:** As an admin, create a notice targeted to the `login` page, log out, and visit the login screen to see the banner appear.
 
-**Code:** [`Broadcasts.tsx`](../components/ui/Broadcasts.tsx)
+**Code:** [`components/ui/Broadcasts.tsx`](../components/ui/Broadcasts.tsx)
 
 ---
 
-### 7. 💬 Community Chat
+### 7. Community Chat
 
-**What it does:** Public and private channels with direct messaging. Messages support soft-delete and edit logging. Channels are moderated by staff.
+**What it does:** Public and private channels with direct messaging. Messages support soft-delete and maintain an edit audit log. GIF search is powered by a server-side Tenor proxy. Channels are moderated by staff.
 
 **Try it:** Click **Community** in the navigation bar.
 
@@ -138,126 +161,167 @@ Here is a plain-language explanation of every major feature, how to test it, and
 
 ---
 
-### 8. 🆘 Support Query System
+### 8. Support Query System
 
-**What it does:** Any logged-in user (volunteer) can raise a support query. Queries go to moderators first. If a moderator cannot resolve the issue, they can **escalate it to an admin** with a written reason. Admins handle unresolved escalations.
+**What it does:** Three-tier escalation system for volunteer support queries.
 
-**Escalation flow:**
 ```
-Volunteer raises query → Moderator reviews → If unresolved: Moderator escalates (with reason) → Admin resolves
+Volunteer raises query (status: open)
+  -> Moderator reviews
+       -> Resolved: Moderator closes
+       -> Unresolved: Moderator escalates with written reason (status: escalated)
+            -> Admin resolves (status: resolved)
 ```
 
-**Try it:** Click **Support** or the help link in the navigation bar to raise a query.
+**Try it:** Use the **Support** link in the navigation bar to raise a query. Log in as a moderator to review and escalate it.
+
+**Code:** [`app/(app)/moderator`](../app/(app)/moderator/)
 
 ---
 
-### 9. 🛡️ Staff Admin & Moderator Portals
+### 9. Admin and Moderator Portals
 
-**What it does:**
-- **Admin Dashboard** — tracks user growth, database sizes, role metrics (Recharts). Allows audit log search + CSV export. Can create direct database credential accounts. Includes a **System Settings** tab to change platform-wide configurations (maintenance mode, point rewards, weather thresholds) and a **Supreme Management** tab for direct CRUD access to all cats, colonies, events, and guilds in the database.
-- **Moderator Dashboard** — interactive Leaflet hotspot map. Inline status editing via map popups. Moderation queue visualization.
+**Admin Dashboard** capabilities:
 
-**Login:**
-- Admin: `admin@meownet.org` (use Staff Portal → Database Direct)
-- Moderator: `moderator@meownet.org` (use Staff Portal → Database Direct)
+- **Analytics** — Recharts visualisations of user growth, role distribution, database sizes
+- **User Management** — create direct-credential accounts with configurable expiry and usage limits, adjust Empire Points, promote roles
+- **Audit Logs** — searchable immutable log of all administrative actions, with a dispute-filing system
+- **System Settings** — toggle maintenance mode, change point rewards, adjust weather safety thresholds — all live without deployment
+- **Supreme Management** — direct CRUD access to all cats, colonies, events, and guilds in the database
+- **Live Activity Feed** — Supabase Realtime feed of sightings, chat posts, and TNR events as they happen
+
+**Moderator Dashboard** capabilities:
+
+- Interactive Leaflet hotspot map with inline status editing from map popups
+- Moderation queue with query escalation controls
+- Volunteer application processing
 
 **Code:** [`app/(app)/admin`](../app/(app)/admin/) · [`app/(app)/moderator`](../app/(app)/moderator/)
 
 ---
 
-### 10. 🔧 Maintenance Mode
+### 10. Maintenance Mode
 
-**What it does:** Admins can enable maintenance mode from the **System Settings** tab. When active, every non-admin visitor is immediately redirected to a themed `/maintenance` page. Admins retain full access and bypass the gate automatically.
+**What it does:** Admins can enable maintenance mode from the System Settings tab. When active, every non-admin visitor is immediately redirected to a themed `/maintenance` page. Admins bypass the gate and retain full access.
 
-**Try it:** Log in as admin, go to the Admin Dashboard → System Settings tab → toggle Maintenance Mode ON. Open an incognito tab and visit any page to see the redirect. Toggle it back OFF when done.
+**Try it:** Log in as admin → Admin Dashboard → System Settings → toggle **Maintenance Mode ON**. Open an incognito window and visit any route to see the redirect. Toggle it back OFF when done.
 
 **Code:** [`proxy.ts`](../proxy.ts) · [`app/maintenance/page.tsx`](../app/maintenance/page.tsx)
 
 ---
 
-## ⚙️ How Everything Ties Together
+### 11. Cryptographic Certificate Verification
+
+**What it does:** Volunteers and staff can generate verifiable PDF-ready certificates from their profile page. Each certificate includes a HMAC-SHA256 signed token. Anyone can visit `/verify` and paste the token to confirm its authenticity — no database lookup required, only server-side cryptographic verification.
+
+**Try it:** Log in, open **Profile → Volunteer Certificate** to view and print your certificate. Copy the verification token and visit [/verify](https://meownet-sr.vercel.app/verify) to validate it.
+
+**Code:**
+- [`app/(app)/profile/certificate/page.tsx`](../app/(app)/profile/certificate/page.tsx) — certificate generation
+- [`app/verify/volunteer/[id]/page.tsx`](../app/verify/volunteer/%5Bid%5D/page.tsx) — HMAC verification
+
+---
+
+## How Everything Ties Together
 
 ### Dual Authentication System
 
-MeowNet runs two authentication systems in parallel:
+MeowNet runs two authentication systems in parallel without conflict:
 
-1. **Clerk (Social Login)** — used by standard volunteers for Google or GitHub sign-in. A server-side HMAC bridge automatically syncs Clerk sessions to Supabase.
-2. **Supabase Direct Database Login** — bypasses Clerk entirely. Staff and judges use this to log in with email+password without any OTP or email verification. Accounts have optional expiry dates and login usage limits enforced by a PostgreSQL trigger.
+1. **Clerk Social Login** — used by standard volunteers for Google or GitHub sign-in. A server-side HMAC bridge (`AuthBridge`) automatically syncs Clerk sessions into Supabase on every page load.
+2. **Supabase Database Direct Login** — bypasses Clerk entirely. Staff and judges use email + password without any OTP or email verification. Accounts have PostgreSQL-enforced optional expiry dates and login usage limits (a trigger decrements a counter on each login).
 
-> **For judges:** Use the **Database Direct** tab on any login page. The Staff Portal pre-fills credentials automatically.
+The `AuthTabs` slider component switches between both modes on a single login card. The `?method=db` URL parameter pre-selects the Database Direct tab for judge card links.
 
 ### Location Privacy
 
-GPS coordinates from cat sightings are **never stored precisely**. A `BEFORE INSERT` database trigger (PostGIS `ST_SnapToGrid`) rounds all coordinates to a ~500m grid before writing to the database. Exact colony locations are permanently discarded.
+GPS coordinates from cat sightings are never stored precisely. A `BEFORE INSERT` PostgreSQL trigger applies PostGIS `ST_SnapToGrid(0.005)` — rounding all coordinates to a ~500m grid before writing to the database. Exact colony locations are permanently discarded; only the grid-snapped version is ever stored.
 
 ### Secure AI Pipeline
 
-The breed estimation AI runs in a separate Docker container (Python FastAPI). The browser never contacts the ML service directly — all requests go through `/api/ai/breed` which validates the user session, strips EXIF data, and adds a service secret header before forwarding.
+The breed estimation AI runs in a separate Docker container (Python FastAPI on Render). The browser never contacts the ML service directly. All requests flow through `/api/ai/breed`, which validates the user session, verifies GDPR consent, strips EXIF data from the image, and adds a `X-Service-Secret` header before forwarding the request. Rate limiting is enforced at 10 requests per minute on the ML side via slowapi.
 
 ---
 
-## 🗂️ Key Code Locations
+## Key Code Locations
 
-| What | Where |
-|------|-------|
-| Location privacy fuzzing | [`0003_cats.sql`](../supabase/migrations/0003_cats.sql) |
-| Gamification rules | [`0005_gamification.sql`](../supabase/migrations/0005_gamification.sql) |
-| Admin login limits | [`0028_custom_admin_users.sql`](../supabase/migrations/0028_custom_admin_users.sql) |
+| Feature | File |
+|---------|------|
+| Location privacy fuzzing | [`supabase/migrations/0002_production_schema.sql`](../supabase/migrations/0002_production_schema.sql) |
+| Empire Points RPC | [`supabase/migrations/0002_production_schema.sql`](../supabase/migrations/0002_production_schema.sql) — `award_points` function |
 | Query escalation | [`app/(app)/moderator`](../app/(app)/moderator/) |
-| Secure password sync | [`lib/actions/auth.ts`](../lib/actions/auth.ts) |
+| Admin server actions | [`lib/actions/admin.ts`](../lib/actions/admin.ts) |
 | EXIF stripper | [`lib/security/exif.ts`](../lib/security/exif.ts) |
-| Interactive Cozy Cat | [`InteractiveCat/index.tsx`](../components/ui/InteractiveCat/index.tsx) |
-| ML Service | [`python-ml/main.py`](../python-ml/main.py) |
+| Cat welfare score | [`lib/welfare/welfare-score.ts`](../lib/welfare/welfare-score.ts) |
+| Interactive cat companion | [`components/ui/InteractiveCat/index.tsx`](../components/ui/InteractiveCat/index.tsx) |
+| ML service | [`python-ml/main.py`](../python-ml/main.py) |
 | Auth sliding toggle | [`components/auth/AuthTabs.tsx`](../components/auth/AuthTabs.tsx) |
 | Broadcast system | [`components/ui/Broadcasts.tsx`](../components/ui/Broadcasts.tsx) |
-| Volunteer Guilds | [`GuildsInterface/index.tsx`](../components/empire/GuildsInterface/index.tsx) |
-| Colony Tycoon | [`TycoonInterface/index.tsx`](../components/empire/TycoonInterface/index.tsx) |
+| Volunteer guilds | [`components/empire/GuildsInterface/index.tsx`](../components/empire/GuildsInterface/index.tsx) |
+| Colony tycoon | [`components/empire/TycoonInterface/index.tsx`](../components/empire/TycoonInterface/index.tsx) |
 | System settings | [`lib/supabase/settings.ts`](../lib/supabase/settings.ts) |
 | Maintenance mode | [`proxy.ts`](../proxy.ts) · [`app/maintenance/page.tsx`](../app/maintenance/page.tsx) |
-| Certificate verification | [`app/verify/volunteer/[id]/page.tsx`](../app/verify/volunteer/%5Bid%5D/page.tsx) · [`app/verify/page.tsx`](../app/verify/page.tsx) |
-
-### 🌟 New in v0.6.0: Cryptographic Certificate Verification Registry
-To add maximum civic trust and platforms transparency, we introduced a cryptographic certificate verification ecosystem:
-- **Verifier Portal:** A new public page `/verify` is linked directly under the Resources column in the global footer. Judges can input any certificate token or Proof of Neuter UUID to verify records.
-- **Volunteer & Staff Certificates:** Users can now click **"Volunteer Certificate"** (or **"Staff Certificate"** if signed-in as a moderator/admin) from their profile dashboard to view, download, and print background-free certificates. The print output dynamically renders in landscape on a single page.
-- **Zero-DB Validation:** The certificate verification is powered by HMAC SHA256 cryptographic signatures using the server's private secret, ensuring metrics cannot be tampered with.
+| Certificate verification | [`app/verify/volunteer/[id]/page.tsx`](../app/verify/volunteer/%5Bid%5D/page.tsx) |
+| Weather proxy | [`app/api/weather/route.ts`](../app/api/weather/route.ts) |
+| Clerk-Supabase bridge | [`components/auth/AuthBridge/index.tsx`](../components/auth/AuthBridge/index.tsx) |
 
 ---
 
-## 🏗️ Quick Architecture Summary
+## Architecture Overview
 
 ```
 Browser
-  ↓
+  |
 Next.js 16 (Vercel Edge)
-  ├── Clerk Social Login  ←──── Google / GitHub OAuth
-  ├── Supabase Direct DB  ←──── Staff / Judge credentials (no OTP)
-  ├── /api/* routes       ←──── Proxy for ML, weather, catfacts
-  └── Server Actions      ←──── Secure mutations (admin, cats, events)
-  ↓
+  +-- Clerk Social Login      <---- Google / GitHub OAuth
+  +-- Supabase Direct DB      <---- Staff / Judge credentials (no OTP)
+  +-- /api/* routes           <---- Proxy for ML, weather, catfacts, GIFs
+  +-- Server Actions          <---- Secure mutations (admin, cats, events)
+  |
 Supabase (PostgreSQL + PostGIS)
-  ├── RLS on every table
-  ├── Location fuzzing trigger
-  ├── Login expiry + usage limit triggers
-  ├── Realtime subscriptions (guilds, chat, map)
-  └── system_settings (maintenance, point config, weather threshold)
-  ↓
-Python FastAPI (Docker → Render)
-  └── HuggingFace breed + mood AI
+  +-- RLS on every table
+  +-- Location fuzzing trigger (ST_SnapToGrid)
+  +-- Login expiry + usage limit triggers
+  +-- Realtime subscriptions (guilds, chat, map, system_settings)
+  +-- system_settings (maintenance, point config, weather threshold)
+  |
+Python FastAPI (Docker -> Render)
+  +-- HuggingFace breed + mood AI
+  +-- X-Service-Secret auth + slowapi rate limiting
 ```
 
 ---
 
-## 🛡️ v0.7.0 — Post-Session Hardening Notes
+## Post-Session Security Hardening Notes (v0.7.0 / v0.8.0)
 
-- **Security Header Accuracy:** All documented security header values verified against `next.config.ts`. Corrected `X-Frame-Options` from `DENY` to `SAMEORIGIN` (the actual deployed value).
-- **Source Map Protection:** `productionBrowserSourceMaps: false` — JavaScript source maps are not served in production, preventing attackers from reading TypeScript source in browser DevTools.
-- **Powered-By Header Suppression:** `poweredByHeader: false` — the `X-Powered-By: Next.js` fingerprinting header is removed.
-- **Documentation Completeness:** All consolidated migrations, 30+ database tables, and every live API route are now accurately documented.
-- **GIF Proxy:** Community chat uses a server-side Tenor proxy (`/api/tenor`) — GIF searches never leave through the browser, bypassing content blockers.
+- **Security Header Accuracy** — All documented header values verified against `next.config.ts`. `X-Frame-Options` is `SAMEORIGIN` (permits Vercel preview embeds while blocking third-party frames).
+- **Source Map Protection** — `productionBrowserSourceMaps: false` — JavaScript source maps are not served in production.
+- **Powered-By Suppression** — `poweredByHeader: false` — the `X-Powered-By: Next.js` fingerprinting header is removed.
+- **Code Quality Audit** — 637 code smells, accessibility violations, and strict TypeScript warnings resolved across all major components.
+- **GIF Proxy** — Community chat uses a server-side Tenor proxy (`/api/tenor`) so GIF searches never leave through the browser.
 
 ---
 
-*Built with 🐾 for every stray cat that deserves a better life.*
+## Judge Checklist
 
-*MeowNet — #hackthekitty 2026 · v0.8.0 · Author: [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com*
+Use this to guide a structured evaluation:
+
+| Area | What to Check | Where |
+|------|--------------|-------|
+| Authentication | Log in via Database Direct (no OTP) | [Staff Portal](https://meownet-sr.vercel.app/auth/moderator-login) |
+| Privacy — location | Cat map markers are approximate, not exact | [/map](https://meownet-sr.vercel.app/map) |
+| Privacy — EXIF | Upload a photo with GPS — EXIF is stripped before storage | Cats → Log New Cat |
+| AI integration | Breed estimate with consent gate + vet disclaimer | Cats → Log New Cat |
+| Welfare Score | 0–100 welfare breakdown on any cat profile | Any cat detail page |
+| Gamification | Points, leaderboard, badges, guilds, trivia, bingo | Empire section |
+| Admin power | System settings, user management, audit logs | Admin Dashboard |
+| Maintenance mode | Toggle ON → non-admin redirect → Toggle OFF | Admin → System Settings |
+| Verification | Generate certificate → copy token → verify at /verify | Profile → Certificate |
+| Community | Chat channels, DMs, GIF search | Community section |
+| Weather | Geolocation-based feline safety grid | Weather section |
+| Code quality | TypeScript strict, 0 type errors, ESLint clean | Source code |
+| Security | HMAC bridge, RLS, CSP headers, no service keys in client | [docs/security.md](security.md) |
+
+---
+
+*MeowNet — #hackthekitty 2026 · v0.8.0 · [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com*

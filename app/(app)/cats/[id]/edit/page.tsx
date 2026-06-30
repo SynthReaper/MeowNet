@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: 'Update the information or status of your cat sighting.',
 };
 
-export default async function EditCatPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditCatPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
   const { userId: clerkUserId } = await auth();
   if (!clerkUserId) {

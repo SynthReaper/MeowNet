@@ -106,7 +106,7 @@ export default function StaffProfileView({
   recentPoints,
   sightings,
   pledges,
-}: StaffProfileViewProps) {
+}: Readonly<StaffProfileViewProps>) {
   const [profileTab, setProfileTab] = useState<'staff' | 'volunteer'>('staff');
 
   const [isEditingDossier, setIsEditingDossier] = useState(false);
@@ -184,6 +184,36 @@ export default function StaffProfileView({
   const maxEdits = profile.max_edits ?? 20;
   const isSubMod = subRole === 'sub_moderator';
 
+  // Pre-calculate styling classes to resolve nested ternary code smells
+  let trialBannerClass = 'bg-[var(--bg-elevated)] border-[var(--bg-border)]/50 text-[var(--empire-gold)]';
+  let trialIcon = 'schedule';
+  if (daysRemaining !== null) {
+    if (daysRemaining <= 3) {
+      trialBannerClass = 'bg-red-500/10 border-red-500/25 text-red-400';
+      trialIcon = 'timer_off';
+    } else if (daysRemaining <= 7) {
+      trialBannerClass = 'bg-amber-500/10 border-amber-500/25 text-amber-400';
+    }
+  }
+
+  let subModBannerClass = 'bg-[var(--bg-elevated)] border-[var(--bg-border)]/50 text-[var(--empire-gold)]';
+  let subModIcon = 'edit_note';
+  if (isSubMod) {
+    if (editsCount >= maxEdits) {
+      subModBannerClass = 'bg-red-500/10 border-red-500/25 text-red-400';
+      subModIcon = 'block';
+    } else if (editsCount >= maxEdits - 3) {
+      subModBannerClass = 'bg-amber-500/10 border-amber-500/25 text-amber-400';
+    }
+  }
+
+  let progressBarColor = 'var(--empire-gold)';
+  if (editsCount >= maxEdits) {
+    progressBarColor = '#f87171';
+  } else if (editsCount >= maxEdits - 3) {
+    progressBarColor = '#fbbf24';
+  }
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-12 py-8 flex flex-col gap-8">
       {/* Staff Identity Card */}
@@ -249,15 +279,9 @@ export default function StaffProfileView({
 
       {/* Trial Expiration + Sub-Moderator Banners */}
       {daysRemaining !== null && (
-        <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl border ${
-          daysRemaining <= 3
-            ? 'bg-red-500/10 border-red-500/25 text-red-400'
-            : daysRemaining <= 7
-            ? 'bg-amber-500/10 border-amber-500/25 text-amber-400'
-            : 'bg-[var(--bg-elevated)] border-[var(--bg-border)]/50 text-[var(--empire-gold)]'
-        }`}>
+        <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl border ${trialBannerClass}`}>
           <span className="material-symbols-outlined text-xl flex-shrink-0">
-            {daysRemaining <= 3 ? 'timer_off' : 'schedule'}
+            {trialIcon}
           </span>
           <div>
             <div className="font-display text-sm font-bold">
@@ -273,15 +297,9 @@ export default function StaffProfileView({
       )}
 
       {isSubMod && (
-        <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl border ${
-          editsCount >= maxEdits
-            ? 'bg-red-500/10 border-red-500/25 text-red-400'
-            : editsCount >= maxEdits - 3
-            ? 'bg-amber-500/10 border-amber-500/25 text-amber-400'
-            : 'bg-[var(--bg-elevated)] border-[var(--bg-border)]/50 text-[var(--empire-gold)]'
-        }`}>
+        <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl border ${subModBannerClass}`}>
           <span className="material-symbols-outlined text-xl flex-shrink-0">
-            {editsCount >= maxEdits ? 'block' : 'edit_note'}
+            {subModIcon}
           </span>
           <div className="flex-grow">
             <div className="font-display text-sm font-bold">
@@ -299,7 +317,7 @@ export default function StaffProfileView({
               className="h-full rounded-full transition-all"
               style={{
                 width: `${Math.min((editsCount / maxEdits) * 100, 100)}%`,
-                background: editsCount >= maxEdits ? '#f87171' : editsCount >= maxEdits - 3 ? '#fbbf24' : 'var(--empire-gold)',
+                background: progressBarColor,
               }}
             />
           </div>
@@ -383,77 +401,91 @@ export default function StaffProfileView({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-3">
                     <div>
-                      <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Display Name</label>
-                      <input
-                        type="text"
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder="Display Name"
-                        className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all"
-                        required
-                      />
+                      <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">
+                        Display Name
+                        <input
+                          type="text"
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          placeholder="Display Name"
+                          className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all mt-1 font-normal normal-case"
+                          required
+                        />
+                      </label>
                     </div>
                     <div>
-                      <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Preferred Focus / Role</label>
-                      <input
-                        type="text"
-                        value={preferredRole}
-                        onChange={(e) => setPreferredRole(e.target.value)}
-                        placeholder="e.g. TNR Coordination, Colony Welfare"
-                        className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all"
-                      />
+                      <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">
+                        Preferred Focus / Role
+                        <input
+                          type="text"
+                          value={preferredRole}
+                          onChange={(e) => setPreferredRole(e.target.value)}
+                          placeholder="e.g. TNR Coordination, Colony Welfare"
+                          className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all mt-1 font-normal normal-case"
+                        />
+                      </label>
                     </div>
                     <div>
-                      <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Primary Area</label>
-                      <input
-                        type="text"
-                        value={locationNeighborhood}
-                        onChange={(e) => setLocationNeighborhood(e.target.value)}
-                        placeholder="e.g. Brooklyn, Queens"
-                        className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all"
-                      />
+                      <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">
+                        Primary Area
+                        <input
+                          type="text"
+                          value={locationNeighborhood}
+                          onChange={(e) => setLocationNeighborhood(e.target.value)}
+                          placeholder="e.g. Brooklyn, Queens"
+                          className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all mt-1 font-normal normal-case"
+                        />
+                      </label>
                     </div>
                     <div>
-                      <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Emergency Contact Phone</label>
-                      <input
-                        type="tel"
-                        value={contactPhone}
-                        onChange={(e) => setContactPhone(e.target.value)}
-                        placeholder="Phone number"
-                        className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all"
-                      />
+                      <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">
+                        Emergency Contact Phone
+                        <input
+                          type="tel"
+                          value={contactPhone}
+                          onChange={(e) => setContactPhone(e.target.value)}
+                          placeholder="Phone number"
+                          className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all mt-1 font-normal normal-case"
+                        />
+                      </label>
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-3">
                     <div>
-                      <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Avatar Image URL</label>
-                      <input
-                        type="url"
-                        value={avatarUrl}
-                        onChange={(e) => setAvatarUrl(e.target.value)}
-                        placeholder="e.g. https://example.com/image.jpg"
-                        className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all"
-                      />
+                      <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">
+                        Avatar Image URL
+                        <input
+                          type="url"
+                          value={avatarUrl}
+                          onChange={(e) => setAvatarUrl(e.target.value)}
+                          placeholder="e.g. https://example.com/image.jpg"
+                          className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all mt-1 font-normal normal-case"
+                        />
+                      </label>
                     </div>
                     <div>
-                      <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">OR Upload Photo</label>
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
-                        className="w-full text-[11px] font-body text-[var(--empire-cream)] file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[11px] file:font-semibold file:bg-[var(--bg-elevated)] file:text-[var(--empire-gold)] hover:file:bg-[var(--bg-border)]/20 transition-all"
-                      />
+                      <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">
+                        OR Upload Photo
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
+                          className="w-full text-[11px] font-body text-[var(--empire-cream)] file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[11px] file:font-semibold file:bg-[var(--bg-elevated)] file:text-[var(--empire-gold)] hover:file:bg-[var(--bg-border)]/20 transition-all mt-1"
+                        />
+                      </label>
                     </div>
                     <div className="flex-grow flex flex-col">
-                      <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Staff Bio (Max 500 chars)</label>
-                      <textarea
-                        value={bio}
-                        onChange={(e) => setBio(e.target.value)}
-                        placeholder="Write your staff biography here..."
-                        className="w-full flex-grow bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all resize-none min-h-[90px]"
-                        maxLength={500}
-                      />
+                      <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">
+                        Staff Bio (Max 500 chars)
+                        <textarea
+                          value={bio}
+                          onChange={(e) => setBio(e.target.value)}
+                          placeholder="Write your staff biography here..."
+                          className="w-full flex-grow bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all resize-none min-h-[90px] mt-1 font-normal normal-case"
+                          maxLength={500}
+                        />
+                      </label>
                     </div>
                   </div>
                 </div>
@@ -657,7 +689,7 @@ export default function StaffProfileView({
                       const pledgeInfo = PLEDGE_CONFIG[pledge.pledge] ?? { label: pledge.pledge, icon: 'favorite', bg: 'rgba(0,0,0,0.05)', color: 'inherit' };
                       return (
                         <Link
-                          key={idx}
+                          key={pledge.pledge + '-' + pledge.created_at + '-' + idx}
                           href={cat ? `/cats/${cat.id}` : '#'}
                           className="flex items-center gap-3 p-2.5 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-border)]/10 transition-colors border border-[var(--bg-border)]/10 no-underline group"
                         >
@@ -707,7 +739,7 @@ export default function StaffProfileView({
                 <div className="flex flex-col">
                   {recentPoints.map((log, i) => (
                     <div
-                      key={i}
+                      key={log.activity + '-' + log.created_at + '-' + i}
                       className={`flex justify-between items-center py-3 ${
                         i < recentPoints.length - 1 ? 'border-b border-[var(--bg-border)]/40' : ''
                       }`}

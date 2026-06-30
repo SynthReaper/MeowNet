@@ -147,7 +147,18 @@ export default function LogCatForm() {
           { label: 'Location', num: 2 },
           { label: 'Details', num: 3 },
         ].map((s) => (
-          <div key={s.num} className="flex flex-col items-center gap-1 cursor-pointer" onClick={() => step > s.num && setStep(s.num)}>
+          <div 
+            key={s.num} 
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                if (step > s.num) setStep(s.num);
+              }
+            }}
+            className="flex flex-col items-center gap-1 cursor-pointer" 
+            onClick={() => step > s.num && setStep(s.num)}
+          >
             <div 
               className={`w-10 h-10 rounded-full flex items-center justify-center border-2 font-display text-base font-bold transition-all duration-200 ${
                 step >= s.num 
@@ -233,26 +244,30 @@ export default function LogCatForm() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Latitude</label>
-              <input 
-                type="number" 
-                step="any" 
-                value={lat} 
-                onChange={(e) => setLat(e.target.value)} 
-                placeholder="e.g. 40.7128" 
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all font-data"
-              />
+              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
+                Latitude
+                <input 
+                  type="number" 
+                  step="any" 
+                  value={lat} 
+                  onChange={(e) => setLat(e.target.value)} 
+                  placeholder="e.g. 40.7128" 
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all font-data mt-2 font-normal normal-case"
+                />
+              </label>
             </div>
             <div>
-              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Longitude</label>
-              <input 
-                type="number" 
-                step="any" 
-                value={lng} 
-                onChange={(e) => setLng(e.target.value)} 
-                placeholder="e.g. -74.0060" 
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all font-data"
-              />
+              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
+                Longitude
+                <input 
+                  type="number" 
+                  step="any" 
+                  value={lng} 
+                  onChange={(e) => setLng(e.target.value)} 
+                  placeholder="e.g. -74.0060" 
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all font-data mt-2 font-normal normal-case"
+                />
+              </label>
             </div>
           </div>
 
@@ -265,10 +280,10 @@ export default function LogCatForm() {
                 defaultChecked 
                 className="mt-1 accent-[var(--life-teal)]" 
               />
-              <div className="font-body text-xs text-[var(--empire-cream)]/80 leading-relaxed">
+              <span className="font-body text-xs text-[var(--empire-cream)]/80 leading-relaxed">
                 <strong>Enable Location Fuzzing (Recommended)</strong>
-                <p className="text-[var(--empire-cream)]/50 mt-0.5">MeowNet snaps GPS points to a 500m grid (`ST_SnapToGrid`) to protect cats from malicious tracking. Uncheck to save precise coordinates for rescue operations.</p>
-              </div>
+                <span className="block text-[var(--empire-cream)]/50 mt-0.5">MeowNet snaps GPS points to a 500m grid (`ST_SnapToGrid`) to protect cats from malicious tracking. Uncheck to save precise coordinates for rescue operations.</span>
+              </span>
             </label>
           </div>
 
@@ -299,60 +314,68 @@ export default function LogCatForm() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Cat Name (Optional)</label>
-              <input 
-                type="text" 
-                name="name" 
-                maxLength={100} 
-                placeholder="e.g. Whiskers, Barnaby" 
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all"
-              />
+              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
+                Cat Name (Optional)
+                <input 
+                  type="text" 
+                  name="name" 
+                  maxLength={100} 
+                  placeholder="e.g. Whiskers, Barnaby" 
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
+                />
+              </label>
             </div>
             <div>
-              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Primary Color / Pattern</label>
-              <input 
-                type="text" 
-                name="color" 
-                maxLength={100} 
-                placeholder="e.g. Orange tabby, Tuxedo" 
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all"
-              />
+              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
+                Primary Color / Pattern
+                <input 
+                  type="text" 
+                  name="color" 
+                  maxLength={100} 
+                  placeholder="e.g. Orange tabby, Tuxedo" 
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
+                />
+              </label>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Status Classification</label>
-              <select 
-                name="status" 
-                required 
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all"
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
+                Status Classification
+                <select 
+                  name="status" 
+                  required 
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
+                >
+                  {STATUS_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
             <div>
-              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Age Estimate</label>
-              <select 
-                name="age_estimate" 
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all"
-              >
-                <option value="">Unknown</option>
-                {AGE_OPTIONS.map((a) => (
-                  <option key={a} value={a}>
-                    {a.charAt(0).toUpperCase() + a.slice(1)}
-                  </option>
-                ))}
-              </select>
+              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
+                Age Estimate
+                <select 
+                  name="age_estimate" 
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
+                >
+                  <option value="">Unknown</option>
+                  {AGE_OPTIONS.map((a) => (
+                    <option key={a} value={a}>
+                      {a.charAt(0).toUpperCase() + a.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           </div>
 
           <div className="mb-6">
-            <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-3">Community Care Indicators</label>
+            <span className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-3">Community Care Indicators</span>
             <div className="flex flex-wrap gap-4">
               {[
                 { name: 'sterilized',   icon: 'content_cut', label: 'Sterilized' },
@@ -373,7 +396,7 @@ export default function LogCatForm() {
           </div>
 
           <div className="mb-6">
-            <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-3">Triage & Health Indicators (Optional)</label>
+            <span className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-3">Triage & Health Indicators (Optional)</span>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
               {(Object.keys(HEALTH_FLAG_LABELS) as HealthFlag[]).map((flag) => (
                 <label 
@@ -397,35 +420,41 @@ export default function LogCatForm() {
           </div>
 
           <div className="mb-6">
-            <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Observer Notes</label>
-            <textarea 
-              name="health_notes" 
-              maxLength={2000} 
-              placeholder="e.g. Friendly, has a minor limp on front left paw..." 
-              rows={3}
-              className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all resize-none"
-            />
+            <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
+              Observer Notes
+              <textarea 
+                name="health_notes" 
+                maxLength={2000} 
+                placeholder="e.g. Friendly, has a minor limp on front left paw..." 
+                rows={3}
+                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all resize-y mt-2 font-normal normal-case"
+              />
+            </label>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 pt-4 border-t border-[var(--bg-border)]/40">
             <div>
-              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Contact Info (Optional)</label>
-              <input 
-                type="text" 
-                name="contact_info" 
-                maxLength={500} 
-                placeholder="Email or phone..." 
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all"
-              />
+              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
+                Contact Info (Optional)
+                <input 
+                  type="text" 
+                  name="contact_info" 
+                  maxLength={500} 
+                  placeholder="Email or phone..." 
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
+                />
+              </label>
             </div>
             <div>
-              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Rescue Shelter URL (Optional)</label>
-              <input 
-                type="url" 
-                name="shelter_url" 
-                placeholder="Rescue website..." 
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all"
-              />
+              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
+                Rescue Shelter URL (Optional)
+                <input 
+                  type="url" 
+                  name="shelter_url" 
+                  placeholder="Rescue website..." 
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
+                />
+              </label>
             </div>
           </div>
 

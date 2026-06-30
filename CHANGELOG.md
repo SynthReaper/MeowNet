@@ -20,10 +20,12 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 - **Leaflet Map Heatmap**: Added point marker vs. density heatmap layer toggles on Leaflet Mission Control Map page.
 
 ### Changed
+- **Documentation Overhaul**: Complete rewrite of `README.md` and `docs/HACKATHON.md` for professional judge-ready presentation. README now features an HTML banner, clean feature table (emojis removed from table rows), and a structured judge credentials callout. HACKATHON.md is a full rewrite with a 60-second overview, numbered section headers, judge checklist scoring table, and a detailed architecture walkthrough. `AGENTS.md` (root and `.agents/`) updated with emoji-in-code prohibition, `npm run type-check` gate enforcement, and `lib/welfare/welfare-score.ts` + `/api/tenor` route additions.
 - **Migration Consolidation**: Consolidated all 61 database migration files into `0001_extensions.sql` and `0002_production_schema.sql` for streamlined deployment, ensuring completely non-destructive migrations (`IF NOT EXISTS` syntax).
 - **Agent Instructions Version Bump**: Updated root `AGENTS.md` and workspace `.agents/AGENTS.md` to `v0.8.0`, defining absolute prohibitions for `correct.sql`, homepage styling, and database safety rules.
 
 ### Fixed
+- **Code Smells & Accessibility Compliance Audit**: Resolved 637 code smells, accessibility warnings, and strict typescript compilation errors across major components (`AdminDashboardClient.tsx`, `CommunityClient.tsx`, `EditCatForm/index.tsx`, `LogCatForm/index.tsx`, `StaffProfileView/index.tsx`, `Navbar/index.tsx`, `InteractiveCat.tsx`, etc.), improving code maintainability, markup semantics, and WAI-ARIA compliance.
 - **Hydration Mismatch Fix**: Resolved page-load hydration discrepancy on the Landing Page by moving the client-only `sessionStorage` intro-loader trigger into a client-side `useEffect` hook.
 - **Client Script Render Warning**: Prevented the "Encountered a script tag while rendering React component" React 19 console warning by converting the inline `beforeInteractive` theme script into a native `<script>` tag inside the `<head>` of the root layout.
 - **Historical Timeline Status Fix**: Configured the "First Sighting Logged" event description to calculate and display the cat's original registration status (e.g. `tnr_needed`) dynamically when it is sterilized and updated to adoptable, ensuring the timeline doesn't overwrite historical facts.

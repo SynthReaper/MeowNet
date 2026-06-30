@@ -37,7 +37,7 @@ const STATUS_OPTIONS = [
 
 const AGE_OPTIONS = ['kitten', 'juvenile', 'adult', 'senior'] as const;
 
-export default function EditCatForm({ cat }: EditCatFormProps) {
+export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null!);
   const [isPending, setIsPending] = useState(false);
@@ -181,28 +181,32 @@ export default function EditCatForm({ cat }: EditCatFormProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">Latitude</label>
-              <input 
-                type="number" 
-                step="any" 
-                value={lat} 
-                required
-                onChange={(e) => setLat(e.target.value)} 
-                placeholder="e.g. 40.7128" 
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all font-data text-xs"
-              />
+              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
+                Latitude
+                <input 
+                  type="number" 
+                  step="any" 
+                  value={lat} 
+                  required
+                  onChange={(e) => setLat(e.target.value)} 
+                  placeholder="e.g. 40.7128" 
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all font-data text-xs mt-1.5 font-normal normal-case"
+                />
+              </label>
             </div>
             <div>
-              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">Longitude</label>
-              <input 
-                type="number" 
-                step="any" 
-                value={lng} 
-                required
-                onChange={(e) => setLng(e.target.value)} 
-                placeholder="e.g. -74.0060" 
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all font-data text-xs"
-              />
+              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
+                Longitude
+                <input 
+                  type="number" 
+                  step="any" 
+                  value={lng} 
+                  required
+                  onChange={(e) => setLng(e.target.value)} 
+                  placeholder="e.g. -74.0060" 
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all font-data text-xs mt-1.5 font-normal normal-case"
+                />
+              </label>
             </div>
           </div>
 
@@ -215,10 +219,10 @@ export default function EditCatForm({ cat }: EditCatFormProps) {
                 defaultChecked={cat.location_privacy === 'area'} 
                 className="mt-1 combat-accent accent-[var(--life-teal)]" 
               />
-              <div className="font-body text-xs text-[var(--empire-cream)]/80 leading-relaxed">
+              <span className="font-body text-xs text-[var(--empire-cream)]/80 leading-relaxed">
                 <strong>Enable Location Fuzzing (Recommended)</strong>
-                <p className="text-[var(--empire-cream)]/50 mt-0.5">Snaps GPS points to a 500m grid (`ST_SnapToGrid`) to protect cats from malicious tracking. Uncheck to save precise coordinates for rescue operations.</p>
-              </div>
+                <span className="block text-[var(--empire-cream)]/50 mt-0.5">Snaps GPS points to a 500m grid (`ST_SnapToGrid`) to protect cats from malicious tracking. Uncheck to save precise coordinates for rescue operations.</span>
+              </span>
             </label>
           </div>
         </div>
@@ -232,100 +236,114 @@ export default function EditCatForm({ cat }: EditCatFormProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">Cat Name</label>
-              <input 
-                type="text" 
-                name="name" 
-                defaultValue={cat.name ?? ''}
-                maxLength={100} 
-                placeholder="e.g. Whiskers" 
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all"
-              />
+              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
+                Cat Name
+                <input 
+                  type="text" 
+                  name="name" 
+                  defaultValue={cat.name ?? ''}
+                  maxLength={100} 
+                  placeholder="e.g. Whiskers" 
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all mt-1.5 font-normal normal-case"
+                />
+              </label>
             </div>
             <div>
-              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">Breed Estimate</label>
-              <input 
-                type="text" 
-                name="breed_estimate" 
-                defaultValue={cat.breed_estimate ?? ''}
-                maxLength={100} 
-                placeholder="e.g. British Shorthair" 
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all"
-              />
+              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
+                Breed Estimate
+                <input 
+                  type="text" 
+                  name="breed_estimate" 
+                  defaultValue={cat.breed_estimate ?? ''}
+                  maxLength={100} 
+                  placeholder="e.g. British Shorthair" 
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all mt-1.5 font-normal normal-case"
+                />
+              </label>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">Status Classification</label>
-              <select 
-                name="status" 
-                required 
-                defaultValue={cat.status}
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all"
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
+                Status Classification
+                <select 
+                  name="status" 
+                  required 
+                  defaultValue={cat.status}
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all mt-1.5 font-normal normal-case"
+                >
+                  {STATUS_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
             <div>
-              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">Age Estimate</label>
-              <select 
-                name="age_estimate" 
-                defaultValue={cat.age_estimate ?? ''}
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all"
-              >
-                <option value="">Unknown</option>
-                {AGE_OPTIONS.map((a) => (
-                  <option key={a} value={a}>
-                    {a.charAt(0).toUpperCase() + a.slice(1)}
-                  </option>
-                ))}
-              </select>
+              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
+                Age Estimate
+                <select 
+                  name="age_estimate" 
+                  defaultValue={cat.age_estimate ?? ''}
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all mt-1.5 font-normal normal-case"
+                >
+                  <option value="">Unknown</option>
+                  {AGE_OPTIONS.map((a) => (
+                    <option key={a} value={a}>
+                      {a.charAt(0).toUpperCase() + a.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">Primary Color / Pattern</label>
-              <input 
-                type="text" 
-                name="color" 
-                defaultValue={cat.color ?? ''}
-                maxLength={100} 
-                placeholder="e.g. Orange tabby" 
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all"
-              />
+              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
+                Primary Color / Pattern
+                <input 
+                  type="text" 
+                  name="color" 
+                  defaultValue={cat.color ?? ''}
+                  maxLength={100} 
+                  placeholder="e.g. Orange tabby" 
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all mt-1.5 font-normal normal-case"
+                />
+              </label>
             </div>
             <div>
-              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">Rescue Contact Info</label>
-              <input 
-                type="text" 
-                name="contact_info" 
-                defaultValue={cat.contact_info ?? ''}
-                maxLength={500} 
-                placeholder="Email/phone..." 
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all"
-              />
+              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
+                Rescue Contact Info
+                <input 
+                  type="text" 
+                  name="contact_info" 
+                  defaultValue={cat.contact_info ?? ''}
+                  maxLength={500} 
+                  placeholder="Email/phone..." 
+                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all mt-1.5 font-normal normal-case"
+                />
+              </label>
             </div>
           </div>
 
           <div className="mb-4">
-            <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">Rescue Shelter URL</label>
-            <input 
-              type="url" 
-              name="shelter_url" 
-              defaultValue={cat.shelter_url ?? ''}
-              placeholder="Rescue website..." 
-              className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all"
-            />
+            <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
+              Rescue Shelter URL
+              <input 
+                type="url" 
+                name="shelter_url" 
+                defaultValue={cat.shelter_url ?? ''}
+                placeholder="Rescue website..." 
+                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all mt-1.5 font-normal normal-case"
+              />
+            </label>
           </div>
 
           <div className="mb-4">
-            <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Community Care Indicators</label>
+            <span className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Community Care Indicators</span>
             <div className="flex flex-wrap gap-4">
               {[
                 { name: 'sterilized',   icon: 'content_cut', label: 'Sterilized', defaultChecked: cat.sterilized },
@@ -347,7 +365,7 @@ export default function EditCatForm({ cat }: EditCatFormProps) {
           </div>
 
           <div className="mb-4">
-            <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Triage & Health Indicators</label>
+            <span className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Triage & Health Indicators</span>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {(Object.keys(HEALTH_FLAG_LABELS) as HealthFlag[]).map((flag) => (
                 <label 
@@ -371,15 +389,17 @@ export default function EditCatForm({ cat }: EditCatFormProps) {
           </div>
 
           <div className="mb-4">
-            <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Observer Notes</label>
-            <textarea 
-              name="health_notes" 
-              defaultValue={cat.health_notes ?? ''}
-              maxLength={2000} 
-              placeholder="Add observation details..." 
-              rows={3}
-              className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all resize-none"
-            />
+            <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
+              Observer Notes
+              <textarea 
+                name="health_notes" 
+                defaultValue={cat.health_notes ?? ''}
+                maxLength={2000} 
+                placeholder="Add observation details..." 
+                rows={3}
+                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all resize-y font-normal normal-case mt-2"
+              />
+            </label>
           </div>
         </div>
 

@@ -148,7 +148,7 @@ interface PollProps {
   messageText: string;
 }
 
-function PollCard({ messageId, messageText }: PollProps) {
+function PollCard({ messageId, messageText }: Readonly<PollProps>) {
   const match = messageText.match(/\[📊 Poll\]\s*([^|]+)\s*\|\s*(.*)/);
   const question = match ? match[1].trim() : '';
   const options = match ? match[2].split('|').map(o => o.trim()).filter(Boolean) : [];
@@ -206,7 +206,7 @@ function PollCard({ messageId, messageText }: PollProps) {
 
           return (
             <button
-              key={idx}
+              key={opt + '-' + idx}
               disabled={isAnyVoted}
               onClick={() => handleVote(idx)}
               className={`w-full relative overflow-hidden p-2 rounded-xl border text-left text-[11px] font-semibold font-body transition-all flex items-center justify-between min-h-[36px] bg-white border-[#dbc2b2]/30 ${
@@ -346,7 +346,7 @@ const renderMessageContent = (messageText: string, messageId?: string) => {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function CommunityClient({ initialMessages, initialChannels, isSignedIn: propIsSignedIn, currentUser: propCurrentUser }: Props) {
+export default function CommunityClient({ initialMessages, initialChannels, isSignedIn: propIsSignedIn, currentUser: propCurrentUser }: Readonly<Props>) {
   const { user: clerkUser, isSignedIn: isClerkSignedIn } = useUser();
   const [supabaseUser, setSupabaseUser] = useState<any>(null);
   const [isSupabaseLoaded, setIsSupabaseLoaded] = useState(false);
@@ -550,7 +550,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
   const [isPending, setIsPending] = useState(false);
 
   // Custom messaging states (Location, Polls, Alerts)
-  const [isSharingLocation, setIsSharingLocation] = useState(false);
+  const [, setIsSharingLocation] = useState(false);
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
@@ -1823,7 +1823,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
                 <div className="flex -space-x-2.5 overflow-hidden">
                   {MOCK_AVATARS.map((url, i) => (
                     <img
-                      key={i}
+                      key={url + '-' + i}
                       src={url}
                       alt=""
                       className="inline-block h-7 w-7 rounded-full ring-2 ring-white dark:ring-[var(--bg-surface)] object-cover"
@@ -2982,7 +2982,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
               
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                 {pollOptions.map((opt, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
+                  <div key={'poll-option-' + idx} className="flex items-center gap-2">
                     <input
                       type="text"
                       value={opt}

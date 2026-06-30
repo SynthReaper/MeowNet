@@ -80,7 +80,7 @@ export default function Navbar() {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
 
   const [supabaseUser, setSupabaseUser] = useState<any>(null);
-  const [isSupabaseLoaded, setIsSupabaseLoaded] = useState(false);
+  const [, setIsSupabaseLoaded] = useState(false);
   const [userDisplayName, setUserDisplayName] = useState<string>('Volunteer');
 
   const isUserLoggedIn = isSignedIn || !!supabaseUser;
@@ -292,9 +292,23 @@ export default function Navbar() {
   const showMod = mounted && userRole === 'moderator';
   const showStaff = showAdmin || showMod;
 
-  const logoText = !mounted ? 'MeowNet' : (userRole === 'admin' ? 'MeowNet Admin' : userRole === 'moderator' ? 'MeowNet Staff' : 'MeowNet');
-  const logoIcon = !mounted ? 'pets' : (userRole === 'admin' ? 'crown' : userRole === 'moderator' ? 'shield' : 'pets');
-  const staffBadge = !mounted ? null : (userRole === 'admin' ? 'Admin' : userRole === 'moderator' ? 'Mod' : null);
+  let logoText = 'MeowNet';
+  if (mounted) {
+    if (userRole === 'admin') {
+      logoText = 'MeowNet Admin';
+    } else if (userRole === 'moderator') {
+      logoText = 'MeowNet Staff';
+    }
+  }
+
+  let staffBadge = null;
+  if (mounted) {
+    if (userRole === 'admin') {
+      staffBadge = 'Admin';
+    } else if (userRole === 'moderator') {
+      staffBadge = 'Mod';
+    }
+  }
 
   const avatarSrc = dbAvatarUrl || user?.imageUrl;
 
@@ -474,13 +488,22 @@ export default function Navbar() {
                   className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-extrabold no-underline transition-all hover:scale-105 active:scale-95 text-white shadow-md"
                   style={{background:'linear-gradient(135deg,var(--empire-gold),#f97316)',boxShadow:'0 4px 14px rgba(217,119,6,0.35)'}}
                 >
-                  <span className="material-symbols-outlined text-sm" style={{fontVariationSettings:"'FILL' 1"}}>add_location_alt</span>
-                  Log Sighting
+                  <span className="material-symbols-outlined text-sm" style={{fontVariationSettings:"'FILL' 1"}}>add_location_alt</span>{" "}Log Sighting
                 </Link>
               )}
 
               {/* Notification Bell */}
-              <div className="relative" onClick={(e) => e.stopPropagation()}>
+              <div 
+                className="relative" 
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                  }
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <button
                   onClick={() => setIsNotifOpen(!isNotifOpen)}
                   type="button"
@@ -534,6 +557,13 @@ export default function Navbar() {
                         notifications.map((n) => (
                           <div
                             key={n.id}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                handleNotifClick(n);
+                              }
+                            }}
                             onClick={() => handleNotifClick(n)}
                             className="p-3 text-left cursor-pointer flex gap-3 items-start transition-all"
                             style={!n.is_read ? {background:'rgba(217,119,6,0.04)'} : {}}
@@ -643,6 +673,14 @@ export default function Navbar() {
         <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            role="button"
+            aria-label="Close menu"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                setIsMobileMenuOpen(false);
+              }
+            }}
             onClick={() => setIsMobileMenuOpen(false)}
           />
           <div

@@ -15,7 +15,7 @@ interface InteractiveCatProps {
   temperature?: number | null;
 }
 
-export default function InteractiveCat({ temperature = null }: InteractiveCatProps) {
+export default function InteractiveCat({ temperature = null }: Readonly<InteractiveCatProps>) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pupilOffset, setPupilOffset] = useState({ x: 0, y: 0 });
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
@@ -199,9 +199,162 @@ export default function InteractiveCat({ temperature = null }: InteractiveCatPro
   // Determine active accessory based on weather temperature
   const isCold = temperature !== null && temperature < 45;
 
+  let pingColorClass = 'bg-emerald-400';
+  if (isSleeping) pingColorClass = 'bg-indigo-400';
+  else if (isPetting) pingColorClass = 'bg-red-400';
+  else if (isLaserMode) pingColorClass = 'bg-red-500';
+
+  let dotColorClass = 'bg-emerald-500';
+  if (isSleeping) dotColorClass = 'bg-indigo-500';
+  else if (isPetting) dotColorClass = 'bg-red-500';
+  else if (isLaserMode) dotColorClass = 'bg-red-600';
+
+  let statusText = 'Content — Hover or Pet';
+  if (isSleeping) statusText = 'Sleeping — Click head to wake up';
+  else if (isPetting) statusText = 'Purring! (Keep petting)';
+  else if (isLaserMode) statusText = 'Laser Toy Active: Click to bat!';
+  else if (isYawning) statusText = 'Stretching & Yawning...';
+
+  let tailRotateClass = 'rotate-0';
+  if (isSleeping) {
+    tailRotateClass = 'rotate-2';
+  } else if (isHovered) {
+    tailRotateClass = 'animate-pulse';
+  }
+
+  let leftEarRotate = 'hover:rotate-[-10deg]';
+  if (isSleeping) {
+    leftEarRotate = 'rotate-[-6deg]';
+  } else if (isYawning) {
+    leftEarRotate = 'rotate-[4deg]';
+  } else if (isPetting) {
+    leftEarRotate = 'rotate-[-3deg]';
+  }
+
+  let rightEarRotate = 'hover:rotate-[10deg]';
+  if (isSleeping) {
+    rightEarRotate = 'rotate-[6deg]';
+  } else if (isYawning) {
+    rightEarRotate = 'rotate-[-4deg]';
+  } else if (isPetting) {
+    rightEarRotate = 'rotate-[3deg]';
+  }
+
+  const renderEyes = () => {
+    if (isSleeping) {
+      return (
+        <>
+          {/* Sleeping Closed Arcs */}
+          <path d="M 98,175 Q 112,185 126,175" fill="none" stroke="var(--empire-gold)" strokeWidth="3" strokeLinecap="round" />
+          <path d="M 174,175 Q 188,185 202,175" fill="none" stroke="var(--empire-gold)" strokeWidth="3" strokeLinecap="round" />
+        </>
+      );
+    }
+    if ((isHovered && !isLaserMode) || isPetting) {
+      return (
+        <>
+          {/* Happy Curved Closed Eyes ^ ^ (Triggered on hover or petting) */}
+          <path d="M 98,180 Q 112,165 126,180" fill="none" stroke="var(--empire-gold)" strokeWidth="3.5" strokeLinecap="round" />
+          <path d="M 174,180 Q 188,165 202,180" fill="none" stroke="var(--empire-gold)" strokeWidth="3.5" strokeLinecap="round" />
+        </>
+      );
+    }
+    if (isYawning) {
+      return (
+        <>
+          {/* Squinting Eyes > < */}
+          <path d="M 100,172 L 114,179 L 100,186" fill="none" stroke="var(--empire-gold)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M 200,172 L 186,179 L 200,186" fill="none" stroke="var(--empire-gold)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        </>
+      );
+    }
+    if (isBlinking) {
+      return (
+        <>
+          {/* Flat Blinking lines */}
+          <line x1="98" y1="178" x2="126" y2="178" stroke="var(--empire-gold)" strokeWidth="3" strokeLinecap="round" />
+          <line x1="174" y1="178" x2="202" y2="178" stroke="var(--empire-gold)" strokeWidth="3" strokeLinecap="round" />
+        </>
+      );
+    }
+    return (
+      <>
+        {/* Left Eye */}
+        <ellipse cx="112" cy="178" rx="15" ry="15" className="fill-[var(--bg-elevated)] stroke-[var(--bg-border)]" strokeWidth="2" />
+        {/* Pupil (Dilated in Laser Mode) */}
+        <ellipse
+          cx={112 + pupilOffset.x}
+          cy={178 + pupilOffset.y}
+          rx={isLaserMode ? 8.5 : 6.5}
+          ry={isLaserMode ? 12 : 10}
+          fill="var(--empire-cream)"
+        />
+        {/* Highlight */}
+        <circle cx={110 + pupilOffset.x - (isLaserMode ? 3 : 2)} cy={178 + pupilOffset.y - (isLaserMode ? 4 : 3)} r={isLaserMode ? 3 : 2} fill="white" />
+        
+        {/* Right Eye */}
+        <ellipse cx="188" cy="178" rx="15" ry="15" className="fill-[var(--bg-elevated)] stroke-[var(--bg-border)]" strokeWidth="2" />
+        {/* Pupil (Dilated in Laser Mode) */}
+        <ellipse
+          cx={188 + pupilOffset.x}
+          cy={178 + pupilOffset.y}
+          rx={isLaserMode ? 8.5 : 6.5}
+          ry={isLaserMode ? 12 : 10}
+          fill="var(--empire-cream)"
+        />
+        {/* Highlight */}
+        <circle cx={186 + pupilOffset.x - (isLaserMode ? 3 : 2)} cy={178 + pupilOffset.y - (isLaserMode ? 4 : 3)} r={isLaserMode ? 3 : 2} fill="white" />
+      </>
+    );
+  };
+
+  const renderMouth = () => {
+    if (isYawning) {
+      return (
+        <>
+          <ellipse cx="150" cy="214" rx="10" ry="16" fill="#ba1a1a" stroke="var(--bg-border)" strokeWidth="1.5" />
+          {/* Cute pink tongue */}
+          <path d="M 144,220 Q 150,212 156,220 Q 150,229 144,220 Z" fill="pink" />
+        </>
+      );
+    }
+    if (isSleeping) {
+      return (
+        <path d="M 147,202 Q 150,205 153,202" fill="none" stroke="var(--empire-gold)" strokeWidth="2" strokeLinecap="round" />
+      );
+    }
+    if (isPetting) {
+      return (
+        <path
+          d="M 140,200 Q 145,206 150,200 Q 155,206 160,200"
+          fill="none"
+          stroke="var(--empire-gold)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+      );
+    }
+    return (
+      <path
+        d="M 142,201 Q 146,205 150,201 Q 154,205 158,201"
+        fill="none"
+        stroke="var(--empire-gold)"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    );
+  };
+
   return (
     <div 
       ref={containerRef}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleContainerClick();
+        }
+      }}
       onMouseEnter={() => {
         setIsHovered(true);
         lastMoveRef.current = Date.now();
@@ -219,25 +372,10 @@ export default function InteractiveCat({ temperature = null }: InteractiveCatPro
       {/* 1. Status Mood Pill Badge */}
       <div className="absolute top-4 left-4 bg-white/80 dark:bg-[#1c1a17]/80 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-semibold text-[var(--text-secondary)] border border-[var(--bg-border)]/30 flex items-center gap-1.5 pointer-events-none select-none z-30 shadow-sm transition-all duration-300">
         <span className="relative flex h-1.5 w-1.5">
-          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-            isSleeping ? 'bg-indigo-400' : isPetting ? 'bg-red-400' : isLaserMode ? 'bg-red-500' : 'bg-emerald-400'
-          }`}></span>
-          <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${
-            isSleeping ? 'bg-indigo-500' : isPetting ? 'bg-red-500' : isLaserMode ? 'bg-red-600' : 'bg-emerald-500'
-          }`}></span>
+          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${pingColorClass}`}></span>
+          <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${dotColorClass}`}></span>
         </span>
-        <span>
-          {isSleeping 
-            ? "Sleeping — Click head to wake up" 
-            : isPetting 
-              ? "Purring! (Keep petting)" 
-              : isLaserMode 
-                ? "Laser Toy Active: Click to bat!" 
-                : isYawning 
-                  ? "Stretching & Yawning..." 
-                  : "Content — Hover or Pet"
-          }
-        </span>
+        <span>{statusText}</span>
       </div>
 
       {/* 2. Interactive Laser Mode Toggle Button */}
@@ -326,9 +464,7 @@ export default function InteractiveCat({ temperature = null }: InteractiveCatPro
         <path
           d="M 215,235 C 235,235 250,200 245,185 C 240,175 230,185 235,195 C 240,205 225,225 215,225 Z"
           fill="var(--bg-border)"
-          className={`origin-[215px_225px] transition-transform duration-500 ${
-            isSleeping ? 'rotate-2' : isHovered ? 'animate-pulse' : 'rotate-0'
-          }`}
+          className={`origin-[215px_225px] transition-transform duration-500 ${tailRotateClass}`}
         />
 
         {/* Head Base (Listens to clicking/petting) */}
@@ -342,9 +478,7 @@ export default function InteractiveCat({ temperature = null }: InteractiveCatPro
         {/* Left Ear */}
         <path
           d="M 75,145 L 45,75 Q 90,100 100,138 Z"
-          className={`fill-[var(--bg-surface)] stroke-[var(--bg-border)] transition-transform duration-300 origin-[75px_145px] ${
-            isSleeping ? 'rotate-[-6deg]' : isYawning ? 'rotate-[4deg]' : isPetting ? 'rotate-[-3deg]' : 'hover:rotate-[-10deg]'
-          }`}
+          className={`fill-[var(--bg-surface)] stroke-[var(--bg-border)] transition-transform duration-300 origin-[75px_145px] ${leftEarRotate}`}
           strokeWidth="4"
           strokeLinejoin="round"
         />
@@ -357,9 +491,7 @@ export default function InteractiveCat({ temperature = null }: InteractiveCatPro
         {/* Right Ear */}
         <path
           d="M 225,145 L 255,75 Q 210,100 200,138 Z"
-          className={`fill-[var(--bg-surface)] stroke-[var(--bg-border)] transition-transform duration-300 origin-[225px_145px] ${
-            isSleeping ? 'rotate-[6deg]' : isYawning ? 'rotate-[-4deg]' : isPetting ? 'rotate-[3deg]' : 'hover:rotate-[10deg]'
-          }`}
+          className={`fill-[var(--bg-surface)] stroke-[var(--bg-border)] transition-transform duration-300 origin-[225px_145px] ${rightEarRotate}`}
           strokeWidth="4"
           strokeLinejoin="round"
         />
@@ -370,59 +502,7 @@ export default function InteractiveCat({ temperature = null }: InteractiveCatPro
         />
 
         {/* Eyes (Tracking / Blinking / Squinting / Sleeping / Petting / Laser Dilation) */}
-        {isSleeping ? (
-          <>
-            {/* Sleeping Closed Arcs */}
-            <path d="M 98,175 Q 112,185 126,175" fill="none" stroke="var(--empire-gold)" strokeWidth="3" strokeLinecap="round" />
-            <path d="M 174,175 Q 188,185 202,175" fill="none" stroke="var(--empire-gold)" strokeWidth="3" strokeLinecap="round" />
-          </>
-        ) : (isHovered && !isLaserMode) || isPetting ? (
-          <>
-            {/* Happy Curved Closed Eyes ^ ^ (Triggered on hover or petting) */}
-            <path d="M 98,180 Q 112,165 126,180" fill="none" stroke="var(--empire-gold)" strokeWidth="3.5" strokeLinecap="round" />
-            <path d="M 174,180 Q 188,165 202,180" fill="none" stroke="var(--empire-gold)" strokeWidth="3.5" strokeLinecap="round" />
-          </>
-        ) : isYawning ? (
-          <>
-            {/* Squinting Eyes > < */}
-            <path d="M 100,172 L 114,179 L 100,186" fill="none" stroke="var(--empire-gold)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M 200,172 L 186,179 L 200,186" fill="none" stroke="var(--empire-gold)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-          </>
-        ) : isBlinking ? (
-          <>
-            {/* Flat Blinking lines */}
-            <line x1="98" y1="178" x2="126" y2="178" stroke="var(--empire-gold)" strokeWidth="3" strokeLinecap="round" />
-            <line x1="174" y1="178" x2="202" y2="178" stroke="var(--empire-gold)" strokeWidth="3" strokeLinecap="round" />
-          </>
-        ) : (
-          <>
-            {/* Left Eye */}
-            <ellipse cx="112" cy="178" rx="15" ry="15" className="fill-[var(--bg-elevated)] stroke-[var(--bg-border)]" strokeWidth="2" />
-            {/* Pupil (Dilated in Laser Mode) */}
-            <ellipse
-              cx={112 + pupilOffset.x}
-              cy={178 + pupilOffset.y}
-              rx={isLaserMode ? 8.5 : 6.5}
-              ry={isLaserMode ? 12 : 10}
-              fill="var(--empire-cream)"
-            />
-            {/* Highlight */}
-            <circle cx={110 + pupilOffset.x - (isLaserMode ? 3 : 2)} cy={178 + pupilOffset.y - (isLaserMode ? 4 : 3)} r={isLaserMode ? 3 : 2} fill="white" />
-            
-            {/* Right Eye */}
-            <ellipse cx="188" cy="178" rx="15" ry="15" className="fill-[var(--bg-elevated)] stroke-[var(--bg-border)]" strokeWidth="2" />
-            {/* Pupil (Dilated in Laser Mode) */}
-            <ellipse
-              cx={188 + pupilOffset.x}
-              cy={178 + pupilOffset.y}
-              rx={isLaserMode ? 8.5 : 6.5}
-              ry={isLaserMode ? 12 : 10}
-              fill="var(--empire-cream)"
-            />
-            {/* Highlight */}
-            <circle cx={186 + pupilOffset.x - (isLaserMode ? 3 : 2)} cy={178 + pupilOffset.y - (isLaserMode ? 4 : 3)} r={isLaserMode ? 3 : 2} fill="white" />
-          </>
-        )}
+        {renderEyes()}
 
         {/* Nose (small pink triangle) */}
         <polygon
@@ -433,35 +513,7 @@ export default function InteractiveCat({ temperature = null }: InteractiveCatPro
         />
 
         {/* Mouth (Adapts to Yawn / Normal / Sleep / Petting) */}
-        {isYawning ? (
-          /* Big yawning oval */
-          <>
-            <ellipse cx="150" cy="214" rx="10" ry="16" fill="#ba1a1a" stroke="var(--bg-border)" strokeWidth="1.5" />
-            {/* Cute pink tongue */}
-            <path d="M 144,220 Q 150,212 156,220 Q 150,229 144,220 Z" fill="pink" />
-          </>
-        ) : isSleeping ? (
-          /* Small sleepy mouth */
-          <path d="M 147,202 Q 150,205 153,202" fill="none" stroke="var(--empire-gold)" strokeWidth="2" strokeLinecap="round" />
-        ) : isPetting ? (
-          /* Wide content smile during petting */
-          <path
-            d="M 140,200 Q 145,206 150,200 Q 155,206 160,200"
-            fill="none"
-            stroke="var(--empire-gold)"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-        ) : (
-          /* Normal content smile split */
-          <path
-            d="M 142,201 Q 146,205 150,201 Q 154,205 158,201"
-            fill="none"
-            stroke="var(--empire-gold)"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-        )}
+        {renderMouth()}
 
         {/* Whiskers */}
         {/* Left Whiskers */}

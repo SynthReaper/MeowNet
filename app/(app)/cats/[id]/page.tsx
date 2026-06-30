@@ -29,11 +29,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!cat) return { title: 'Cat Not Found' };
   return {
     title: cat.name ? `${cat.name} the Cat` : 'Cat Profile',
-    description: `${cat.status} cat${cat.breed_estimate ? ` — likely ${cat.breed_estimate}` : ''} on MeowNet.`,
+    description: `${cat.status} cat${cat.breed_estimate ? ' — likely ' + cat.breed_estimate : ''} on MeowNet.`,
   };
 }
 
-export default async function CatProfilePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CatProfilePage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -252,7 +252,7 @@ export default async function CatProfilePage({ params }: { params: Promise<{ id:
           
           <div className="relative border-l-2 border-[var(--bg-border)] ml-4 md:ml-6 space-y-8">
             {timelineEvents.map((event, idx) => (
-              <div key={idx} className="relative pl-8 md:pl-10">
+              <div key={event.title + '-' + idx} className="relative pl-8 md:pl-10">
                 <div className={`absolute -left-[17px] top-0 w-8 h-8 bg-white border-4 rounded-full flex items-center justify-center ${event.color}`}>
                   <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                     {event.icon}
@@ -300,7 +300,7 @@ export default async function CatProfilePage({ params }: { params: Promise<{ id:
                     vet: '🩺 Pledged Vet Care Sponsor',
                   };
                   return (
-                    <div key={idx} className="bg-[var(--bg-elevated)] p-3 rounded-xl border border-[var(--bg-border)]/20 flex items-start gap-2.5">
+                    <div key={cg.pledge + '-' + idx} className="bg-[var(--bg-elevated)] p-3 rounded-xl border border-[var(--bg-border)]/20 flex items-start gap-2.5">
                       <div className="w-7 h-7 rounded-full bg-[var(--bg-border)]/20 overflow-hidden flex items-center justify-center shrink-0 border border-[var(--bg-border)]/35">
                         {!cg.is_anonymous && cg.profiles?.avatar_url ? (
                           <img src={cg.profiles.avatar_url} alt="" className="w-full h-full object-cover" />

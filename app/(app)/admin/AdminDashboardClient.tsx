@@ -3,7 +3,7 @@
 // app/(app)/admin/AdminDashboardClient.tsx — Interactive Admin Dashboard
 
 import { useState, useEffect, useMemo, useTransition } from 'react';
-import Link from 'next/link';
+// Removed unused import: Link
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -41,7 +41,7 @@ import {
   moderateEvent,
   raiseModeratorQuery,
   resolveModeratorQuery,
-  shiftQueryToAdmin,
+  
   updateEventByStaff,
   type SystemSetting,
 } from '@/lib/actions/admin';
@@ -192,7 +192,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
       <div className="bg-[var(--bg-surface)] border border-[var(--bg-border)] p-3 rounded-xl shadow-ambient text-xs font-body text-[var(--empire-cream)]">
         <p className="font-bold mb-1">{label}</p>
         {payload.map((pld, index) => (
-          <p key={index} style={{ color: pld.color || pld.fill }}>
+          <p key={pld.name + '-' + index} style={{ color: pld.color || pld.fill }}>
             <span className="font-semibold">{pld.name}:</span> {pld.value.toLocaleString()}
           </p>
         ))}
@@ -201,6 +201,14 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   }
   return null;
 };
+
+const renderLegendText = (value: string) => (
+  <span className="text-xs font-body font-semibold text-[var(--empire-cream)]/75">{value}</span>
+);
+
+const renderLegendTextSmall = (value: string) => (
+  <span className="text-[10px] font-body font-semibold text-[var(--empire-cream)]/75">{value}</span>
+);
 
 export default function AdminDashboardClient({
   initialStats,
@@ -216,8 +224,8 @@ export default function AdminDashboardClient({
   initialBingo,
   initialGuilds,
   currentUser,
-}: Props) {
-  const router = useRouter();
+}: Readonly<Props>) {
+  useRouter();
   const [stats, setStats] = useState<Stats>(initialStats);
   const [profiles, setProfiles] = useState<Profile[]>(initialProfiles);
   const [audits] = useState<AuditLog[]>(initialAudits);
@@ -227,9 +235,9 @@ export default function AdminDashboardClient({
   const [cats, setCats] = useState<any[]>(initialCats || []);
   const [events, setEvents] = useState<any[]>(initialEvents || []);
   const [queries, setQueries] = useState<any[]>(initialQueries || []);
-  const [trivia, setTrivia] = useState<any[]>(initialTrivia || []);
-  const [bingo, setBingo] = useState<any[]>(initialBingo || []);
-  const [guilds, setGuilds] = useState<any[]>(initialGuilds || []);
+  const [trivia] = useState<any[]>(initialTrivia || []);
+  const [bingo] = useState<any[]>(initialBingo || []);
+  const [guilds] = useState<any[]>(initialGuilds || []);
 
   const [systemSettings, setSystemSettings] = useState<SystemSetting[]>(initialSystemSettings || []);
   const [updatingSetting, setUpdatingSetting] = useState<string | null>(null);
@@ -276,8 +284,8 @@ export default function AdminDashboardClient({
 
   const [resolvingQueryId, setResolvingQueryId] = useState<string | null>(null);
   const [queryResolutionText, setQueryResolutionText] = useState('');
-  const [shiftingQueryId, setShiftingQueryId] = useState<string | null>(null);
-  const [shiftReasonText, setShiftReasonText] = useState('');
+  const [shiftingQueryId] = useState<string | null>(null);
+  const [shiftReasonText] = useState('');
 
   const [isPending, startTransition] = useTransition();
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -296,9 +304,9 @@ export default function AdminDashboardClient({
 
 
   // Audit Logs Filter States
-  const [auditActionFilter, setAuditActionFilter] = useState('');
-  const [auditStaffFilter, setAuditStaffFilter] = useState('');
-  const [auditDateFilter, setAuditDateFilter] = useState('');
+  const [auditActionFilter] = useState('');
+  const [auditStaffFilter] = useState('');
+  const [auditDateFilter] = useState('');
 
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => {
@@ -1672,11 +1680,11 @@ export default function AdminDashboardClient({
                                 paddingAngle={5}
                                 dataKey="value"
                               >
-                                {roleDistributionData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                {roleDistributionData.map((entry) => (
+                                  <Cell key={`cell-${entry.name}`} fill={entry.color} />
                                 ))}
                               </Pie>
-                              <Legend verticalAlign="bottom" height={36} formatter={(value) => <span className="text-xs font-body font-semibold text-[var(--empire-cream)]/75">{value}</span>} />
+                              <Legend verticalAlign="bottom" height={36} formatter={renderLegendText} />
                             </RechartsPieChart>
                           </ResponsiveContainer>
                         </div>
@@ -2170,11 +2178,11 @@ export default function AdminDashboardClient({
                             paddingAngle={3}
                             dataKey="value"
                           >
-                            {verificationRatioData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            {verificationRatioData.map((entry) => (
+                              <Cell key={`cell-${entry.name}`} fill={entry.color} />
                             ))}
                           </Pie>
-                          <Legend verticalAlign="bottom" height={24} formatter={(value) => <span className="text-[10px] font-body font-semibold text-[var(--empire-cream)]/75">{value}</span>} />
+                          <Legend verticalAlign="bottom" height={24} formatter={renderLegendTextSmall} />
                         </RechartsPieChart>
                       </ResponsiveContainer>
                     </div>
@@ -2726,8 +2734,8 @@ export default function AdminDashboardClient({
                           <YAxis dataKey="name" type="category" stroke="var(--text-muted)" fontSize={10} fontFamily="var(--font-body)" width={120} />
                           <Tooltip content={<CustomTooltip />} />
                           <Bar dataKey="rows" name="Row Count" radius={[0, 4, 4, 0]}>
-                            {databaseSizeData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            {databaseSizeData.map((entry) => (
+                              <Cell key={`cell-${entry.name}`} fill={entry.color} />
                             ))}
                           </Bar>
                         </RechartsBarChart>
@@ -3179,24 +3187,28 @@ export default function AdminDashboardClient({
             <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Display Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)]/30 rounded-xl p-2.5 font-body text-xs outline-none focus:border-[var(--empire-gold)] mt-1 text-[var(--empire-cream)]"
-                  />
+                  <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">
+                    Display Name
+                    <input
+                      type="text"
+                      required
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)]/30 rounded-xl p-2.5 font-body text-xs outline-none focus:border-[var(--empire-gold)] mt-1 text-[var(--empire-cream)] font-normal normal-case"
+                    />
+                  </label>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Preferred Role Focus</label>
-                  <input
-                    type="text"
-                    value={editRoleFocus}
-                    onChange={(e) => setEditRoleFocus(e.target.value)}
-                    placeholder="e.g. Trapper, Feeder"
-                    className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)]/30 rounded-xl p-2.5 font-body text-xs outline-none focus:border-[var(--empire-gold)] mt-1 text-[var(--empire-cream)]"
-                  />
+                  <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">
+                    Preferred Role Focus
+                    <input
+                      type="text"
+                      value={editRoleFocus}
+                      onChange={(e) => setEditRoleFocus(e.target.value)}
+                      placeholder="e.g. Trapper, Feeder"
+                      className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)]/30 rounded-xl p-2.5 font-body text-xs outline-none focus:border-[var(--empire-gold)] mt-1 text-[var(--empire-cream)] font-normal normal-case"
+                    />
+                  </label>
                 </div>
               </div>
 
