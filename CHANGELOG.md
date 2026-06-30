@@ -31,6 +31,10 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 - **Historical Timeline Status Fix**: Configured the "First Sighting Logged" event description to calculate and display the cat's original registration status (e.g. `tnr_needed`) dynamically when it is sterilized and updated to adoptable, ensuring the timeline doesn't overwrite historical facts.
 - **Timeline Height Stretching Fix**: Applied `h-fit` class to the timeline container section, ensuring the element wrapper only spans its active items height and does not stretch down with empty white space.
 
+### Security
+- **Dependabot Upgrades**: Upgraded `python-multipart` to `0.0.32` and `starlette` to `1.3.1` in the python-ml FastAPI service, addressing 11 vulnerable dependency alerts.
+- **CodeQL Remediation**: Resolved 18 CodeQL findings including Insecure Randomness (replaced `Math.random` with cryptographically secure alternates in admin and community invite actions), DOM Text reinterpreted as HTML XSS vectors (added strict URL validation checks for avatars, cat photo previews, meow translator playback, and chat attachments), calendar line injection vulnerability, support query bracket sanitization, and GitHub Actions job runner permissions constraints (`permissions: contents: read`).
+
 ---
 
 ## [0.7.0] — 2026-06-30 · Documentation Accuracy Pass, UI/UX Polish & Security Header Hardening

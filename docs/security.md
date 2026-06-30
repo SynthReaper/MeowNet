@@ -294,6 +294,14 @@ An internal security audit was performed on 2026-06-28 (v0.6.0) covering XSS, SQ
 
 A documentation accuracy pass was performed on 2026-06-30 (v0.7.0). All security header values were verified against `next.config.ts` and corrected (notably `X-Frame-Options: SAMEORIGIN`, not `DENY` as previously documented). Missing headers were added to the reference table.
 
+An internal CodeQL & Dependabot vulnerability audit was performed on 2026-06-30 (v0.8.0). 29 findings were remediated:
+- **Dependency Upgrades**: Upgraded `python-multipart` to `0.0.32` and `starlette` to `1.3.1` in the python-ml FastAPI service, resolving all 11 Dependabot high/medium vulnerabilities.
+- **Insecure Randomness Mitigations**: Replaced insecure `Math.random()` usage with Node's cryptographically secure `crypto.getRandomValues()` and `crypto.randomUUID()` for security-sensitive areas (password fallback generation, username slugs, invitation codes, and fallbacks in weather endpoints).
+- **URL Protocol Sanitization**: Implemented a global client/server-safe URL sanitizer `getSafeImageSrc` in `lib/security/url.ts` to mitigate XSS (DOM text reinterpreted as HTML) warnings on profile avatars, cat previews, translation audio playback, and chat attachment downloading.
+- **ICS Line Injection Safeguards**: Added newline/CRLF stripping to events ICS invite generator, preventing potential calendar invite injection.
+- **Support Query Parsing**: Replaced `.replace(']', '')` with a global regex replace `.replace(/]/g, '')` in moderator/admin dashboards to guarantee full sanitization of bracketed metadata.
+- **CI Workflow Security**: Hardened GitHub Actions runners (`ci.yml`, `health.yml`) by declaring strict read-only execution permissions (`permissions: contents: read`) across all jobs.
+
 ---
 
 ## Vulnerability Disclosure

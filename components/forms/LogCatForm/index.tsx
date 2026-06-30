@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { logCat } from '@/lib/actions/cats';
 import { HEALTH_FLAG_LABELS, type HealthFlag } from '@/lib/veterinary/triageRules';
 import ConsentGate from '@/components/forms/ConsentGate';
+import { getSafeImageSrc } from '@/lib/security/url';
 
 const STATUS_OPTIONS = [
   { value: 'stray',      label: 'Stray',        desc: 'Unowned cat on the street' },
@@ -201,7 +202,7 @@ export default function LogCatForm() {
 
           {previewUrl && (
             <div className="mb-6 rounded-xl overflow-hidden border border-[var(--bg-border)] max-h-[300px]">
-              <img src={previewUrl} alt="Cat preview" className="w-full h-full object-cover" />
+              <img src={getSafeImageSrc(previewUrl)} alt="Cat preview" className="w-full h-full object-cover" />
             </div>
           )}
 

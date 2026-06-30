@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { createClient } from '@/lib/supabase/client';
+import { getSafeImageSrc } from '@/lib/security/url';
 
 interface NavLink {
   href: string;
@@ -611,8 +612,8 @@ export default function Navbar() {
                 className="relative w-8 h-8 rounded-full overflow-hidden flex items-center justify-center transition-all hover:scale-110"
                 style={{boxShadow:'0 0 0 2px rgba(217,119,6,0.3), 0 0 0 4px rgba(217,119,6,0.08)'}}
               >
-                {avatarSrc ? (
-                  <img src={avatarSrc} alt="Profile" className="w-full h-full object-cover" />
+                {getSafeImageSrc(avatarSrc) ? (
+                  <img src={getSafeImageSrc(avatarSrc)} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center font-extrabold text-xs text-white" style={{background:'linear-gradient(135deg,var(--empire-gold),#f97316)'}}>
                     {userDisplayName[0]?.toUpperCase() || 'U'}
@@ -778,8 +779,8 @@ export default function Navbar() {
                 {/* User identity card */}
                 <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-2xl no-underline transition-all" style={{background:'linear-gradient(135deg,rgba(217,119,6,0.06),rgba(249,115,22,0.03))',border:'1px solid rgba(217,119,6,0.1)'}}>
                   <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center" style={{boxShadow:'0 0 0 2px rgba(217,119,6,0.3)',background:'linear-gradient(135deg,var(--empire-gold),#f97316)'}}>
-                    {avatarSrc ? (
-                      <img src={avatarSrc} alt="Profile" className="w-full h-full object-cover" />
+                    {getSafeImageSrc(avatarSrc) ? (
+                      <img src={getSafeImageSrc(avatarSrc)} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center font-extrabold text-sm text-white">
                         {userDisplayName[0]?.toUpperCase() || 'U'}
