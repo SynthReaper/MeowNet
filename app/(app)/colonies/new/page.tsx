@@ -1,5 +1,5 @@
 'use client';
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/(app)/colonies/new/page.tsx — Register a new cat colony
 
 import { useState } from 'react';

@@ -1,5 +1,5 @@
 // app/auth/login/[[...rest]]/page.tsx — Volunteer Sign In Page (Split-Screen Brand Style)
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 import type { Metadata } from 'next';
 import { SignIn, ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
 import { auth } from '@clerk/nextjs/server';

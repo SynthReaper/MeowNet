@@ -1,0 +1,37 @@
+# MeowNet — CODEOWNERS
+#
+# GitHub will automatically request reviews from these owners
+# when a pull request touches the specified paths.
+#
+# Syntax: <pattern> <@user-or-team>
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global fallback — SynthReaper reviews everything
+* @SynthReaper
+
+# ─── Critical Security Files ────────────────────────────────────────────────
+lib/security/         @SynthReaper
+lib/actions/admin.ts  @SynthReaper
+proxy.ts              @SynthReaper
+next.config.ts        @SynthReaper
+
+# ─── Database & Migrations ───────────────────────────────────────────────────
+supabase/migrations/  @SynthReaper
+
+# ─── Auth ────────────────────────────────────────────────────────────────────
+components/auth/      @SynthReaper
+lib/actions/auth.ts   @SynthReaper
+app/auth/             @SynthReaper
+
+# ─── ML Service ──────────────────────────────────────────────────────────────
+python-ml/            @SynthReaper
+
+# ─── Documentation ───────────────────────────────────────────────────────────
+docs/                 @SynthReaper
+README.md             @SynthReaper
+CHANGELOG.md          @SynthReaper
+SETUP.md              @SynthReaper
+.agents/              @SynthReaper
+
+# ─── CI / Workflows ──────────────────────────────────────────────────────────
+.github/              @SynthReaper

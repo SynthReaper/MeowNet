@@ -31,7 +31,7 @@ assignees: []
 | OS | e.g. Windows 11, macOS 15, Ubuntu 24 |
 | Browser | e.g. Chrome 126, Firefox 128, Safari 17 |
 | Node version | `node -v` output |
-| MeowNet version | e.g. `0.5.0` or `git rev-parse --short HEAD` |
+| MeowNet version | e.g. `0.8.0` or `git rev-parse --short HEAD` |
 | Auth method | Clerk OAuth / Database Direct |
 | Role | Volunteer / Moderator / Admin |
 
@@ -53,7 +53,7 @@ Paste logs here
 - [ ] Events / TNR (`/events`)
 - [ ] Community chat (`/community`)
 - [ ] Empire / leaderboard (`/empire`)
-- [ ] Volunteer guilds (`/guilds` — requires v0.5.0+)
+- [ ] Volunteer guilds (`/guilds` — requires v0.8.0+)
 - [ ] Map (`/map`)
 - [ ] Admin dashboard (`/admin`)
 - [ ] Moderator dashboard (`/moderator`)

@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/privacy/page.tsx — GDPR Privacy Policy
 import type { Metadata } from 'next';
 import Navbar from '@/components/nav/Navbar';

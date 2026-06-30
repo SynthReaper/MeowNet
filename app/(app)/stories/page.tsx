@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/(app)/stories/page.tsx — Success Stories of Adopted Cats
 import type { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase/server';

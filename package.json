@@ -1,7 +1,7 @@
 {
   "name": "meownet",
-  "version": "0.5.0",
-  "description": "Community-powered cat rescue platform — 3D globe, live map, gamification, AI breed estimation, and dual auth for #hackthekitty 2026.",
+  "version": "0.8.0",
+  "description": "Community-powered cat rescue platform — interactive cozy cat, live map, gamification, AI breed estimation, and dual auth for #hackthekitty 2026.",
   "author": "SynthReaper <synthreaperx@gmail.com> (https://github.com/SynthReaper)",
   "license": "MIT",
   "homepage": "https://meownet-sr.vercel.app",

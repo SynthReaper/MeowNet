@@ -24,11 +24,17 @@ const securityHeaders = [
       "form-action 'self'",
     ].join('; '),
   },
-
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+  { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+  { key: 'Origin-Agent-Cluster', value: '?1' },
+  { key: 'X-Download-Options', value: 'noopen' },
+  { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
+  { key: 'X-XSS-Protection', value: '0' },
 ];
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  productionBrowserSourceMaps: false,
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];
   },

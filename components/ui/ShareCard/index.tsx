@@ -117,7 +117,7 @@ export default function ShareCard({ displayName, points, catLogsCount, tnrCount 
     // 8. Footer credits
     ctx.fillStyle = 'rgba(253, 249, 243, 0.3)';
     ctx.font = '12px Plus Jakarta Sans, sans-serif';
-    ctx.fillText('Join the empire at github.com/SynthReaper/MeoNet', 50, 405);
+    ctx.fillText('Join the empire at github.com/SynthReaper/MeowNet', 50, 405);
     ctx.fillText('TNR · SIGHTINGS · COLONY SUPPORT', width - 290, 405);
   }, [displayName, points, catLogsCount, tnrCount]);
 

@@ -1,6 +1,6 @@
 # MeowNet API Reference
 
-> Last updated: 2026-06-28 · v0.6.0
+> Last updated: 2026-06-30 · v0.8.0
 
 All API routes live under `app/api/`. Server Actions (in `lib/actions/`) are covered separately.
 
@@ -141,6 +141,48 @@ GDPR Article 17 cascading account deletion.
 - Writes anonymized hash to `erasure_audit`
 - Signs out all active sessions
 - Removes Supabase Storage objects for the user
+
+---
+
+### `GET /api/ai/meow`
+
+Proxies to the Python FastAPI ML service for cat meow sound/mood classification.
+
+**Request:** `multipart/form-data` with `audio` file field.
+
+**Response:**
+```json
+{
+  "mood": "playful",
+  "confidence": 0.74,
+  "VETERINARY_DISCLAIMER": "This is an AI estimate only and should not replace professional veterinary assessment."
+}
+```
+
+**Rate limit:** 5 requests/min per IP (enforced by slowapi on ML service).
+
+---
+
+### `GET /api/tenor`
+
+Server-side Tenor GIF search proxy for community chat. Prevents direct browser requests to Tenor CDN.
+
+**Query Parameters:**
+- `q` — Search query string (e.g. `"happy cat"`)
+- `limit` — Number of results (default `8`, max `20`)
+
+**Response:**
+```json
+{
+  "results": [
+    { "id": "...", "url": "https://media.tenor.com/...", "preview": "..." }
+  ]
+}
+```
+
+**Errors:**
+- `400` — Missing search query
+- `502` — Tenor API unavailable
 
 ---
 

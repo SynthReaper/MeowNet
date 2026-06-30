@@ -14,6 +14,7 @@ interface Notice {
   is_popup: boolean;
   expires_at: string | null;
   target_page: string;
+  pinned: boolean;
 }
 
 const getPageKey = (pathname: string): string => {
@@ -47,10 +48,11 @@ export default function Broadcasts() {
       const now = new Date().toISOString();
       const { data, error } = await supabase
         .from('notices' as never)
-        .select('id, title, content, is_broadcast, broadcast_type, is_popup, expires_at, target_page')
+        .select('id, title, content, is_broadcast, broadcast_type, is_popup, expires_at, target_page, pinned')
         .eq('active', true)
         .or('is_broadcast.eq.true,is_popup.eq.true')
-        .or(`expires_at.is.null,expires_at.gt.${now}`);
+        .or(`expires_at.is.null,expires_at.gt.${now}`)
+        .order('pinned', { ascending: false }) as unknown as { data: Notice[] | null; error: unknown };
 
       if (error) {
         console.error('Error fetching broadcasts/popups:', error);

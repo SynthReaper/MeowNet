@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // lib/supabase/client.ts — Browser singleton
 import { createBrowserClient } from '@supabase/ssr';
 import type { Database } from '@/types/supabase';

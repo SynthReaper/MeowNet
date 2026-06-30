@@ -41,6 +41,8 @@
   --status-adopted:   #818CF8;
 
   /* Typography */
+  --font-sans:    'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono:    'DM Mono', monospace;
   --font-display: 'Quicksand', system-ui, sans-serif;
   --font-body:    'Plus Jakarta Sans', system-ui, sans-serif;
   --font-data:    'DM Mono', monospace;
@@ -204,6 +206,10 @@
    ============================================================ */
 
 @layer components {
+  .font-sans {
+    font-family: var(--font-sans) !important;
+  }
+
   .font-data {
     font-family: var(--font-data);
   }
@@ -768,6 +774,250 @@ body:has(#map-page-root) footer {
   display: none !important;
 }
 
+/* ============================================================
+   MeowNet Premium Design Enhancements
+   ============================================================ */
 
+/* High-contrast, premium gradient stats banner */
+.stats-banner {
+  background: linear-gradient(135deg, #8b4403 0%, #b25804 100%) !important;
+  box-shadow: 0 12px 30px rgba(139, 68, 3, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
 
+[data-theme="dark"] .stats-banner {
+  background: linear-gradient(135deg, #1f1002 0%, #3d1c01 100%) !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(242, 140, 56, 0.15);
+}
 
+.stats-banner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 35px rgba(139, 68, 3, 0.25);
+}
+
+.stats-banner-text {
+  color: #ffffff !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.stats-banner-sub {
+  color: rgba(255, 255, 255, 0.85) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Glassmorphism & custom glowing card layouts */
+.premium-glass-card {
+  background: rgba(var(--bg-surface-rgb), 0.6) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--bg-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.premium-glass-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-active);
+  background: rgba(var(--bg-surface-rgb), 0.8) !important;
+}
+
+/* Entry scroll-reveal animation utilities */
+.reveal-fade-in {
+  opacity: 0;
+  animation: revealFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes revealFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+
+/* Interactive Hover Scales for UI Elements */
+.hover-scale-102 {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.hover-scale-102:hover {
+  transform: scale(1.02);
+}
+/* Interactive Cat Animations */
+@keyframes zzz-float {
+  0% {
+    transform: translateY(0) scale(0.6) rotate(-10deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  75% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(-90px) scale(1.2) rotate(15deg);
+    opacity: 0;
+  }
+}
+.animate-zzz {
+  animation: zzz-float 4s infinite ease-in-out;
+}
+
+@keyframes cat-purr {
+  0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+  25% { transform: translateY(-0.8px) scale(1.002) rotate(-0.1deg); }
+  50% { transform: translateY(0) scale(1) rotate(0deg); }
+  75% { transform: translateY(0.8px) scale(0.998) rotate(0.1deg); }
+}
+.animate-purr {
+  animation: cat-purr 0.15s infinite linear;
+}
+
+/* ============================================================
+   MeowNet v0.8.0 — Premium Cybernetic Dashboard Design System
+   ============================================================ */
+
+@keyframes dashboardFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-dashboard-fade {
+  animation: dashboardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Premium Sci-Fi Glass Panels */
+.premium-glass {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--bg-border) !important;
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.premium-glass:hover {
+  border-color: var(--empire-gold) !important;
+  box-shadow: var(--shadow-active);
+}
+
+/* Cybernetic Glowing Cards */
+.cyber-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--bg-border) !important;
+  box-shadow: var(--shadow-card);
+  transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.cyber-card:hover {
+  transform: translateY(-3.5px) scale(1.008);
+  border-color: var(--empire-gold) !important;
+  box-shadow: var(--shadow-active);
+}
+
+/* Sidebar Styling & Interactive Indicators */
+.sidebar-nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary) !important;
+  border: 1px solid transparent !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  width: 100%;
+}
+
+.sidebar-nav-link::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  height: 70%;
+  width: 3.5px;
+  background-color: var(--empire-gold);
+  border-radius: 0 4px 4px 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-nav-link:hover {
+  color: var(--empire-gold) !important;
+  background-color: var(--bg-elevated) !important;
+  transform: translateX(4px);
+}
+
+.sidebar-nav-link.active {
+  color: var(--empire-gold) !important;
+  background-color: var(--bg-elevated) !important;
+  border: 1px solid var(--bg-border) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+.sidebar-nav-link.active::before {
+  transform: scaleX(1);
+}
+
+/* Modern Typography Enhancements */
+.hero-gradient-text {
+  background: linear-gradient(135deg, var(--text-primary) 30%, var(--empire-gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--empire-gold);
+}
+
+/* Dashboard List Custom Scrollbar */
+.dashboard-scroll-area {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--empire-gold), 0.2) transparent;
+}
+
+.dashboard-scroll-area::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.dashboard-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(var(--empire-gold), 0.25);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.dashboard-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: var(--empire-gold);
+}

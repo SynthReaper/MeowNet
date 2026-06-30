@@ -1,6 +1,6 @@
 # MeowNet Database Documentation
 
-> Last updated: 2026-06-28 · v0.6.0 · Migrations: 0001–0059
+> Last updated: 2026-06-30 · v0.8.0 · Migrations: 0001–0002 (Consolidated)
 
 ---
 
@@ -28,7 +28,21 @@ public schema
 ├── cat_reports       — Moderator report queue for cat content
 ├── staff_audit_log   — Admin + moderator action audit trail
 ├── safety_guides     — Stray colony safety guide content
-└── safety_disputes   — User support dispute log associated with audit entries
+├── safety_disputes   — User support dispute log associated with audit entries
+├── colonies          — Stray cat colony registry with geolocation
+├── notices           — Page-targeted admin broadcast board
+├── guilds            — Volunteer regional guilds (0043)
+├── guild_members     — Guild membership roster (0043)
+├── guild_quests      — Cooperative guild quest definitions (0043)
+├── bingo_tasks       — Weekly bingo task completion tracker (0043)
+├── bingo_task_templates — Admin-defined bingo task templates (0044)
+├── trivia_questions  — Admin-managed daily trivia question bank (0044)
+├── colony_tycoon_sanctuaries — Idle tycoon virtual sanctuary state (0043, 0046)
+├── system_settings   — Key-value platform configuration store (0050)
+├── medical_logs      — Colony medical event logs (0051)
+├── proof_of_neuter   — Proof of neuter verification records (0052)
+├── moderator_queries — Three-tier support ticket system (0054)
+└── query_messages    — Realtime chat messages for support tickets (0054)
 
 Views (Materialized)
 ├── leaderboard_weekly  — Weekly Empire Points rankings
@@ -262,6 +276,36 @@ Auth schema (Supabase managed)
 | `is_read` | `bool` | Default `false` |
 | `created_at` | `timestamptz` | |
 
+### `public.moderator_queries` (migration 0054)
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | `uuid` | PK |
+| `volunteer_id` | `uuid` | FK → profiles.id — who raised the query |
+| `moderator_id` | `uuid` | FK → profiles.id — assigned moderator (nullable) |
+| `admin_id` | `uuid` | FK → profiles.id — assigned admin if escalated (nullable) |
+| `subject` | `text` | Query subject line |
+| `status` | `text` | `'open'` \| `'in_progress'` \| `'escalated'` \| `'resolved'` \| `'closed'` |
+| `target_type` | `text` | What the query is about (e.g. `'cat'`, `'event'`, `'account'`) |
+| `target_id` | `uuid` | ID of the referenced entity (nullable) |
+| `escalation_reason` | `text` | Moderator-written reason for escalating to admin (nullable) |
+| `resolution_notes` | `text` | Admin or moderator resolution summary (nullable) |
+| `created_at` | `timestamptz` | |
+| `updated_at` | `timestamptz` | |
+
+### `public.system_settings` (migration 0050)
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `key` | `text` | PK — configuration key name |
+| `value` | `text` | Configuration value (stored as text, parsed in application) |
+| `description` | `text` | Human-readable description of the setting |
+| `updated_at` | `timestamptz` | |
+
+**Pre-seeded keys:** `MAINTENANCE_MODE`, `TNR_POINTS_AWARDED`, `CAT_LOG_POINTS_AWARDED`, `WEATHER_WARNING_THRESHOLD`, `MAX_EMPIRE_LEADERBOARD_ENTRIES`.
+
+RLS: admins may INSERT/UPDATE; all authenticated users may SELECT.
+
 ---
 
 ## Security Functions (SECURITY DEFINER)
@@ -281,6 +325,9 @@ Helper function to check if a user is a member of a channel. Bypasses RLS to pre
 
 ### `is_channel_creator(channel_id, user_id)`
 Helper function to check if a user is the creator of a channel. Bypasses RLS to prevent infinite recursion.
+
+### `get_user_by_email(email)` (migration 0059)
+SECURITY DEFINER helper that queries `auth.users` for a single user record by email address. Bypasses PostgREST schema isolation to allow Auth synchronization without exposing user listing capabilities. Used by `lib/actions/auth.ts` during Clerk→Supabase session bridge. Returns only the matched user row, never a list.
 
 ---
 

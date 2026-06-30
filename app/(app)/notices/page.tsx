@@ -18,6 +18,7 @@ interface Notice {
   created_at: string;
   created_by: string | null;
   target_page: string;
+  pinned: boolean;
   profiles: { display_name: string } | null;
 }
 
@@ -45,13 +46,15 @@ export default function NoticesPage() {
   const [isPopup, setIsPopup] = useState(false);
   const [expiresAt, setExpiresAt] = useState('');
   const [targetPage, setTargetPage] = useState('all');
+  const [pinned, setPinned] = useState(false);
+  const [active, setActive] = useState(true);
 
   // Fetch notices
   const loadNotices = async () => {
     try {
       const res = await getNotices();
       if (res.success && res.data) {
-        setNotices(res.data as Notice[]);
+        setNotices(res.data as unknown as Notice[]);
       }
     } catch (e) {
       console.error('Failed to load notices:', e);
@@ -69,7 +72,7 @@ export default function NoticesPage() {
           .from('profiles' as never)
           .select('role')
           .eq('id', clerkUser.id)
-          .single() as any);
+          .single() as unknown as { data: { role: 'user' | 'admin' | 'moderator' | null } | null; error: unknown });
         if (data) {
           setRole(data.role);
           return;
@@ -83,7 +86,7 @@ export default function NoticesPage() {
           .from('profiles' as never)
           .select('role')
           .eq('id', user.id)
-          .single() as any);
+          .single() as unknown as { data: { role: 'user' | 'admin' | 'moderator' | null } | null; error: unknown });
         if (data) setRole(data.role);
         else setRole(null);
       } else {
@@ -95,22 +98,22 @@ export default function NoticesPage() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        supabase
+        (supabase
           .from('profiles' as never)
           .select('role')
           .eq('id', session.user.id)
-          .single()
-          .then(({ data }: any) => {
+          .single() as unknown as Promise<{ data: { role: 'user' | 'admin' | 'moderator' | null } | null; error: unknown }>)
+          .then(({ data }) => {
             if (data) setRole(data.role);
           });
       } else {
         if (clerkUser) {
-          supabase
+          (supabase
             .from('profiles' as never)
             .select('role')
             .eq('id', clerkUser.id)
-            .single()
-            .then(({ data }: any) => {
+            .single() as unknown as Promise<{ data: { role: 'user' | 'admin' | 'moderator' | null } | null; error: unknown }>)
+            .then(({ data }) => {
               if (data) setRole(data.role);
               else setRole(null);
             });
@@ -127,7 +130,9 @@ export default function NoticesPage() {
 
   // Load notices and subscribe to realtime updates
   useEffect(() => {
-    loadNotices();
+    const loadTimer = setTimeout(() => {
+      loadNotices();
+    }, 0);
 
     const channel = supabase
       .channel('notices_board_changes')
@@ -141,9 +146,10 @@ export default function NoticesPage() {
       .subscribe();
 
     return () => {
+      clearTimeout(loadTimer);
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [supabase]);
 
   const openAddModal = () => {
     setEditingNotice(null);
@@ -154,6 +160,8 @@ export default function NoticesPage() {
     setIsPopup(false);
     setExpiresAt('');
     setTargetPage('all');
+    setPinned(false);
+    setActive(true);
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -166,6 +174,8 @@ export default function NoticesPage() {
     setBroadcastType(notice.broadcast_type);
     setIsPopup(notice.is_popup);
     setTargetPage(notice.target_page || 'all');
+    setPinned(notice.pinned || false);
+    setActive(notice.active !== false);
     
     // Format expires_at for datetime-local input
     if (notice.expires_at) {
@@ -194,6 +204,8 @@ export default function NoticesPage() {
     formData.append('broadcast_type', broadcastType);
     formData.append('is_popup', String(isPopup));
     formData.append('target_page', targetPage);
+    formData.append('pinned', String(pinned));
+    formData.append('active', String(active));
     if (expiresAt) {
       formData.append('expires_at', new Date(expiresAt).toISOString());
     }
@@ -212,10 +224,38 @@ export default function NoticesPage() {
       } else {
         setFormError(result.error || 'Operation failed');
       }
-    } catch (err: any) {
-      setFormError(err.message || 'An unexpected error occurred');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setFormError(msg);
     } finally {
       setFormLoading(false);
+    }
+  };
+
+  const handleTogglePin = async (notice: Notice) => {
+    const formData = new FormData();
+    formData.append('title', notice.title);
+    formData.append('content', notice.content);
+    formData.append('is_broadcast', String(notice.is_broadcast));
+    formData.append('broadcast_type', notice.broadcast_type);
+    formData.append('is_popup', String(notice.is_popup));
+    formData.append('target_page', notice.target_page);
+    formData.append('active', String(notice.active));
+    formData.append('pinned', String(!notice.pinned));
+    if (notice.expires_at) {
+      formData.append('expires_at', notice.expires_at);
+    }
+
+    try {
+      const res = await updateNotice(notice.id, formData);
+      if (res.success) {
+        loadNotices();
+      } else {
+        alert('Failed to update pin status: ' + res.error);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      alert('Error updating pin status: ' + msg);
     }
   };
 
@@ -228,8 +268,9 @@ export default function NoticesPage() {
       } else {
         alert('Failed to delete notice: ' + res.error);
       }
-    } catch (e: any) {
-      alert('Error deleting notice: ' + e.message);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'An unexpected error occurred';
+      alert('Error deleting notice: ' + msg);
     }
   };
 
@@ -333,8 +374,11 @@ export default function NoticesPage() {
             const author = n.profiles?.display_name || 'Staff Member';
 
             // Card border styling if it is a broadcast
+            // Card border styling if it is a broadcast or pinned
             let cardAccent = 'border-[var(--bg-border)]';
-            if (n.is_broadcast) {
+            if (n.pinned) {
+              cardAccent = 'border-amber-500/50 shadow-[0_4px_20px_rgba(245,158,11,0.08)] ring-1 ring-amber-500/20 bg-amber-500/[0.01]';
+            } else if (n.is_broadcast) {
               if (n.broadcast_type === 'error') cardAccent = 'border-red-500/40 shadow-[0_4px_16px_rgba(239,68,68,0.06)]';
               else if (n.broadcast_type === 'warning') cardAccent = 'border-orange-500/40 shadow-[0_4px_16px_rgba(249,115,22,0.06)]';
               else if (n.broadcast_type === 'success') cardAccent = 'border-teal-500/40 shadow-[0_4px_16px_rgba(20,184,166,0.06)]';
@@ -350,6 +394,12 @@ export default function NoticesPage() {
               >
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-3">
+                    {n.pinned && (
+                      <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-md font-display font-bold text-[10px] uppercase tracking-wider flex items-center gap-0.5">
+                        <span className="material-symbols-outlined text-[11px] font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>push_pin</span>
+                        <span>Pinned</span>
+                      </span>
+                    )}
                     {n.is_broadcast && (
                       <span
                         className={`px-2 py-0.5 rounded-md font-display font-bold text-[10px] uppercase tracking-wider ${
@@ -405,6 +455,15 @@ export default function NoticesPage() {
                   {isStaff && (
                     <div className="flex gap-2">
                       <button
+                        onClick={() => handleTogglePin(n)}
+                        className={`p-1.5 rounded-lg hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer ${
+                          n.pinned ? 'text-amber-500 bg-amber-500/10' : 'text-[var(--text-secondary)] hover:text-amber-500'
+                        }`}
+                        title={n.pinned ? 'Unpin Notice' : 'Pin Notice'}
+                      >
+                        <span className="material-symbols-outlined text-base" style={n.pinned ? { fontVariationSettings: "'FILL' 1" } : {}}>push_pin</span>
+                      </button>
+                      <button
                         onClick={() => openEditModal(n)}
                         className="p-1.5 rounded-lg hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)] transition-colors cursor-pointer"
                         title="Edit Notice"
@@ -432,164 +491,207 @@ export default function NoticesPage() {
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <form
             onSubmit={handleFormSubmit}
-            className="w-full max-w-lg rounded-3xl border border-[var(--bg-border)] bg-[var(--bg-surface)] p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.4)] relative flex flex-col gap-5 max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-lg rounded-3xl border border-[var(--bg-border)] bg-[var(--bg-surface)] shadow-[0_20px_50px_rgba(0,0,0,0.4)] relative flex flex-col max-h-[85vh] overflow-hidden"
             style={{ boxShadow: 'var(--shadow-card)' }}
           >
-            <div className="flex items-start justify-between">
+            {/* Fixed Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--bg-border)]/40">
               <h2 className="font-display font-extrabold text-xl sm:text-2xl text-[var(--text-primary)]">
                 {editingNotice ? 'Edit Announcement' : 'Create Announcement'}
               </h2>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-full hover:bg-[var(--bg-elevated)] transition-colors text-[var(--text-muted)]"
+                className="p-1.5 rounded-full hover:bg-[var(--bg-elevated)] transition-colors text-[var(--text-muted)] cursor-pointer"
               >
                 <span className="material-symbols-outlined text-xl">close</span>
               </button>
             </div>
 
-            {formError && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs p-3.5 rounded-xl font-body flex items-center gap-2">
-                <span className="material-symbols-outlined text-base">error</span>
-                <span>{formError}</span>
-              </div>
-            )}
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="notice-title" className="font-display font-bold text-xs uppercase tracking-wide text-[var(--text-secondary)]">
-                Title
-              </label>
-              <input
-                id="notice-title"
-                type="text"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                maxLength={200}
-                placeholder="Notice title..."
-                className="w-full px-4 py-2.5 rounded-xl border border-[var(--bg-border)] bg-[var(--bg-elevated)] font-body text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--empire-gold)]/35 focus:border-[var(--empire-gold)] transition-all"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="notice-content" className="font-display font-bold text-xs uppercase tracking-wide text-[var(--text-secondary)]">
-                Content
-              </label>
-              <textarea
-                id="notice-content"
-                required
-                rows={5}
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                maxLength={2000}
-                placeholder="Write notice body here..."
-                className="w-full px-4 py-2.5 rounded-xl border border-[var(--bg-border)] bg-[var(--bg-elevated)] font-body text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--empire-gold)]/35 focus:border-[var(--empire-gold)] transition-all resize-none"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="notice-expiry" className="font-display font-bold text-xs uppercase tracking-wide text-[var(--text-secondary)]">
-                Expiration Date (Optional)
-              </label>
-              <input
-                id="notice-expiry"
-                type="datetime-local"
-                value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-[var(--bg-border)] bg-[var(--bg-elevated)] font-body text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--empire-gold)]/35 focus:border-[var(--empire-gold)] transition-all"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label htmlFor="notice-target-page" className="font-display font-bold text-xs uppercase tracking-wide text-[var(--text-secondary)]">
-                Target Page / Route
-              </label>
-              <select
-                id="notice-target-page"
-                value={targetPage}
-                onChange={(e) => setTargetPage(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl border border-[var(--bg-border)] bg-[var(--bg-elevated)] font-body text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--empire-gold)]/35 focus:border-[var(--empire-gold)] transition-all"
-              >
-                <option value="all">All Pages (Global)</option>
-                <option value="landing">Landing Page (/)</option>
-                <option value="login">Sign In (/auth/login)</option>
-                <option value="signup">Sign Up (/auth/signup)</option>
-                <option value="map">Cat Map (/map)</option>
-                <option value="cats">Browse Cats (/cats)</option>
-                <option value="events">TNR Events (/events)</option>
-                <option value="empire">Empire Leaderboard (/empire)</option>
-                <option value="profile">User Profile (/profile)</option>
-                <option value="reports">Field Reports (/reports)</option>
-                <option value="safety">Colony Safety (/safety)</option>
-                <option value="weather">Weather Watch (/weather)</option>
-                <option value="notices">Notice Board (/notices)</option>
-              </select>
-            </div>
-
-            {/* Admin-only Broadcast options */}
-            <div className="border-t border-[var(--bg-border)]/40 pt-4 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="font-display font-bold text-sm text-[var(--text-primary)]">Global Broadcast Banner</span>
-                  <span className="font-body text-xs text-[var(--text-muted)]">Render alert bar at top of all pages.</span>
+            {/* Scrollable Content Body */}
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5" style={{ scrollbarWidth: 'thin' }}>
+              {formError && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs p-3.5 rounded-xl font-body flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base">error</span>
+                  <span>{formError}</span>
                 </div>
+              )}
+
+              <div className="flex flex-col gap-2">
+                <label htmlFor="notice-title" className="font-display font-bold text-xs uppercase tracking-wide text-[var(--text-secondary)]">
+                  Title
+                </label>
                 <input
-                  type="checkbox"
-                  disabled={role !== 'admin'}
-                  checked={isBroadcast}
-                  onChange={(e) => {
-                    setIsBroadcast(e.target.checked);
-                    if (e.target.checked) setIsPopup(false); // Can't be both banner and popup modal
-                  }}
-                  className="w-5 h-5 accent-[var(--empire-gold)] cursor-pointer disabled:cursor-not-allowed"
+                  id="notice-title"
+                  type="text"
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  maxLength={200}
+                  placeholder="Notice title..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-[var(--bg-border)] bg-[var(--bg-elevated)] hover:border-[var(--empire-gold)]/40 font-body text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--empire-gold)]/35 focus:border-[var(--empire-gold)] transition-all"
                 />
               </div>
 
-              {isBroadcast && (
-                <div className="flex flex-col gap-2 pl-4 border-l-2 border-[var(--empire-gold)] animate-fade-in">
-                  <label htmlFor="broadcast-type" className="font-display font-bold text-xs uppercase tracking-wide text-[var(--text-secondary)]">
-                    Banner Style
+              <div className="flex flex-col gap-2">
+                <label htmlFor="notice-content" className="font-display font-bold text-xs uppercase tracking-wide text-[var(--text-secondary)]">
+                  Content
+                </label>
+                <textarea
+                  id="notice-content"
+                  required
+                  rows={5}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  maxLength={2000}
+                  placeholder="Write notice body here..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-[var(--bg-border)] bg-[var(--bg-elevated)] hover:border-[var(--empire-gold)]/40 font-body text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--empire-gold)]/35 focus:border-[var(--empire-gold)] transition-all resize-none"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label htmlFor="notice-expiry" className="font-display font-bold text-xs uppercase tracking-wide text-[var(--text-secondary)]">
+                  Expiration Date (Optional)
+                </label>
+                <input
+                  id="notice-expiry"
+                  type="datetime-local"
+                  value={expiresAt}
+                  onChange={(e) => setExpiresAt(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-[var(--bg-border)] bg-[var(--bg-elevated)] font-body text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--empire-gold)]/35 focus:border-[var(--empire-gold)] transition-all"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label htmlFor="notice-target-page" className="font-display font-bold text-xs uppercase tracking-wide text-[var(--text-secondary)]">
+                  Target Page / Route
+                </label>
+                <select
+                  id="notice-target-page"
+                  value={targetPage}
+                  onChange={(e) => setTargetPage(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-[var(--bg-border)] bg-[var(--bg-elevated)] font-body text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--empire-gold)]/35 focus:border-[var(--empire-gold)] transition-all"
+                >
+                  <option value="all">All Pages (Global)</option>
+                  <option value="landing">Landing Page (/)</option>
+                  <option value="login">Sign In (/auth/login)</option>
+                  <option value="signup">Sign Up (/auth/signup)</option>
+                  <option value="map">Cat Map (/map)</option>
+                  <option value="cats">Browse Cats (/cats)</option>
+                  <option value="events">TNR Events (/events)</option>
+                  <option value="empire">Empire Leaderboard (/empire)</option>
+                  <option value="profile">User Profile (/profile)</option>
+                  <option value="reports">Field Reports (/reports)</option>
+                  <option value="safety">Colony Safety (/safety)</option>
+                  <option value="weather">Weather Watch (/weather)</option>
+                  <option value="notices">Notice Board (/notices)</option>
+                </select>
+              </div>
+
+              {/* Staff / Admin specific options */}
+              <div className="border-t border-[var(--bg-border)]/40 pt-5 flex flex-col gap-5">
+                <div className="flex items-center justify-between py-1">
+                  <div className="flex flex-col pr-4">
+                    <span className="font-display font-bold text-sm text-[var(--text-primary)]">Pin Announcement 📌</span>
+                    <span className="font-body text-xs text-[var(--text-muted)]">Feature this notice at the top of the board and homepage.</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={pinned}
+                      onChange={(e) => setPinned(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[var(--bg-border)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--empire-gold)]"></div>
                   </label>
-                  <select
-                    id="broadcast-type"
-                    value={broadcastType}
-                    disabled={role !== 'admin'}
-                    onChange={(e) => setBroadcastType(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl border border-[var(--bg-border)] bg-[var(--bg-elevated)] font-body text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--empire-gold)]/35 focus:border-[var(--empire-gold)] transition-all"
-                  >
-                    <option value="info">Info (Gold)</option>
-                    <option value="warning">Warning (Orange)</option>
-                    <option value="error">Error (Red)</option>
-                    <option value="success">Success (Teal)</option>
-                  </select>
                 </div>
-              )}
 
-              <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="font-display font-bold text-sm text-[var(--text-primary)]">Site-Wide Popup Dialog</span>
-                  <span className="font-body text-xs text-[var(--text-muted)]">Display a popup modal to users on load.</span>
+                <div className="flex items-center justify-between py-1">
+                  <div className="flex flex-col pr-4">
+                    <span className="font-display font-bold text-sm text-[var(--text-primary)]">Active / Published</span>
+                    <span className="font-body text-xs text-[var(--text-muted)]">Uncheck to save as a draft or hide it from the board.</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={active}
+                      onChange={(e) => setActive(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[var(--bg-border)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--empire-gold)]"></div>
+                  </label>
                 </div>
-                <input
-                  type="checkbox"
-                  disabled={role !== 'admin'}
-                  checked={isPopup}
-                  onChange={(e) => {
-                    setIsPopup(e.target.checked);
-                    if (e.target.checked) setIsBroadcast(false); // Can't be both
-                  }}
-                  className="w-5 h-5 accent-[var(--empire-gold)] cursor-pointer disabled:cursor-not-allowed"
-                />
+
+                <div className="flex items-center justify-between py-1">
+                  <div className="flex flex-col pr-4">
+                    <span className="font-display font-bold text-sm text-[var(--text-primary)]">Global Broadcast Banner</span>
+                    <span className="font-body text-xs text-[var(--text-muted)]">Render alert bar at top of all pages.</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                    <input
+                      type="checkbox"
+                      disabled={role !== 'admin'}
+                      checked={isBroadcast}
+                      onChange={(e) => {
+                        setIsBroadcast(e.target.checked);
+                        if (e.target.checked) setIsPopup(false); // Can't be both banner and popup modal
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[var(--bg-border)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--empire-gold)] peer-disabled:opacity-40 peer-disabled:cursor-not-allowed"></div>
+                  </label>
+                </div>
+
+                {isBroadcast && (
+                  <div className="flex flex-col gap-2 pl-4 border-l-2 border-[var(--empire-gold)] animate-fade-in">
+                    <label htmlFor="broadcast-type" className="font-display font-bold text-xs uppercase tracking-wide text-[var(--text-secondary)]">
+                      Banner Style
+                    </label>
+                    <select
+                      id="broadcast-type"
+                      value={broadcastType}
+                      disabled={role !== 'admin'}
+                      onChange={(e) => setBroadcastType(e.target.value as 'info' | 'warning' | 'error' | 'success')}
+                      className="w-full px-3 py-2 rounded-xl border border-[var(--bg-border)] bg-[var(--bg-elevated)] font-body text-sm text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--empire-gold)]/35 focus:border-[var(--empire-gold)] transition-all"
+                    >
+                      <option value="info">Info (Gold)</option>
+                      <option value="warning">Warning (Orange)</option>
+                      <option value="error">Error (Red)</option>
+                      <option value="success">Success (Teal)</option>
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between py-1">
+                  <div className="flex flex-col pr-4">
+                    <span className="font-display font-bold text-sm text-[var(--text-primary)]">Site-Wide Popup Dialog</span>
+                    <span className="font-body text-xs text-[var(--text-muted)]">Display a popup modal to users on load.</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                    <input
+                      type="checkbox"
+                      disabled={role !== 'admin'}
+                      checked={isPopup}
+                      onChange={(e) => {
+                        setIsPopup(e.target.checked);
+                        if (e.target.checked) setIsBroadcast(false); // Can't be both
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-[var(--bg-border)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--empire-gold)] peer-disabled:opacity-40 peer-disabled:cursor-not-allowed"></div>
+                  </label>
+                </div>
+
+                {role !== 'admin' && (
+                  <p className="font-body text-xs text-amber-600 dark:text-amber-400 italic">
+                    Note: Broadcasts and popup modals can only be created by Administrators.
+                  </p>
+                )}
               </div>
-
-              {role !== 'admin' && (
-                <p className="font-body text-xs text-amber-600 dark:text-amber-400 italic">
-                  Note: Broadcasts and popup modals can only be created by Administrators.
-                </p>
-              )}
             </div>
 
-            <div className="flex justify-end gap-3 mt-4 border-t border-[var(--bg-border)]/40 pt-4">
+            {/* Fixed Footer */}
+            <div className="flex justify-end gap-3 px-6 py-5 border-t border-[var(--bg-border)]/40 bg-[var(--bg-surface)]">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}

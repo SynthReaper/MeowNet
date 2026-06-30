@@ -1,4 +1,4 @@
-# MeowNet — Hackathon Judge Guide 🐾👑 · v0.6.0
+# MeowNet — Hackathon Judge Guide 🐾👑 · v0.8.0
 
 > **Welcome!** This guide is written specifically for hackathon judges. It explains every feature in plain language, how to try it, and exactly where the code lives. No developer experience required.
 
@@ -35,13 +35,13 @@ MeowNet uses two parallel authentication systems. Standard email sign-in may tri
 
 Here is a plain-language explanation of every major feature, how to test it, and where the code lives.
 
-### 1. 🌍 Landing Page & 3D Globe
+### 1. 🐱 Landing Page & Interactive Cozy Cat
 
-**What it does:** The home page displays a live **3D WebGL globe** with glowing particles — each particle represents a logged cat sighting. It also shows a real-time local weather alert based on your geolocation.
+**What it does:** The home page displays an interactive cozy cat companion that reacts dynamically to the current local temperature. It also shows a real-time local weather alert based on your geolocation.
 
-**Try it:** Visit the [home page](https://meownet-sr.vercel.app/), spin the globe, and check the weather banner at the top of the screen.
+**Try it:** Visit the [home page](https://meownet-sr.vercel.app/), interact with your cozy cat friend, and check the weather banner at the top of the screen.
 
-**Code:** [`GlobeScene/index.tsx`](../components/three/GlobeScene/index.tsx) — custom GLSL atmospheric shader + Three.js
+**Code:** [`InteractiveCat/index.tsx`](../components/ui/InteractiveCat/index.tsx) — interactive SVG and CSS animations
 
 ---
 
@@ -206,7 +206,7 @@ The breed estimation AI runs in a separate Docker container (Python FastAPI). Th
 | Query escalation | [`app/(app)/moderator`](../app/(app)/moderator/) |
 | Secure password sync | [`lib/actions/auth.ts`](../lib/actions/auth.ts) |
 | EXIF stripper | [`lib/security/exif.ts`](../lib/security/exif.ts) |
-| 3D Globe | [`GlobeScene/index.tsx`](../components/three/GlobeScene/index.tsx) |
+| Interactive Cozy Cat | [`InteractiveCat/index.tsx`](../components/ui/InteractiveCat/index.tsx) |
 | ML Service | [`python-ml/main.py`](../python-ml/main.py) |
 | Auth sliding toggle | [`components/auth/AuthTabs.tsx`](../components/auth/AuthTabs.tsx) |
 | Broadcast system | [`components/ui/Broadcasts.tsx`](../components/ui/Broadcasts.tsx) |
@@ -248,6 +248,16 @@ Python FastAPI (Docker → Render)
 
 ---
 
+## 🛡️ v0.7.0 — Post-Session Hardening Notes
+
+- **Security Header Accuracy:** All documented security header values verified against `next.config.ts`. Corrected `X-Frame-Options` from `DENY` to `SAMEORIGIN` (the actual deployed value).
+- **Source Map Protection:** `productionBrowserSourceMaps: false` — JavaScript source maps are not served in production, preventing attackers from reading TypeScript source in browser DevTools.
+- **Powered-By Header Suppression:** `poweredByHeader: false` — the `X-Powered-By: Next.js` fingerprinting header is removed.
+- **Documentation Completeness:** All consolidated migrations, 30+ database tables, and every live API route are now accurately documented.
+- **GIF Proxy:** Community chat uses a server-side Tenor proxy (`/api/tenor`) — GIF searches never leave through the browser, bypassing content blockers.
+
+---
+
 *Built with 🐾 for every stray cat that deserves a better life.*
 
-*MeowNet — #hackthekitty 2026 · v0.6.0 · Author: [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com*
+*MeowNet — #hackthekitty 2026 · v0.8.0 · Author: [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com*

@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/(app)/events/loading.tsx — YouTube-style skeleton loader for TNR events listings
 
 export default function EventsLoading() {

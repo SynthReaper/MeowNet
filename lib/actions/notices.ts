@@ -2,7 +2,7 @@
 // lib/actions/notices.ts — Server Actions for Notice Board & Broadcasts
 
 import { revalidatePath } from 'next/cache';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { sanitizeText } from '@/lib/security/sanitize';
 import { z } from 'zod';
 
@@ -14,6 +14,7 @@ const NoticeCreateSchema = z.object({
   is_popup: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
   expires_at: z.string().optional().nullable().transform((val) => val ? new Date(val).toISOString() : null),
   target_page: z.string().default('all'),
+  pinned: z.preprocess((val) => val === 'true' || val === true, z.boolean()).default(false),
 });
 
 const NoticeUpdateSchema = NoticeCreateSchema.extend({
@@ -33,19 +34,46 @@ export interface Notice {
   expires_at: string | null;
   active: boolean;
   target_page: string;
-  profiles: { display_name: string | null } | null;
+  pinned: boolean;
+}
+
+/**
+ * Helper to log staff notice operations to the audit trail logs.
+ */
+async function logNoticeAudit(
+  actorId: string,
+  actorRole: string,
+  action: string,
+  targetId: string,
+  details: string
+) {
+  try {
+    const serviceClient = createServiceClient();
+    await serviceClient
+      .from('staff_audit_logs' as never)
+      .insert({
+        actor_id: actorId,
+        actor_role: actorRole,
+        action,
+        target_id: targetId,
+        details,
+      } as never);
+  } catch (err) {
+    console.error('Error writing notice audit log:', err);
+  }
 }
 
 export async function getNotices() {
   try {
     const supabase = await createServerClient();
     
-    // Select active and unexpired notices, joined with author profile
+    // Select active and unexpired notices, joined with author profile, sorted by pinned first, then created_at
     const { data, error } = await supabase
       .from('notices' as never)
-      .select('id, title, content, created_by, created_at, updated_at, is_broadcast, broadcast_type, is_popup, expires_at, active, target_page, profiles(display_name)')
+      .select('id, title, content, created_by, created_at, updated_at, is_broadcast, broadcast_type, is_popup, expires_at, active, target_page, pinned, profiles(display_name)')
       .eq('active', true)
       .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .order('pinned', { ascending: false })
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -55,6 +83,30 @@ export async function getNotices() {
     return { success: true, data: (data || []) as unknown as Notice[] };
   } catch (err) {
     console.error('getNotices internal error:', err);
+    return { success: false, error: 'internal_error' };
+  }
+}
+
+export async function getPinnedNotice() {
+  try {
+    const supabase = await createServerClient();
+    const { data, error } = await supabase
+      .from('notices' as never)
+      .select('id, title, content, is_broadcast, broadcast_type, target_page, pinned')
+      .eq('active', true)
+      .eq('pinned', true)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching pinned notice:', error);
+      return { success: false, error: 'fetch_failed' };
+    }
+    return { success: true, data: data as unknown as Notice | null };
+  } catch (err) {
+    console.error('getPinnedNotice internal error:', err);
     return { success: false, error: 'internal_error' };
   }
 }
@@ -107,6 +159,7 @@ export async function createNotice(formData: FormData) {
         is_popup: d.is_popup,
         expires_at: d.expires_at,
         target_page: d.target_page,
+        pinned: d.pinned,
         active: true,
       } as never)
       .select('id')
@@ -115,6 +168,16 @@ export async function createNotice(formData: FormData) {
     if (error) {
       console.error('Error inserting notice:', error);
       return { success: false, error: 'insert_failed' };
+    }
+
+    if (data?.id) {
+      await logNoticeAudit(
+        user.id,
+        caller.role,
+        'create_notice',
+        data.id,
+        `Created notice "${d.title}"`
+      );
     }
 
     revalidatePath('/notices');
@@ -190,6 +253,7 @@ export async function updateNotice(id: string, formData: FormData) {
         is_popup: d.is_popup,
         expires_at: d.expires_at,
         target_page: d.target_page,
+        pinned: d.pinned,
         active: d.active,
         updated_at: new Date().toISOString(),
       } as never)
@@ -199,6 +263,14 @@ export async function updateNotice(id: string, formData: FormData) {
       console.error('Error updating notice:', error);
       return { success: false, error: 'update_failed' };
     }
+
+    await logNoticeAudit(
+      user.id,
+      caller.role,
+      'update_notice',
+      id,
+      `Updated notice "${d.title}"`
+    );
 
     revalidatePath('/notices');
     revalidatePath('/', 'layout');
@@ -250,6 +322,14 @@ export async function deleteNotice(id: string) {
       console.error('Error deleting notice:', error);
       return { success: false, error: 'delete_failed' };
     }
+
+    await logNoticeAudit(
+      user.id,
+      caller.role,
+      'delete_notice',
+      id,
+      `Deleted notice with ID: ${id}`
+    );
 
     revalidatePath('/notices');
     revalidatePath('/', 'layout');

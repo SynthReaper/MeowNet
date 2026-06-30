@@ -27,8 +27,9 @@ export default function DataPortability() {
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();
-    } catch (err: any) {
-      setError(err.message || 'Failed to download data.');
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : 'Failed to download data.';
+      setError(errMsg);
     } finally {
       setExporting(false);
     }

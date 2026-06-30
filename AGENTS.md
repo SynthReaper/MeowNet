@@ -1,7 +1,7 @@
 # Agent Instructions — MeowNet
 
 > **Author:** SynthReaper · synthreaperx@gmail.com · https://github.com/SynthReaper
-> **Project:** MeowNet — #hackthekitty 2026 · v0.4.0
+> **Project:** MeowNet — #hackthekitty 2026 · v0.8.0
 
 ## Package Manager
 Use **npm**: `npm install`, `npm run dev`, `npm run build`, `npm run type-check`
@@ -53,7 +53,7 @@ lib/privacy/consent-text.ts  → Client-safe copy (NO server imports)
 lib/privacy/consent.ts       → Server-only GDPR functions
 lib/supabase/server.ts       → Server client (next/headers — server only)
 lib/supabase/client.ts       → Browser client (safe in client components)
-supabase/migrations/         → 0001–0033, run in order
+supabase/migrations/         → 0001–0002, run in order
 python-ml/                   → FastAPI ML service, separate deploy
 docs/                        → Developer documentation
   HACKATHON.md               → Judge guide (start here!)

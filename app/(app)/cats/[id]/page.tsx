@@ -8,6 +8,7 @@ import { VETERINARY_DISCLAIMER } from '@/lib/veterinary/triageRules';
 import { getBreedProfile } from '@/lib/veterinary/breedProfiles';
 import CatActions from '@/components/cats/CatActions';
 import NeuterBadge from '@/components/cats/NeuterBadge';
+import { calculateWelfareScore } from '@/lib/welfare/welfare-score';
 
 export const revalidate = 300;
 
@@ -78,14 +79,19 @@ export default async function CatProfilePage({ params }: { params: Promise<{ id:
 
   const bcsData = cat.bcs_estimate ? BCS_SCALE[cat.bcs_estimate as keyof typeof BCS_SCALE] : null;
   const breedProfile = cat.breed_estimate ? getBreedProfile(cat.breed_estimate) : null;
+  const welfare = calculateWelfareScore(cat);
 
   // Build timeline events
+  const originalStatus = (cat.status === 'adoptable' || cat.status === 'adopted' || cat.status === 'fostered') && cat.sterilized
+    ? 'tnr_needed'
+    : cat.status;
+
   const timelineEvents = [
     {
       title: 'First Sighting Logged',
       icon: 'visibility',
       date: 'Recent Sighting',
-      desc: `Cat first identified and registered in MeowNet database as ${cat.status.replace('_', ' ')}.`,
+      desc: `Cat first identified and registered in MeowNet database as ${originalStatus.replace('_', ' ')}.`,
       color: 'border-tertiary-container text-tertiary',
     },
   ];
@@ -155,6 +161,49 @@ export default async function CatProfilePage({ params }: { params: Promise<{ id:
               <span className="material-symbols-outlined">info</span>
               <span>A Little About {cat.name ?? 'this friend'}</span>
             </h2>
+
+            {/* Welfare Score Component */}
+            {welfare && (
+              <div className="p-4 rounded-xl border mb-4" style={{ backgroundColor: welfare.color, borderColor: welfare.borderColor }}>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-body text-xs font-semibold text-[var(--empire-cream)]/60">Cat Welfare Score</span>
+                  <span className="font-display text-sm font-bold animate-pulse" style={{ color: welfare.textColor }}>
+                    {welfare.label} ({welfare.score}/100)
+                  </span>
+                </div>
+                <div className="w-full bg-[var(--bg-border)]/20 h-2.5 rounded-full overflow-hidden mb-3">
+                  <div 
+                    className="h-full rounded-full transition-all duration-500" 
+                    style={{ 
+                      width: `${welfare.score}%`, 
+                      backgroundColor: welfare.textColor 
+                    }} 
+                  />
+                </div>
+                <div className="grid grid-cols-5 gap-1 text-[10px] text-center font-body text-[var(--empire-cream)]/50">
+                  <div>
+                    <div className="font-semibold text-[var(--empire-cream)]/75">{welfare.breakdown.tnr}/30</div>
+                    <div>TNR</div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[var(--empire-cream)]/75">{welfare.breakdown.vaccination}/20</div>
+                    <div>Vacc</div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[var(--empire-cream)]/75">{welfare.breakdown.microchip}/10</div>
+                    <div>Chip</div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[var(--empire-cream)]/75">{welfare.breakdown.bcs}/20</div>
+                    <div>BCS</div>
+                  </div>
+                  <div>
+                    <div className="font-semibold text-[var(--empire-cream)]/75">{welfare.breakdown.health}/20</div>
+                    <div>Health</div>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <p className="font-body text-sm text-[var(--empire-cream)]/70 flex-grow leading-relaxed">
               {cat.health_notes || `${cat.name || 'This cat'} is currently classified as ${cat.status.replace('_', ' ')} and is tracked by the local MeowNet volunteer network. Use the details below to check vaccination history and help coordinate care.`}
@@ -195,7 +244,7 @@ export default async function CatProfilePage({ params }: { params: Promise<{ id:
       {/* Main Grid for secondary information */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Journey History (Timeline) - 7 columns */}
-        <section className="lg:col-span-7 bg-white p-6 md:p-8 rounded-2xl shadow-ambient border border-[var(--bg-border)]">
+        <section className="lg:col-span-7 bg-white p-6 md:p-8 rounded-2xl shadow-ambient border border-[var(--bg-border)] h-fit">
           <h2 className="font-display text-xl text-[var(--empire-gold)] font-bold mb-8 flex items-center gap-2">
             <span className="material-symbols-outlined">timeline</span>
             <span>Journey So Far</span>
@@ -239,7 +288,7 @@ export default async function CatProfilePage({ params }: { params: Promise<{ id:
 
             {caregivers.length === 0 ? (
               <p className="font-body text-xs text-[var(--empire-cream)]/50 leading-relaxed">
-                No active care pledges yet. Click "Lend a Paw" to pledge food, trapping help, foster care, or medical sponsorship for this cat!
+                {'No active care pledges yet. Click "Lend a Paw" to pledge food, trapping help, foster care, or medical sponsorship for this cat!'}
               </p>
             ) : (
               <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto pr-1">

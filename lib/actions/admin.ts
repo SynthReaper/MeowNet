@@ -1,5 +1,5 @@
 'use server';
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // lib/actions/admin.ts — Server Actions for moderation and admin tasks
 
 import { revalidatePath } from 'next/cache';

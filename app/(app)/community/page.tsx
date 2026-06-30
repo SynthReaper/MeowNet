@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/(app)/community/page.tsx — Server entry point for Community Hub
 
 import type { Metadata } from 'next';

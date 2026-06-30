@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/(app)/cats/loading.tsx — YouTube-style skeleton loader for cat listing directory
 
 export default function CatsLoading() {

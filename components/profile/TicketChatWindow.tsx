@@ -32,7 +32,7 @@ interface Props {
 }
 
 export default function TicketChatWindow({ ticket, currentUserId, currentUserRole, onUpdate, onBack }: Props) {
-  const [messages, setMessages] = useState<ChatMessage[]>(ticket.chat_messages || []);
+  const messages = ticket.chat_messages || [];
   const [typedMessage, setTypedMessage] = useState('');
   const [proposeSolve, setProposeSolve] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -43,11 +43,6 @@ export default function TicketChatWindow({ ticket, currentUserId, currentUserRol
   // Auto-scroll to bottom of chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // Sync messages from prop updates (e.g. from realtime WebSocket)
-  useEffect(() => {
-    setMessages(ticket.chat_messages || []);
   }, [ticket.chat_messages]);
 
   const isStaff = currentUserRole === 'admin' || currentUserRole === 'moderator';
@@ -63,7 +58,6 @@ export default function TicketChatWindow({ ticket, currentUserId, currentUserRol
     startTransition(async () => {
       const res = await addQueryChatMessage(ticket.id, text, proposeSolve);
       if (res.success && res.chat_messages) {
-        setMessages(res.chat_messages);
         setTypedMessage('');
         setProposeSolve(false);
         let nextStatus = ticket.status;
@@ -75,7 +69,7 @@ export default function TicketChatWindow({ ticket, currentUserId, currentUserRol
         onUpdate({
           ...ticket,
           chat_messages: res.chat_messages,
-          status: nextStatus as any
+          status: nextStatus as 'pending' | 'solved' | 'closed' | 'resolved'
         });
       } else {
         setError(res.error || 'Failed to send message');

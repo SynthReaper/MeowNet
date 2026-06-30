@@ -1,6 +1,6 @@
 # MeowNet 🐾👑
 
-> **The community-powered cat empire.** Log strays, coordinate TNR, earn Empire Points — every particle on that globe is a cat with a better life.
+> **The community-powered cat empire.** Log strays, coordinate TNR, earn Empire Points — every interaction with your cozy companion makes a difference.
 
 [![CI Status](https://github.com/SynthReaper/MeowNet/actions/workflows/ci.yml/badge.svg)](https://github.com/SynthReaper/MeowNet/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue?logo=typescript)](https://www.typescriptlang.org/)
@@ -44,7 +44,7 @@ MeowNet changes that. It's a full-stack, privacy-first web platform that turns u
 
 | Feature | Description | Code Location |
 |---------|-------------|---------------|
-| 🌍 **3D Impact Globe** | WebGL globe with custom GLSL atmospheric shader — every point is a logged cat | `components/three/GlobeScene` |
+| 🐱 **Interactive Cat** | Cozy interactive cat companion responding to local temperature | `components/ui/InteractiveCat` |
 | 🗺️ **Live Cat Map** | Leaflet interactive map, realtime subscriptions, cat status markers | `app/(app)/map` |
 | 🐱 **Cat Logging** | Photo upload → EXIF strip → AI breed estimation → geofuzzing → DB save | `app/(app)/cats/new` |
 | 📅 **TNR Events** | Create, join, and manage Trap-Neuter-Return events with realtime capacity | `app/(app)/events` |
@@ -76,7 +76,7 @@ MeowNet changes that. It's a full-stack, privacy-first web platform that turns u
 | **Next.js** | 16 (App Router) | Framework — RSC, Server Actions, API Routes |
 | **React** | 19 | UI — transitions, optimistic UI, hooks |
 | **TypeScript** | 5 strict | Type safety across entire codebase |
-| **Three.js + GLSL** | r168 | WebGL 3D globe with atmospheric shader |
+| **SVG & CSS Animations** | — | Interactive cozy cat companion responding to local temperature |
 | **Leaflet** | 1.9 | Interactive realtime cat map |
 | **Recharts** | 2.15 | Admin analytics dashboards |
 | **GSAP** | 3 | Counter animations, scroll-triggered effects |
@@ -108,7 +108,7 @@ Browser
   │
   ├── Supabase (PostgreSQL + PostGIS)
   │     ├── Auth            — email/password + Google/GitHub + direct creds
-  │     ├── Database        — cats, events, profiles, gamification (42 migrations)
+  │     ├── Database        — cats, events, profiles, gamification (2 migrations)
   │     ├── Storage         — Cat photos (EXIF stripped before upload)
   │     ├── Realtime        — Live cat sighting map + community chat + guilds
   │     └── system_settings — Dynamic key-value configuration store
@@ -117,9 +117,10 @@ Browser
   │     └── /breed + /meow — HuggingFace inference (breed + mood)
   │
   └── External APIs (server-side proxied — never from browser)
-        ├── Open-Meteo  → /api/weather
+        ├── Open-Meteo    → /api/weather
         ├── Catfact.ninja → /api/catfact
-        └── Nominatim   → reverse geocoding (display only)
+        ├── Tenor GIF CDN → /api/tenor (community chat GIF search)
+        └── Nominatim     → reverse geocoding (display only)
 ```
 
 ### Project Structure
@@ -143,9 +144,11 @@ MeowNet/
 │   │   └── weather/        # Feline weather safety watch
 │   ├── api/
 │   │   ├── ai/breed/       # ML breed estimation proxy
+│   │   ├── ai/meow/        # ML meow mood classification proxy
 │   │   ├── ai/health/      # ML service warmup ping
 │   │   ├── catfact/        # Cat fact API proxy
 │   │   ├── privacy/        # GDPR cascading account deletion
+│   │   ├── tenor/          # Tenor GIF search proxy for community chat
 │   │   └── weather/        # Open-Meteo server proxy
 │   ├── auth/               # Login, signup, OAuth callback
 │   ├── maintenance/        # Full-site maintenance mode page
@@ -154,7 +157,7 @@ MeowNet/
 │   ├── auth/AuthBridge/    # Clerk→Supabase session sync
 │   ├── forms/ConsentGate/  # GDPR Article 6(1)(a) consent UI
 │   ├── nav/Navbar/         # Dual auth-provider aware navbar
-│   └── three/GlobeScene/   # Three.js + GLSL WebGL globe
+│   └── ui/InteractiveCat/  # Interactive cozy cat companion
 ├── docs/                   # Developer & judge documentation
 ├── lib/
 │   ├── actions/            # Server Actions (admin, auth, cats, events)
@@ -166,7 +169,7 @@ MeowNet/
 │   ├── docker-compose.yml
 │   └── main.py
 └── supabase/
-    ├── migrations/         # 0001–0042 applied migrations
+    ├── migrations/         # 0001–0059 applied migrations
     └── seed.sql
 ├── proxy.ts                # Next.js middleware (auth guard + maintenance gate)
 ```
@@ -183,7 +186,9 @@ MeowNet/
 | **GDPR Erasure** | Cascade `DELETE` removes all user data + signs out all sessions |
 | **Points Idempotency** | `action_key UNIQUE` in `point_log` — points awarded exactly once |
 | **ML Auth** | `X-Service-Secret` header + slowapi rate limiting (10/min breed) |
-| **Security Headers** | CSP, HSTS, X-Frame-Options, X-Content-Type-Options in `next.config.ts` |
+| **Security Headers** | CSP, HSTS, `X-Frame-Options: SAMEORIGIN`, COOP, CORP + 6 more in `next.config.ts` |
+| **Source Maps** | `productionBrowserSourceMaps: false` — TypeScript not readable in DevTools |
+| **Fingerprint Removal** | `poweredByHeader: false` — hides `X-Powered-By: Next.js` |
 | **RLS** | Row-Level Security on every Supabase table — least privilege |
 | **Admin Credentials** | Admin-created accounts use DB-enforced expiry + login usage limits |
 
@@ -201,8 +206,8 @@ MeowNet/
 git clone https://github.com/SynthReaper/MeowNet.git && cd MeowNet
 npm install
 cp .env.example .env.local          # Fill in your Supabase + Clerk keys
-npx supabase db push                 # Apply all 59 migrations
-npm run dev                          # Start at localhost:3000
+  npx supabase db push                 # Apply all 2 migrations (0001–0002)
+  npm run dev                          # Start at localhost:3000
 ```
 
 ### ML Service (Docker)
@@ -226,7 +231,7 @@ npm run build         # Production build
 |----------|---------|
 | [docs/HACKATHON.md](docs/HACKATHON.md) | **Start here** — Judge guide, demo walkthrough |
 | [docs/architecture.md](docs/architecture.md) | System design, ADRs, data flow |
-| [docs/database.md](docs/database.md) | 59 migrations, schema, RLS matrix |
+| [docs/database.md](docs/database.md) | 2 migrations, schema, RLS matrix |
 | [docs/api.md](docs/api.md) | API route reference |
 | [docs/security.md](docs/security.md) | Threat model, GDPR compliance |
 | [docs/deployment.md](docs/deployment.md) | Vercel + Railway + Docker guide |
@@ -241,7 +246,7 @@ Created for **#hackthekitty 2026** 🐾 by [SynthReaper](https://github.com/Synt
 
 - **Supabase** — Database, Auth, Storage, Realtime
 - **Clerk** — User identity and OAuth
-- **Three.js & GLSL** — Hardware-accelerated 3D globe
+- **SVG & CSS Animations** — Interactive cozy cat companion
 - **Leaflet** — Interactive map
 - **HuggingFace** — AI breed image classification
 - **Open-Meteo** — Weather forecasting API
@@ -249,9 +254,9 @@ Created for **#hackthekitty 2026** 🐾 by [SynthReaper](https://github.com/Synt
 
 ---
 
-*Every particle on that globe is a cat with a better life.* 🐾
+*Every interaction with your cozy companion makes a difference.* 🐾
 
 ---
 
-**Author:** [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com · **Version:** 0.6.0 · **License:** [MIT with Custom Disclaimer](LICENSE)
+**Author:** [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com · **Version:** 0.8.0 · **License:** [MIT with Custom Disclaimer](LICENSE)
 

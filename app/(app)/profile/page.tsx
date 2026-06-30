@@ -369,7 +369,7 @@ export default async function ProfilePage() {
 
           {/* Profile Queries and Support */}
           {userRole === 'user' && (
-            <ProfileQueries initialQueries={userQueries} userId={profile.id} />
+            <ProfileQueries initialQueries={userQueries} />
           )}
 
           {/* GDPR / Data Deletion */}

@@ -1,6 +1,6 @@
 # MeowNet Security Documentation
 
-> Last updated: 2026-06-28 · v0.6.0
+> Last updated: 2026-06-30 · v0.8.0
 
 ---
 
@@ -27,7 +27,7 @@ Server          Auth check on every API route + Server Action
                 No secrets in client bundle
                 External APIs proxied server-side only
 ─────────────────────────────────────────────────────
-Database        Row-Level Security on every table (59 migrations)
+Database        Row-Level Security on every table (2 consolidated migrations)
                 SECURITY DEFINER for privileged ops
                 Location fuzzing trigger (BEFORE INSERT)
                 Role escalation prevention trigger
@@ -153,16 +153,38 @@ Admin-created direct credential users (v0.2.0) have additional security controls
 
 ## Security Headers
 
-Set in `next.config.ts`:
+All headers are set in `next.config.ts` via the `securityHeaders` array and applied to all routes via `/:path*`.
 
 ```
-Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; connect-src *; font-src *; worker-src 'self' blob:;
-X-Frame-Options: DENY
+Content-Security-Policy:
+  default-src 'self';
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.clerk.accounts.dev https://clerk.com https://*.clerk.com https://challenges.cloudflare.com;
+  style-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://*.clerk.com https://fonts.googleapis.com;
+  img-src 'self' data: blob: *.supabase.co https://img.clerk.com https://*.clerk.accounts.dev https://*.clerk.com https://*.basemaps.cartocdn.com https://*.tile.openstreetmap.org https://images.unsplash.com https://media.tenor.com https://*.tenor.com;
+  connect-src 'self' *.supabase.co wss://*.supabase.co https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com;
+  frame-src 'self' https://challenges.cloudflare.com https://*.clerk.accounts.dev;
+  font-src 'self' https://fonts.gstatic.com;
+  worker-src blob:;
+  object-src 'none';
+  base-uri 'self';
+  frame-ancestors 'self';
+  form-action 'self';
+
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+X-Frame-Options: SAMEORIGIN
 X-Content-Type-Options: nosniff
 Referrer-Policy: strict-origin-when-cross-origin
-Permissions-Policy: camera=(), microphone=(), geolocation=(self)
-Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+Permissions-Policy: camera=(), microphone=(self), geolocation=(self)
+X-DNS-Prefetch-Control: on
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
+Origin-Agent-Cluster: ?1
+X-Download-Options: noopen
+X-Permitted-Cross-Domain-Policies: none
+X-XSS-Protection: 0   ← intentionally disabled (modern browsers use CSP)
 ```
+
+> **Note:** `productionBrowserSourceMaps: false` is set in `next.config.ts`. JavaScript source maps are **not** served in production, preventing attackers from reading original TypeScript source code in browser DevTools. The `poweredByHeader: false` flag also removes the `X-Powered-By: Next.js` header.
 
 ---
 
@@ -270,6 +292,8 @@ An independent automated security audit was performed via Aikido Security. The f
 
 An internal security audit was performed on 2026-06-28 (v0.6.0) covering XSS, SQL injection, CSRF, file upload injection, IDOR, auth bypass, and secret exposure. Six controls were added/updated as a result — see [Input Validation Hardening](#input-validation-hardening-v050) and [Cryptographic Validation & Scalable Auth Sync](#cryptographic-validation--scalable-auth-sync-v060) above.
 
+A documentation accuracy pass was performed on 2026-06-30 (v0.7.0). All security header values were verified against `next.config.ts` and corrected (notably `X-Frame-Options: SAMEORIGIN`, not `DENY` as previously documented). Missing headers were added to the reference table.
+
 ---
 
 ## Vulnerability Disclosure
@@ -292,3 +316,30 @@ MeowNet's Clerk instance is not configured with a verified custom email domain. 
 - Judges can use the pre-loaded credential cards on the [Staff Portal](https://meownet-sr.vercel.app/auth/moderator-login)
 
 **Impact:** Low (alternative auth paths are provided and prominently documented). No security data is at risk.
+
+---
+
+## Middleware, Optimization & Telemetry Audit Alignment
+
+The following mappings outline how MeowNet aligns with essential middleware, performance optimization, and telemetry requirements within its Next.js App Router architecture:
+
+### 1. Essential Security Middleware
+* **Security Headers (Helmet equivalent):** Implemented natively in Next.js config via the `securityHeaders` declaration block in [next.config.ts](../next.config.ts). This enforces strict HTTP headers including a Content Security Policy (CSP), Strict-Transport-Security (HSTS), X-Frame-Options (Clickjacking defense), X-Content-Type-Options (nosniff), and Referrer-Policy.
+* **Rate Limiting:** Auth endpoints and direct login are rate-limited via Clerk and Supabase's built-in platform security controls. For heavy ML services, rate limiting is handled per-IP using FastAPI `slowapi` limits (10/min breed, 5/min meow) inside the FastAPI container.
+* **DDoS Mitigation:** Handled at the infrastructure layer. All traffic to MeowNet passes through Vercel's Edge network, which filters malicious DDoS attacks and packet sniffing before hitting origin services.
+* **Input Sanitization:** Neutralized across both the client and server:
+  * Safe client-side HTML output rendering via `dompurify`.
+  * Multi-pass HTML tag strip and entity encoding (`< > & " ' \``) via `sanitizeText` in [lib/security/sanitize.ts](../lib/security/sanitize.ts).
+  * Strict schema parameter parsing on API routes and Server Actions using `zod`.
+* **CORS Management:** Managed via Next.js config rules under `allowedOrigins` in [next.config.ts](../next.config.ts), restricting cross-origin requests to trusted domains.
+
+### 2. Performance & Traffic Optimization
+* **Payload Compression:** Next.js automatically applies Gzip and Brotli compression to static files and dynamic API responses at the edge.
+* **HTTP/2 & HTTP/3 Protocols:** Enabled at the edge network layer via Vercel's global CDN and router infrastructure, allowing asset multiplexing over single TCP/UDP connections.
+* **Caching Layers:** Avoids database load on heavy query surfaces (e.g., the Global Leaderboard) by computing statistics asynchronously and caching results through database Materialized Views and SWR stale-while-revalidate client caches.
+
+### 3. Reliability, Logging, & Telemetry
+* **Request Logging:** Telemetry streams, status codes, and endpoint execution times are captured by standard container stdout logs, Vercel logging integrations, and dedicated staff operations auditing logs (`staff_audit_log`).
+* **Global Error Handlers:** Handled through Next.js global boundaries (`error.tsx`/`not-found.tsx`) and robust try-catch response structures in Server Actions to catch exceptions and conceal database schemas or stack traces from users.
+* **Health Check Endpoints:** Exposed via the root health path [/health](../app/health/route.ts) returning `200 OK` with timestamp and uptime telemetry, alongside the target [/api/ai/health](../app/api/ai/health/route.ts) warmup route.
+

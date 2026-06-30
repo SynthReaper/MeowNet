@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // lib/supabase/server.ts — SSR-safe server client
 import { createServerClient as createSSRClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';

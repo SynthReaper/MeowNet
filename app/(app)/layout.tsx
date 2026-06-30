@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/(app)/layout.tsx — Authenticated app shell with Navbar
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';

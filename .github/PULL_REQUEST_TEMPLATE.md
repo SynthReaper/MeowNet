@@ -72,7 +72,20 @@ Closes #<!-- issue number -->
 **Server Actions & API Routes**
 - [ ] `'use server'` directive present in all new server action files
 - [ ] No `SUPABASE_SERVICE_ROLE_KEY` used outside of `lib/supabase/server.ts`
-- [ ] Weather / ML calls go through the server proxy (`/api/weather`, `/api/ai/breed`) — not direct browser fetch
+- [ ] Weather / ML / GIF calls go through the server proxy (`/api/weather`, `/api/ai/breed`, `/api/tenor`) — not direct browser fetch
+
+## 📝 Documentation Checklist
+
+*(Required by AGENTS.md post-task doc mandate)*
+
+- [ ] `CHANGELOG.md` updated with this change
+- [ ] `README.md` feature table / migration count current
+- [ ] `docs/api.md` updated (if new or changed routes)
+- [ ] `docs/database.md` updated (if schema changed)
+- [ ] `docs/security.md` updated (if security controls changed)
+- [ ] `docs/architecture.md` updated (if architecture changed)
+- [ ] `SETUP.md` updated (if env vars or CLI changed)
+- [ ] Version strings consistent across README, CHANGELOG, HACKATHON.md, AGENTS.md
 
 ## Screenshots / Recordings
 

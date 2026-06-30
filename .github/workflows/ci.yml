@@ -1,4 +1,4 @@
-name: CI — Lint · Types · Build · Secret Scan
+name: CI — Lint · Types · Build · Secret Scan · Docs Check
 
 on:
   push:
@@ -111,3 +111,60 @@ jobs:
 
       - name: Build ML Docker image
         run: docker build -t meownet-ml:ci ./python-ml
+
+  # ─── Job 5: Docs Consistency ──────────────────────────────────────────────
+  docs-check:
+    name: "📝 Docs — Version & Accuracy Check"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check version consistency
+        run: |
+          # Extract version from README footer
+          README_VER=$(grep -oP '(?<=\*\*Version:\*\* )\d+\.\d+\.\d+' README.md | head -1)
+          # Extract latest released version from CHANGELOG
+          CHANGELOG_VER=$(grep -oP '(?<=## \[)\d+\.\d+\.\d+(?=\])' CHANGELOG.md | head -1)
+          # Extract version from HACKATHON.md title
+          HACKATHON_VER=$(grep -oP '(?<=v)\d+\.\d+\.\d+' docs/HACKATHON.md | head -1)
+
+          echo "README version:    $README_VER"
+          echo "CHANGELOG version: $CHANGELOG_VER"
+          echo "HACKATHON version: $HACKATHON_VER"
+
+          if [ "$README_VER" != "$CHANGELOG_VER" ]; then
+            echo "❌ Version mismatch: README ($README_VER) vs CHANGELOG ($CHANGELOG_VER)"
+            exit 1
+          fi
+
+          echo "✅ Version strings consistent"
+
+      - name: Check for stale migration counts
+        run: |
+          # Count actual migration files
+          ACTUAL=$(ls supabase/migrations/*.sql 2>/dev/null | wc -l)
+          echo "Actual migration files: $ACTUAL"
+
+          # Check for obviously stale counts in docs
+          STALE=$(grep -rn " 33 migrations\| 42 migrations\|0001–0033\|0001–0042" docs/ README.md SETUP.md 2>/dev/null || true)
+          if [ -n "$STALE" ]; then
+            echo "⚠️  Stale migration count found in docs:"
+            echo "$STALE"
+            exit 1
+          fi
+          echo "✅ Migration counts look current"
+
+      - name: Check for local paths in docs
+        run: |
+          # No Windows or Unix absolute paths should appear in docs
+          BAD=$(grep -rn "C:\\\\" docs/ README.md SETUP.md CHANGELOG.md 2>/dev/null || true)
+          if [ -n "$BAD" ]; then
+            echo "❌ Local file path found in documentation:"
+            echo "$BAD"
+            exit 1
+          fi
+          echo "✅ No local paths found in docs"
+

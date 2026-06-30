@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 import type { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
@@ -44,14 +44,43 @@ export default async function AdminPage() {
     redirect('/cats');
   }
 
-  // Fetch initial dashboard stats, profiles, compliance audits, applications, logs, and settings
-  const [stats, profiles, audits, applications, auditLogs, systemSettings] = await Promise.all([
+  // Fetch initial dashboard stats, profiles, compliance audits, applications, logs, settings, and moderator/gamification data
+  const [
+    stats,
+    profiles,
+    audits,
+    applications,
+    auditLogs,
+    systemSettings,
+    catsRes,
+    eventsRes,
+    queriesRes,
+    triviaRes,
+    bingoRes,
+    guildsRes,
+  ] = await Promise.all([
     getAdminDashboardStats(),
     getAllProfiles(),
     getErasureAudits(),
     getModeratorApplications(),
     getAuditLogs(),
     getSystemSettings(),
+    supabase
+      .from('cats' as never)
+      .select('id, name, status, breed_estimate, age_estimate, owner_id, created_at, photo_url, is_verified, health_flags, health_notes, sterilized, vaccinated, microchipped, contact_info, bcs_estimate, color, shelter_url, breed_confidence, location')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('tnr_events' as never)
+      .select('id, title, description, capacity, status, created_at, cats_tnrd_count, event_time, organizer_id, location')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('moderator_queries' as never)
+      .select('id, target_type, target_id, moderator_id, volunteer_id, message, status, response, created_at')
+      .order('created_at', { ascending: false })
+      .then(res => res, () => ({ data: [], error: null })),
+    supabase.from('trivia_questions' as never).select('*').order('created_at', { ascending: true }),
+    supabase.from('bingo_task_templates' as never).select('*').order('created_at', { ascending: true }),
+    supabase.from('guilds' as never).select('*').order('points', { ascending: false })
   ]);
 
   return (
@@ -62,6 +91,19 @@ export default async function AdminPage() {
       initialApplications={applications as unknown as ModeratorApplication[]}
       initialAuditLogs={auditLogs as unknown as StaffAuditLog[]}
       initialSystemSettings={systemSettings as unknown as SystemSetting[]}
+      initialCats={(catsRes.data ?? []) as any[]}
+      initialEvents={(eventsRes.data ?? []) as any[]}
+      initialQueries={(queriesRes?.data ?? []) as any[]}
+      initialTrivia={(triviaRes.data ?? []) as any[]}
+      initialBingo={(bingoRes.data ?? []) as any[]}
+      initialGuilds={(guildsRes.data ?? []) as any[]}
+      currentUser={{
+        id: user.id,
+        role: 'admin',
+        sub_role: null,
+        edits_count: 0,
+        max_edits: 999999
+      }}
     />
   );
 }

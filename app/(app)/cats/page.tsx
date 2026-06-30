@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/(app)/cats/page.tsx — Cat listings with search/filter
 import type { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase/server';

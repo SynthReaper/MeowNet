@@ -1,6 +1,6 @@
 # MeowNet Architecture
 
-> Last updated: 2026-06-28 · v0.6.0
+> Last updated: 2026-06-30 · v0.8.0
 
 ## System Overview
 
@@ -15,7 +15,7 @@ Browser
   │
   ├── Supabase (PostgreSQL + PostGIS)
   │     ├── Auth     — email/password + Google/GitHub OAuth + direct credentials
-  │     ├── Database — cats, events, profiles, gamification, guilds (59 migrations)
+  │     ├── Database — cats, events, profiles, gamification, guilds (2 migrations)
   │     ├── Storage  — Cat photos (EXIF stripped before write)
   │     ├── Realtime — Live cat map, chat, guilds subscriptions
   │     └── system_settings — Dynamic key-value configuration store
@@ -24,9 +24,10 @@ Browser
   │     └── /breed + /meow — HuggingFace AI inference
   │
   └── External APIs (server-side proxied — never from browser)
-        ├── Open-Meteo   → /api/weather (single + batch)
+        ├── Open-Meteo    → /api/weather (single + batch)
         ├── Catfact.ninja → /api/catfact
-        └── Nominatim    → reverse geocoding (display only, client-side)
+        ├── Tenor GIF CDN → /api/tenor (community chat GIF search proxy)
+        └── Nominatim     → reverse geocoding (display only, client-side)
 ```
 
 ---
@@ -99,7 +100,7 @@ User fills LogCatForm
     → INSERT cats with ST_SnapToGrid location fuzzing trigger
     → award_points RPC (SECURITY DEFINER — bypasses RLS)
   → Realtime broadcast to subscribed CatMap clients
-  → Globe particles update via Supabase Realtime channel
+  → Local landing page metrics updated
 ```
 
 ### Weather Alert (Landing Page)
@@ -190,7 +191,7 @@ User visits /auth/login or /auth/moderator-login
 
 | Component | Type | Why |
 |-----------|------|-----|
-| `GlobeScene` | Client | Three.js requires DOM + WebGL API |
+| `InteractiveCat` | Client | Inline SVG rendering and stateful CSS animation triggers |
 | `CatMap` | Client | Leaflet + realtime Supabase subscription |
 | `Navbar` | Client | Scroll events, dual auth state, theme toggle |
 | `WeatherPage` | Client | Geolocation API, live fetch |
@@ -242,5 +243,7 @@ See [security.md](security.md) for the full STRIDE threat model.
 - EXIF stripped before upload — `lib/security/exif.ts`
 - GPS fuzzing at DB level — `ST_SnapToGrid(0.005°)`
 - Points idempotency — `action_key UNIQUE` prevents double-awarding
-- CSP + HSTS + X-Frame-Options headers in `next.config.ts`
+- CSP + HSTS + X-Frame-Options (`SAMEORIGIN`) in `next.config.ts`
+- `productionBrowserSourceMaps: false` — JS source maps not served in prod
+- `poweredByHeader: false` — hides Next.js fingerprint
 - `service_role` key never in client bundle — verified via CI secret scan

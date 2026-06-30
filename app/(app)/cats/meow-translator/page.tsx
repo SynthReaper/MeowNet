@@ -241,7 +241,7 @@ export default function MeowTranslatorPage() {
           <span>AI Meow Translator</span>
         </h1>
         <p className="font-body text-base text-[var(--empire-cream)]/70 max-w-xl">
-          Record or upload a community stray's vocal meow. Our AI mood classifier estimates their behavioral sentiment!
+          {"Record or upload a community stray's vocal meow. Our AI mood classifier estimates their behavioral sentiment!"}
         </p>
       </div>
 

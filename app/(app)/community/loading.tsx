@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/(app)/community/loading.tsx — 2-column channel layout skeleton loader for community discussion room
 
 export default function CommunityLoading() {

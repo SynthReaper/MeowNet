@@ -1,6 +1,6 @@
 'use client';
 // app/auth/forgot-password/page.tsx — Custom Password Reset Flow
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // Design matching MeowNet brand with step-by-step custom wizard
 
 import { useState, useRef, useCallback, useEffect } from 'react';

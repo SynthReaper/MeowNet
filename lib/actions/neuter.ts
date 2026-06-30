@@ -111,7 +111,7 @@ export async function verifyNeuterRequest(proofId: string, approve: boolean) {
       const actionKey = `neuter-verify:${(proof as any).cat_id}:${Date.now()}`;
       await (admin as any).rpc('award_points', {
         p_user_id: (proof as any).user_id,
-        p_activity: 'NEUTER_PROOF' as any,
+        p_activity: 'NEUTER_PROOF',
         p_points: 50,
         p_related_id: (proof as any).cat_id,
         p_action_key: actionKey

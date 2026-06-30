@@ -46,7 +46,7 @@ export default function OnboardingTour() {
   useEffect(() => {
     const isDone = localStorage.getItem('meownet_tour_done');
     if (isDone !== 'true') {
-      setIsOpen(true);
+      setTimeout(() => setIsOpen(true), 0);
     }
 
     // Dynamic location transition detector to trigger tour walkthrough on new location

@@ -36,7 +36,7 @@ export async function createMedicalLog(colonyId: string, logType: 'vaccine' | 'p
 
     // Award volunteer points for registering a medical action (+15 XP)
     const admin = createServiceClient();
-    const actionKey = makeActionKey(user.id, 'MEDICAL_LOG' as any, `${colonyId}:${logType}:${Date.now()}`);
+    const actionKey = makeActionKey(user.id, 'MEDICAL_LOG', `${colonyId}:${logType}:${Date.now()}`);
     await (admin as any).rpc('award_points', {
       p_user_id: user.id,
       p_activity: 'MEDICAL_LOG',
@@ -105,7 +105,7 @@ export async function transferEmpirePointsToColonyFund(colonyId: string, amountP
 
     // 2. Deduct points via award_points (negative points)
     const admin = createServiceClient();
-    const deductKey = makeActionKey(user.id, 'COLONY_DONATION' as any, `deduct:${colonyId}:${Date.now()}`);
+    const deductKey = makeActionKey(user.id, 'COLONY_DONATION', `deduct:${colonyId}:${Date.now()}`);
     const { error: deductError } = await (admin as any).rpc('award_points', {
       p_user_id: user.id,
       p_activity: 'COLONY_DONATION',

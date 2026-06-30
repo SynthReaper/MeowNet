@@ -25,6 +25,10 @@ interface Props {
 export default function FuturisticAuditDashboard({ initialAuditLogs, currentUserRole }: Props) {
   const [logs, setLogs] = useState<AuditLogEntry[]>(initialAuditLogs);
   
+  useEffect(() => {
+    setLogs(initialAuditLogs);
+  }, [initialAuditLogs]);
+
   // Filtering states
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'moderator' | 'volunteer'>('all');
@@ -438,6 +442,13 @@ export default function FuturisticAuditDashboard({ initialAuditLogs, currentUser
                 <p className="bg-[var(--bg-elevated)] border border-[var(--bg-border)]/35 p-4 rounded-xl font-data text-xs text-[var(--text-primary)]/95 leading-relaxed whitespace-pre-line select-all">
                   {selectedLog.details || 'No extended transaction details recorded.'}
                 </p>
+              </div>
+
+              <div className="flex flex-col gap-1.5 pt-2 border-t border-[var(--bg-border)]/35">
+                <span className="text-[9px] text-[var(--text-muted)] uppercase font-black">Raw JSON Payload</span>
+                <pre className="bg-[var(--bg-elevated)] border border-[var(--bg-border)]/35 p-3 rounded-xl font-data text-[10px] text-[var(--text-primary)]/90 overflow-x-auto whitespace-pre select-all max-h-[140px] dashboard-scroll-area">
+                  {JSON.stringify(selectedLog, null, 2)}
+                </pre>
               </div>
 
               {/* Transparency Dispute / Query Panel */}

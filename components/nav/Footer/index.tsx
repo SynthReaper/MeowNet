@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-[var(--bg-surface)] border-t border-[var(--bg-border)]/40 mt-auto py-12 px-6 md:px-12 transition-colors duration-300">
+    <footer className="w-full bg-[var(--bg-surface)] border-t border-[var(--bg-border)]/40 mt-auto py-12 px-6 md:px-12 transition-colors duration-300 rounded-t-[3rem] shadow-[0_-12px_32px_rgba(148,74,0,0.03)]">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         
         {/* Brand Section */}

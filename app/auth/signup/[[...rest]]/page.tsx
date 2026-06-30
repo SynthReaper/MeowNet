@@ -1,5 +1,5 @@
 // app/auth/signup/[[...rest]]/page.tsx — Catch-all Join Empire Page (Split-Screen Brand Style)
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 import type { Metadata } from 'next';
 import { SignUp, ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
 import { auth } from '@clerk/nextjs/server';

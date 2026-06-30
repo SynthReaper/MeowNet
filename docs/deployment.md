@@ -1,6 +1,6 @@
 # MeowNet Deployment Guide
 
-> Last updated: 2026-06-28 · v0.6.0
+> Last updated: 2026-06-30 · v0.8.0
 
 ---
 
@@ -69,7 +69,7 @@ npm install -g supabase
 # Link to your remote project
 npx supabase link --project-ref YOUR_PROJECT_REF
 
-# Apply all 33 migrations
+# Apply all 2 migrations (0001–0002)
 npx supabase db push
 ```
 
@@ -184,12 +184,17 @@ Push to main
   │     ├── npm run build        # Next.js production build
   │     └── gitleaks scan        # Secret detection
   │
-  ├── Vercel Integration
-  │     └── Next.js production build & deployment
+  ├── GitHub Actions: health.yml
+  │     └── Ping production URLs every 6 hours
   │
-  └── Render Git Integration
-        └── Python ML Service build & deployment
+  ├── Vercel Direct Git Integration
+  │     └── Next.js production build & deployment (automatic on push to main)
+  │
+  └── Render Direct Git Integration
+        └── Python ML Service build & deployment (automatic on push to main)
 ```
+
+> **Note:** A separate `deploy.yml` workflow file is not used. Vercel and Render deployments are triggered by direct Git repository integration — not via GitHub Actions deploy steps.
 
 ---
 

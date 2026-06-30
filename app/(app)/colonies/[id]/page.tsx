@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/(app)/colonies/[id]/page.tsx — Colony detailed overview page
 import type { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase/server';
@@ -271,7 +271,7 @@ export default async function ColonyDetailPage({
 
                 <div className="flex flex-col gap-2 border-t border-[var(--bg-border)]/20 pt-3 text-xs text-[var(--empire-cream)]/80 font-body">
                   <div className="flex justify-between">
-                    <span>TNR'd:</span>
+                    <span>{"TNR'd:"}</span>
                     <strong className="font-data">{colony.tnr_count}</strong>
                   </div>
                   <div className="flex justify-between">
@@ -291,7 +291,7 @@ export default async function ColonyDetailPage({
                 <span>Nearby Felines</span>
               </h2>
               <p className="font-body text-xs text-[var(--empire-cream)]/50 mt-1">
-                Registered stray or feral cats sighted within 500 meters of this colony's registered epicenter.
+                {"Registered stray or feral cats sighted within 500 meters of this colony's registered epicenter."}
               </p>
             </div>
 

@@ -1,5 +1,5 @@
 'use client';
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/(app)/weather/page.tsx — Feline Weather Watch & Shelter Safety Index
 
 import { useState, useEffect, useMemo } from 'react';

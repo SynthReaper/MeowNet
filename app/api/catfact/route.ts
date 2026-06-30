@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/api/catfact/route.ts — Full catfact.ninja proxy (all 3 endpoints)
 // Prevents Chrome extension (injectScriptAdjust.js) from intercepting browser fetches.
 //

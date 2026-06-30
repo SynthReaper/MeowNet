@@ -1,5 +1,5 @@
 'use server';
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // lib/actions/community.ts — Server Actions for community chat room
 
 import { revalidatePath } from 'next/cache';

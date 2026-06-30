@@ -1,10 +1,11 @@
 'use client';
 
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/(app)/moderator/ModeratorDashboardClient.tsx — Interactive Moderator Dashboard
 
 import { useState, useEffect, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import {
   AreaChart,
@@ -496,6 +497,21 @@ export default function ModeratorDashboardClient({
     setTimeout(() => setNotification(null), 4000);
   };
 
+  const [volunteerApprovals, setVolunteerApprovals] = useState([
+    { id: '1', name: 'Marcus Chen', initials: 'MC', status: 'Cleared background check', statusColor: 'text-[var(--life-teal)]', progress: '90%', action: 'approve' },
+    { id: '2', name: 'Sarah Jenkins', initials: 'SJ', status: 'Pending background check', statusColor: 'text-amber-400', progress: '100%', action: 'approve' },
+    { id: '3', name: 'Alex Rivera', initials: 'AR', status: 'Cleared background check', statusColor: 'text-[var(--life-teal)]', progress: '45%', action: 'progress' }
+  ]);
+
+  const handleApproveVolunteer = (id: string, name: string) => {
+    setActionLoadingId(`volunteer-approve-${id}`);
+    setTimeout(() => {
+      setVolunteerApprovals(prev => prev.filter(v => v.id !== id));
+      showNotification('success', `Volunteer "${name}" approved successfully!`);
+      setActionLoadingId(null);
+    }, 800);
+  };
+
   // Fetch Audit Logs when audits tab becomes active
   useEffect(() => {
     let active = true;
@@ -896,7 +912,7 @@ export default function ModeratorDashboardClient({
   });
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 md:px-12 py-8 flex flex-col gap-8">
+    <div className="w-full max-w-7xl mx-auto px-4 md:px-12 py-8 flex flex-col lg:flex-row gap-8 items-start animate-dashboard-fade">
       {/* Toast Notification */}
       {notification && (
         <div
@@ -913,150 +929,308 @@ export default function ModeratorDashboardClient({
         </div>
       )}
 
-      {/* Header */}
-      <div>
-        <h1 className="font-display text-3xl font-extrabold text-[var(--empire-gold)] flex items-center gap-2">
-          <span className="material-symbols-outlined text-3xl animate-pulse" style={{ fontVariationSettings: "'FILL' 1" }}>
-            shield
-          </span>
-          <span>Moderator Command Center</span>
-        </h1>
-        <p className="font-body text-sm text-[var(--empire-cream)]/60">
-          Verify stray reports, update community TNR campaigns, address inquiries, and audit logs.
-        </p>
+      {/* Left Sidebar Nav */}
+      <div className="w-full lg:w-64 flex-shrink-0 premium-glass p-5 rounded-2xl flex flex-col gap-6 lg:sticky lg:top-20">
+        <div className="flex items-center gap-3 pb-4 border-b border-[var(--bg-border)]/20">
+          <div className="w-10 h-10 rounded-full overflow-hidden shadow-md flex items-center justify-center shrink-0" style={{background:'linear-gradient(135deg,#fbbf24,#f97316)'}}>
+            <img src="/pet-logo.png" alt="Mission Control" className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <h2 className="font-display text-sm font-black text-[var(--empire-gold)] leading-none">Mission Control</h2>
+            <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40 mt-1 block">Moderator Panel</span>
+          </div>
+        </div>
+
+        <nav className="flex flex-col gap-1">
+          <button
+            onClick={() => setActiveTab('map')}
+            className={`sidebar-nav-link border-none text-left w-full ${
+              activeTab === 'map' ? 'active text-[var(--empire-gold)]' : 'text-[var(--empire-cream)]/60'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">dashboard</span>
+            <span>Dashboard</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('cats')}
+            className={`sidebar-nav-link border-none text-left w-full ${
+              activeTab === 'cats' ? 'active text-[var(--empire-gold)]' : 'text-[var(--empire-cream)]/60'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">pets</span>
+            <span>Stray Cats ({cats.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('events')}
+            className={`sidebar-nav-link border-none text-left w-full ${
+              activeTab === 'events' ? 'active text-[var(--empire-gold)]' : 'text-[var(--empire-cream)]/60'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">event</span>
+            <span>TNR Campaigns ({events.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('queries')}
+            className={`sidebar-nav-link border-none text-left w-full ${
+              activeTab === 'queries' ? 'active text-[var(--empire-gold)]' : 'text-[var(--empire-cream)]/60'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">question_answer</span>
+            <span>Queries Log ({queries.filter((q) => q.status !== 'closed' && q.status !== 'resolved').length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('profiles')}
+            className={`sidebar-nav-link border-none text-left w-full ${
+              activeTab === 'profiles' ? 'active text-[var(--empire-gold)]' : 'text-[var(--empire-cream)]/60'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">volunteer_activism</span>
+            <span>Volunteers ({profiles.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('audits')}
+            className={`sidebar-nav-link border-none text-left w-full ${
+              activeTab === 'audits' ? 'active text-[var(--empire-gold)]' : 'text-[var(--empire-cream)]/60'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">history</span>
+            <span>Audit Trail</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('live')}
+            className={`sidebar-nav-link border-none text-left w-full ${
+              activeTab === 'live' ? 'active text-[var(--empire-gold)]' : 'text-[var(--empire-cream)]/60'
+            }`}
+          >
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span>Live User Feed</span>
+          </button>
+        </nav>
+
+        <div className="pt-4 border-t border-[var(--bg-border)]/20 mt-auto flex flex-col gap-2">
+          <Link
+            href="/notices"
+            className="w-full bg-[var(--empire-gold)] hover:bg-[var(--empire-gold-dim)] text-white py-2.5 px-4 rounded-xl font-display text-xs font-bold shadow-md hover:shadow-lg transition-all min-h-[40px] flex items-center justify-center gap-1.5 no-underline cursor-pointer font-extrabold"
+          >
+            <span className="material-symbols-outlined text-sm">campaign</span>
+            <span>Broadcast Alert</span>
+          </Link>
+        </div>
       </div>
 
-      {currentUser?.sub_role === 'sub_moderator' && (
-        <div className="bg-[#fdf3e7] border border-[#fbdcb2] rounded-2xl p-4.5 flex items-center gap-3.5 shadow-sm text-xs font-semibold text-[#8a561e] animate-fade-in">
-          <span className="material-symbols-outlined text-xl text-[#eb8424]" style={{ fontVariationSettings: "'FILL' 1" }}>info</span>
-          <div className="flex-1">
-            <p className="font-bold text-[#964a00]">Sub-Moderator Mode (Limited Access)</p>
-            <p className="text-[#6b5a4d] mt-0.5 font-medium">
-              You can view all logs, queries, and sightings. Your account is configured for testing with a maximum limit of <strong>{currentUser.max_edits} edits</strong> total.
-              Currently used: <strong className="text-[#eb8424]">{currentUser.edits_count} / {currentUser.max_edits} edits</strong>.
+      {/* Main Canvas Area */}
+      <div className="flex-1 min-w-0 flex flex-col gap-8 w-full">
+        {/* Dynamic Canvas Header */}
+        <header className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 border-b border-[var(--bg-border)]/20 pb-4">
+          <div>
+            <h2 className="font-display text-2xl font-black text-[var(--empire-gold)] mb-1 capitalize">
+              {activeTab === 'map' ? 'Moderator Panel' : activeTab}
+            </h2>
+            <p className="font-body text-xs text-[var(--empire-cream)]/60">
+              {activeTab === 'map' && 'Real-time telemetry, active verification queues, and vitals.'}
+              {activeTab === 'cats' && 'Review stray cat sighting reports, edit profile entries, and moderate health flags.'}
+              {activeTab === 'events' && 'Authorize public TNR activities and confirm target colony metrics.'}
+              {activeTab === 'queries' && 'Resolve escalated volunteer help requests and system queries.'}
+              {activeTab === 'profiles' && 'Inspect registered volunteer status, points ledger, and permissions.'}
+              {activeTab === 'audits' && 'Operational staff action logging.'}
+              {activeTab === 'live' && 'Telemetry feed tracking user locations and updates.'}
             </p>
           </div>
-        </div>
-      )}
+        </header>
 
-      {/* Dashboard Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-[var(--bg-surface)] p-5 rounded-2xl border border-[var(--bg-border)] shadow-ambient flex items-center gap-4 hover:shadow-active transition-all">
-          <div className="w-12 h-12 rounded-xl bg-[var(--empire-gold)]/10 text-[var(--empire-gold)] flex items-center justify-center">
-            <span className="material-symbols-outlined text-2xl">pets</span>
-          </div>
-          <div>
-            <div className="text-2xl font-black text-[var(--empire-cream)] font-data">
-              {cats.filter((c) => !c.is_verified).length}
+        {currentUser?.sub_role === 'sub_moderator' && (
+          <div className="bg-[#fdf3e7] border border-[#fbdcb2] rounded-2xl p-4.5 flex items-center gap-3.5 shadow-sm text-xs font-semibold text-[#8a561e] animate-fade-in">
+            <span className="material-symbols-outlined text-xl text-[#eb8424]" style={{ fontVariationSettings: "'FILL' 1" }}>info</span>
+            <div className="flex-1">
+              <p className="font-bold text-[#964a00]">Sub-Moderator Mode (Limited Access)</p>
+              <p className="text-[#6b5a4d] mt-0.5 font-medium">
+                You can view all logs, queries, and sightings. Your account is configured for testing with a maximum limit of <strong>{currentUser.max_edits} edits</strong> total.
+                Currently used: <strong className="text-[#eb8424]">{currentUser.edits_count} / {currentUser.max_edits} edits</strong>.
+              </p>
             </div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40 mt-0.5">
-              Unverified Cats
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-[var(--bg-surface)] p-5 rounded-2xl border border-[var(--bg-border)] shadow-ambient flex items-center gap-4 hover:shadow-active transition-all">
-          <div className="w-12 h-12 rounded-xl bg-[var(--life-teal)]/10 text-[var(--life-teal)] flex items-center justify-center">
-            <span className="material-symbols-outlined text-2xl">event</span>
-          </div>
-          <div>
-            <div className="text-2xl font-black text-[var(--text-primary)] font-data">
-              {events.filter((e) => e.status === 'pending').length}
-            </div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mt-0.5">
-              Pending Events
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-[var(--bg-surface)] p-5 rounded-2xl border border-[var(--bg-border)] shadow-ambient flex items-center gap-4 hover:shadow-active transition-all">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
-            <span className="material-symbols-outlined text-2xl">question_answer</span>
-          </div>
-          <div>
-            <div className="text-2xl font-black text-[var(--text-primary)] font-data">
-              {queries.filter((q) => q.status !== 'closed' && q.status !== 'resolved').length}
-            </div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mt-0.5">
-              Active Inquiries
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-[var(--bg-surface)] p-5 rounded-2xl border border-[var(--bg-border)] shadow-ambient flex items-center gap-4 hover:shadow-active transition-all">
-          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center">
-            <span className="material-symbols-outlined text-2xl">volunteer_activism</span>
-          </div>
-          <div>
-            <div className="text-2xl font-black text-[var(--text-primary)] font-data">{profiles.length}</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mt-0.5">
-              Monitored Volunteers
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tab Menu */}
-      <div className="flex border-b border-[var(--bg-border)]/30 gap-4 overflow-x-auto pb-1">
-        {[
-          { key: 'map', label: 'Interactive Map' },
-          { key: 'cats', label: 'Stray Cats', count: cats.length },
-          { key: 'events', label: 'TNR Events', count: events.length },
-          { key: 'queries', label: 'Queries Log', count: queries.filter((q) => q.status !== 'closed' && q.status !== 'resolved').length },
-          { key: 'profiles', label: 'Volunteers', count: profiles.length },
-          { key: 'audits', label: 'Audit Trail' },
-          { key: 'live', label: 'Live User Feed' },
-        ].map((tab) => {
-          const isLive = tab.key === 'live';
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
-              className={`pb-3 font-display text-sm font-bold border-b-2 transition-all cursor-pointer shrink-0 flex items-center gap-1.5 ${
-                activeTab === tab.key
-                  ? 'text-[var(--empire-gold)] border-[var(--empire-gold)]'
-                  : 'text-[var(--empire-cream)]/40 border-transparent hover:text-[var(--empire-gold)]'
-              }`}
-            >
-              {isLive && (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-              )}
-              <span>{tab.label} {tab.count !== undefined && `(${tab.count})`}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Main Container */}
-      <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--bg-border)] shadow-ambient p-6">
-        {/* MAP TAB */}
-        {activeTab === 'map' && (
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-wrap gap-4 items-center justify-between">
-              <div>
-                <h3 className="font-display text-base font-bold text-[var(--empire-gold)] flex items-center gap-2">
-                  <span className="material-symbols-outlined">map</span>
-                  <span>Interactive Hotspots Sighting Map</span>
-                </h3>
-                <p className="font-body text-xs text-[var(--empire-cream)]/50 mt-1">
-                  Click on pins to view status information, verify cat sightings, or approve TNR events.
-                </p>
-              </div>
-            </div>
-            <ModeratorHotspotsMap
-              cats={cats}
-              events={events}
-              onToggleCatVerified={handleToggleCatVerified}
-              onModerateEvent={handleModerateEvent}
-              onSelectCat={(c) => setSelectedCat(c)}
-              onSelectEvent={(e) => setSelectedEvent(e)}
-              actionLoadingId={actionLoadingId}
-            />
           </div>
         )}
+
+        {/* Main Content Container */}
+        <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--bg-border)] shadow-ambient p-6">
+          {/* MAP TAB / DASHBOARD */}
+          {activeTab === 'map' && (
+            <div className="flex flex-col gap-8">
+              {/* Top row: Community Vitals + Volunteer Approvals */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Community Vitals Card */}
+                <div className="bg-[var(--bg-elevated)]/45 border border-[var(--bg-border)]/40 p-5 rounded-2xl shadow-sm">
+                  <h3 className="font-display text-base font-bold text-[var(--empire-gold)] mb-4 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-base">monitoring</span>
+                    <span>Community Vitals</span>
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-[var(--bg-surface)] p-4 rounded-xl border border-[var(--bg-border)]/20 shadow-sm flex items-center gap-3">
+                      <span className="material-symbols-outlined text-2xl text-[var(--life-teal)] bg-[var(--life-teal)]/10 p-2.5 rounded-lg">volunteer_activism</span>
+                      <div>
+                        <div className="text-xl font-black text-[var(--empire-cream)] font-data">1,284</div>
+                        <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">Active Guardians</div>
+                      </div>
+                    </div>
+                    <div className="bg-[var(--bg-surface)] p-4 rounded-xl border border-[var(--bg-border)]/20 shadow-sm flex items-center gap-3">
+                      <span className="material-symbols-outlined text-2xl text-[var(--empire-gold)] bg-[var(--empire-gold)]/10 p-2.5 rounded-lg">pets</span>
+                      <div>
+                        <div className="text-xl font-black text-[var(--empire-cream)] font-data">47</div>
+                        <div className="text-[9px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">New Sightings Today</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 p-3.5 bg-[var(--life-teal)]/5 border border-[var(--life-teal)]/10 rounded-xl text-[10px] text-[var(--life-teal)] flex items-center gap-2">
+                    <span className="material-symbols-outlined text-xs">info</span>
+                    <span>All core parameters are tracking within normal parameters. Real-time updates active.</span>
+                  </div>
+                </div>
+
+                {/* Volunteer Approval Panel Card */}
+                <div className="bg-[var(--bg-elevated)]/45 border border-[var(--bg-border)]/40 p-5 rounded-2xl shadow-sm flex flex-col gap-3">
+                  <div className="flex justify-between items-center pb-2 border-b border-[var(--bg-border)]/20">
+                    <h3 className="font-display text-sm font-bold text-[var(--empire-cream)] flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm">assignment_ind</span>
+                      <span>Volunteer Approval</span>
+                    </h3>
+                    <span className="text-[8px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-500 py-0.5 px-1.5 rounded-full uppercase tracking-wider">
+                      {volunteerApprovals.length} Pending Check
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-2.5">
+                    {volunteerApprovals.length === 0 ? (
+                      <div className="py-8 text-center text-[var(--empire-cream)]/30 text-xs italic">
+                        No pending approvals in queue
+                      </div>
+                    ) : (
+                      volunteerApprovals.map((v) => (
+                        <div key={v.id} className="flex items-center justify-between gap-4 p-2 bg-[var(--bg-surface)]/40 border border-[var(--bg-border)]/10 rounded-xl">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-7 h-7 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center font-bold text-xs`}>
+                              {v.initials}
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-[var(--empire-cream)]">{v.name}</div>
+                              <div className={`text-[8px] ${v.statusColor} font-bold`}>{v.status}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 bg-[var(--bg-border)]/30 rounded-full h-1 overflow-hidden">
+                              <div className="bg-emerald-400 h-full rounded-full" style={{ width: v.progress }} />
+                            </div>
+                            {v.action === 'approve' ? (
+                              <button
+                                disabled={actionLoadingId === `volunteer-approve-${v.id}`}
+                                onClick={() => handleApproveVolunteer(v.id, v.name)}
+                                className="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-[8px] text-emerald-400 font-bold px-2.5 py-1 rounded-lg cursor-pointer transition-colors disabled:opacity-50"
+                              >
+                                {actionLoadingId === `volunteer-approve-${v.id}` ? 'Approving...' : 'Approve'}
+                              </button>
+                            ) : (
+                              <span className="text-[8px] bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-bold px-2.5 py-1 rounded-lg">
+                                In Progress
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Row: Map (left) + Moderation Queue (right) */}
+              <div className="flex flex-col lg:flex-row gap-8 items-stretch">
+                {/* Map Bento Cell */}
+                <div className="flex-1 bg-[var(--bg-surface)] rounded-2xl border border-[var(--bg-border)] shadow-ambient p-5 flex flex-col gap-4">
+                  <div className="flex flex-wrap gap-4 items-center justify-between pb-3 border-b border-[var(--bg-border)]/20">
+                    <div>
+                      <h3 className="font-display text-sm font-bold text-[var(--empire-gold)] flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-sm">map</span>
+                        <span>Live Field Ops Map</span>
+                      </h3>
+                      <p className="font-body text-[10px] text-[var(--empire-cream)]/50">
+                        Click pins to inspect coordinates, view details, or process sightings.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-h-[420px] rounded-xl overflow-hidden border border-[var(--bg-border)]/40 relative">
+                    <ModeratorHotspotsMap
+                      cats={cats}
+                      events={events}
+                      onToggleCatVerified={handleToggleCatVerified}
+                      onModerateEvent={handleModerateEvent}
+                      onSelectCat={(c) => setSelectedCat(c)}
+                      onSelectEvent={(e) => setSelectedEvent(e)}
+                      actionLoadingId={actionLoadingId}
+                    />
+                  </div>
+                </div>
+
+                {/* Moderation Queue Bento Cell */}
+                <div className="w-full lg:w-80 bg-[var(--bg-surface)] rounded-2xl border border-[var(--bg-border)] shadow-ambient p-5 flex flex-col gap-4">
+                  <div className="pb-3 border-b border-[var(--bg-border)]/20">
+                    <h3 className="font-display text-sm font-bold text-[var(--empire-cream)] flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm">checklist</span>
+                      <span>Moderation Queue</span>
+                    </h3>
+                    <p className="font-body text-[10px] text-[var(--empire-cream)]/50">
+                      {cats.filter(c => !c.is_verified).length} pending verifications
+                    </p>
+                  </div>
+                  <div className="flex-1 overflow-y-auto flex flex-col gap-3 max-h-[460px] pr-1.5">
+                    {cats.filter(c => !c.is_verified).length === 0 ? (
+                      <div className="py-24 text-center text-xs text-[var(--empire-cream)]/40 italic flex flex-col items-center justify-center gap-2">
+                        <span className="material-symbols-outlined text-2xl text-emerald-400">task_alt</span>
+                        <span>Verification queue clear!</span>
+                      </div>
+                    ) : (
+                      cats.filter(c => !c.is_verified).slice(0, 10).map((cat) => (
+                        <div key={cat.id} className="p-3 bg-[var(--bg-elevated)]/30 border border-[var(--bg-border)]/30 rounded-xl flex flex-col gap-2 hover:border-[var(--empire-gold)]/50 transition-all duration-300 text-left">
+                          <div className="flex justify-between items-start gap-1">
+                            <div className="font-display text-xs font-bold text-[var(--empire-gold)] truncate">{cat.name || 'Unnamed Cat'}</div>
+                            <span className={`text-[8px] font-bold uppercase tracking-wider py-0.5 px-1.5 rounded-full ${
+                              cat.health_notes?.toLowerCase().includes('sick') || cat.health_notes?.toLowerCase().includes('injur')
+                                ? 'bg-red-500/10 border border-red-500/20 text-red-400'
+                                : 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
+                            }`}>
+                              {cat.health_notes?.toLowerCase().includes('sick') || cat.health_notes?.toLowerCase().includes('injur') ? 'Urgent' : 'Sighting'}
+                            </span>
+                          </div>
+                          <div className="text-[10px] font-body text-[var(--empire-cream)]/75 line-clamp-2">{cat.breed_estimate || 'Stray Cat'} · {cat.health_notes || 'No health flags'}</div>
+                          <div className="text-[8px] font-data text-[var(--empire-cream)]/40">Registered {new Date(cat.created_at).toLocaleDateString()}</div>
+                          <div className="flex gap-2 justify-end pt-1.5 border-t border-[var(--bg-border)]/15">
+                            <button
+                              onClick={() => setSelectedCat(cat)}
+                              className="bg-[var(--bg-elevated)] hover:bg-[var(--bg-surface)] border border-[var(--bg-border)] text-[8px] text-[var(--empire-cream)] font-bold px-2 py-1 rounded-lg cursor-pointer transition-colors"
+                            >
+                              Inspect
+                            </button>
+                            <button
+                              disabled={actionLoadingId === `verify-${cat.id}`}
+                              onClick={() => handleToggleCatVerified(cat.id, true)}
+                              className="bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/20 text-[8px] text-emerald-400 font-bold px-2.5 py-1 rounded-lg cursor-pointer transition-colors disabled:opacity-50"
+                            >
+                              Verify
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* CATS TAB */}
         {activeTab === 'cats' && (
@@ -1164,7 +1338,7 @@ export default function ModeratorDashboardClient({
                 {filteredCats.map((cat) => (
                   <div
                     key={cat.id}
-                    className="bg-[var(--bg-elevated)]/40 rounded-2xl border border-[var(--bg-border)]/40 p-4 flex flex-col justify-between gap-4 hover:border-[var(--empire-gold)]/60 transition-all shadow-sm"
+                    className="cyber-card p-4 rounded-2xl flex flex-col justify-between gap-4"
                   >
                     <div className="flex gap-4">
                       {cat.photo_url ? (
@@ -1551,6 +1725,21 @@ export default function ModeratorDashboardClient({
                               </span>
                             )}
                           </div>
+
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <span className="text-[9px] px-2 py-0.5 bg-[var(--bg-surface)]/60 border border-[var(--bg-border)]/30 rounded-md font-mono text-[var(--empire-cream)]/50">
+                              For Volunteer: {q.volunteer_id}
+                            </span>
+                            <span className="text-[9px] px-2 py-0.5 bg-[var(--bg-surface)]/60 border border-[var(--bg-border)]/30 rounded-md font-mono text-[var(--empire-cream)]/50">
+                              Raised By Mod: {q.moderator_id || 'Direct/Admin'}
+                            </span>
+                            {(q.status === 'resolved' || q.status === 'closed' || q.status === 'solved') && (
+                              <span className="text-[9px] px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/25 rounded-md font-mono text-emerald-400">
+                                Solved By: {q.moderator_id || 'System Admin'}
+                              </span>
+                            )}
+                          </div>
+
                           <p className="font-body text-xs font-semibold text-[var(--empire-cream)] mt-3 leading-relaxed">
                             {displayMessage}
                           </p>
@@ -2582,6 +2771,7 @@ export default function ModeratorDashboardClient({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

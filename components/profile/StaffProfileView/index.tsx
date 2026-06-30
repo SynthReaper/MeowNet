@@ -1,6 +1,6 @@
 'use client';
 
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // components/profile/StaffProfileView/index.tsx — Staff-specific profile view with unified Volunteer capabilities
 
 import { useState, ComponentProps } from 'react';

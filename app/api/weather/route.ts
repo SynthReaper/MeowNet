@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/api/weather/route.ts — Full Open-Meteo proxy with rich weather data
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -160,7 +160,7 @@ export async function GET(req: NextRequest) {
           {
             headers: {
               'Accept-Language': 'en',
-              'User-Agent': 'MeowNet/1.0 (https://github.com/SynthReaper/MeoNet)',
+              'User-Agent': 'MeowNet/1.0 (https://github.com/SynthReaper/MeowNet)',
             },
           }
         );

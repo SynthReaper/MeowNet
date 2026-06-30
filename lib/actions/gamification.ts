@@ -119,7 +119,7 @@ export async function getTriviaStats() {
       if (!questionsError && dbQuestions && dbQuestions.length > 0) {
         questionsList = dbQuestions;
       }
-    } catch {}
+    } catch { }
 
     if (questionsList.length === 0) {
       questionsList = TRIVIA_QUESTIONS.map(q => ({
@@ -183,7 +183,7 @@ export async function submitTriviaAnswer(questionId: string, answerIndex: number
       if (!qError && dbQuestion) {
         activeQuestion = dbQuestion;
       }
-    } catch {}
+    } catch { }
 
     if (!activeQuestion) {
       const localQ = TRIVIA_QUESTIONS.find(q => q.id === questionId);
@@ -220,7 +220,7 @@ export async function submitTriviaAnswer(questionId: string, answerIndex: number
       const admin = createServiceClient();
       pointsAwarded = 10; // BASE trivia point
       let streakBonus = 0;
-      
+
       if (newStreak > 0 && newStreak % 3 === 0) {
         streakBonus = 15; // STREAK_BONUS every 3 days
         pointsAwarded += streakBonus;
@@ -380,11 +380,11 @@ export async function claimBingoSquare(squareIndex: number) {
       // Lines to check
       const checks = [
         // Rows
-        [0,1,2,3,4], [5,6,7,8,9], [10,11,12,13,14], [15,16,17,18,19], [20,21,22,23,24],
+        [0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11, 12, 13, 14], [15, 16, 17, 18, 19], [20, 21, 22, 23, 24],
         // Columns
-        [0,5,10,15,20], [1,6,11,16,21], [2,7,12,17,22], [3,8,13,18,23], [4,9,14,19,24],
+        [0, 5, 10, 15, 20], [1, 6, 11, 16, 21], [2, 7, 12, 17, 22], [3, 8, 13, 18, 23], [4, 9, 14, 19, 24],
         // Diagonals
-        [0,6,12,18,24], [4,8,12,16,20]
+        [0, 6, 12, 18, 24], [4, 8, 12, 16, 20]
       ];
       return checks.some(line => line.every(idx => sqs[idx].completed));
     };
@@ -462,9 +462,9 @@ export async function joinGuild(guildId: string) {
     const minPoints = (guild as any).min_points_required ?? 0;
 
     if (userPoints < minPoints) {
-      return { 
-        success: false, 
-        error: `Insufficient empire points. This guild requires at least ${minPoints} points to join. You currently have ${userPoints} points.` 
+      return {
+        success: false,
+        error: `Insufficient empire points. This guild requires at least ${minPoints} points to join. You currently have ${userPoints} points.`
       };
     }
 
@@ -639,10 +639,10 @@ export async function claimIdlePoints() {
 
     // Award points via RPC
     const admin = createServiceClient();
-    const actionKey = makeActionKey(user.id, 'LEND_A_PAW' as any, `claim-idle:${Date.now()}`);
+    const actionKey = makeActionKey(user.id, 'TYCOON_CLAIM', `claim-idle:${Date.now()}`);
     const { error: awardError } = await (admin as any).rpc('award_points', {
       p_user_id: user.id,
-      p_activity: 'LEND_A_PAW',
+      p_activity: 'TYCOON_CLAIM',
       p_points: pointsToClaim,
       p_related_id: sanctuary.id,
       p_action_key: actionKey,
@@ -704,10 +704,10 @@ export async function purchaseSanctuaryUpgrade(upgradeType: 'shelter_bed' | 'kib
 
     // 4. Deduct points via award_points RPC (negative points)
     const admin = createServiceClient();
-    const actionKey = makeActionKey(user.id, 'LEND_A_PAW' as any, `${upgradeType}:${level}:${Date.now()}`);
+    const actionKey = makeActionKey(user.id, 'TYCOON_UPGRADE', `${upgradeType}:${level}:${Date.now()}`);
     const { error: awardError } = await (admin as any).rpc('award_points', {
       p_user_id: user.id,
-      p_activity: 'LEND_A_PAW',
+      p_activity: 'TYCOON_UPGRADE',
       p_points: -cost,
       p_related_id: sanctuary.id,
       p_action_key: actionKey,
@@ -729,10 +729,10 @@ export async function purchaseSanctuaryUpgrade(upgradeType: 'shelter_bed' | 'kib
 
     if (insertError) {
       // Revert points if upgrade insert fails
-      const revertKey = makeActionKey(user.id, 'LEND_A_PAW' as any, `revert:${upgradeType}:${level}:${Date.now()}`);
+      const revertKey = makeActionKey(user.id, 'TYCOON_UPGRADE', `revert:${upgradeType}:${level}:${Date.now()}`);
       await (admin as any).rpc('award_points', {
         p_user_id: user.id,
-        p_activity: 'LEND_A_PAW',
+        p_activity: 'TYCOON_UPGRADE',
         p_points: cost,
         p_related_id: sanctuary.id,
         p_action_key: revertKey,
@@ -949,10 +949,10 @@ export async function awardMeowTranslationPoints() {
 
   try {
     const admin = createServiceClient();
-    const actionKey = makeActionKey(user.id, 'MEOW_TRANSLATION' as any, `meow-translation:${Date.now()}`);
+    const actionKey = makeActionKey(user.id, 'MEOW_TRANSLATION', `meow-translation:${Date.now()}`);
     const { error } = await (admin as any).rpc('award_points', {
       p_user_id: user.id,
-      p_activity: 'LEND_A_PAW',
+      p_activity: 'MEOW_TRANSLATION',
       p_points: 10,
       p_related_id: user.id,
       p_action_key: actionKey,

@@ -5,6 +5,14 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { submitUserProfileQuery } from '@/lib/actions/admin';
 
+export interface ChatMessage {
+  sender_id: string;
+  sender_name: string;
+  sender_role: 'volunteer' | 'moderator';
+  message: string;
+  timestamp: string;
+}
+
 interface Query {
   id: string;
   target_type: 'cat' | 'event' | 'profile' | 'message' | 'general';
@@ -13,16 +21,15 @@ interface Query {
   status: 'pending' | 'solved' | 'closed' | 'resolved';
   response?: string | null;
   created_at: string;
-  chat_messages?: any[];
+  chat_messages?: ChatMessage[];
   volunteer_id: string;
 }
 
 interface Props {
   initialQueries: Query[];
-  userId: string;
 }
 
-export default function ProfileQueries({ initialQueries, userId }: Props) {
+export default function ProfileQueries({ initialQueries }: Props) {
   const [queries, setQueries] = useState<Query[]>(initialQueries);
   const [message, setMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +59,7 @@ export default function ProfileQueries({ initialQueries, userId }: Props) {
           target_type: res.query.target_type,
           target_id: res.query.target_id,
           message: res.query.message,
-          status: res.query.status as any,
+          status: res.query.status as Query['status'],
           created_at: res.query.created_at,
           chat_messages: res.query.chat_messages,
           volunteer_id: res.query.volunteer_id,

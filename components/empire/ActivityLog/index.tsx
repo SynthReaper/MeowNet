@@ -66,6 +66,42 @@ const ACTIVITY_CONFIG: Record<string, { label: string; icon: string; bg: string;
     bg: '#fbcfe8', // pink/rose tint
     color: '#9d174d',
   },
+  TYCOON_CLAIM: {
+    label: 'Claimed Tycoon Sanctuary Points',
+    icon: 'account_balance_wallet',
+    bg: '#dcfce7', // light green
+    color: '#15803d',
+  },
+  TYCOON_UPGRADE: {
+    label: 'Purchased Sanctuary Upgrade',
+    icon: 'upgrade',
+    bg: '#fef3c7', // light yellow
+    color: '#b45309',
+  },
+  MEOW_TRANSLATION: {
+    label: 'Translated Meow (AI Translator)',
+    icon: 'translate',
+    bg: '#e0f2fe', // light blue
+    color: '#0369a1',
+  },
+  NEUTER_PROOF: {
+    label: 'Submitted Neuter Verification',
+    icon: 'verified',
+    bg: '#d1fae5', // emerald
+    color: '#065f46',
+  },
+  MEDICAL_LOG: {
+    label: 'Logged Medical Record',
+    icon: 'medical_services',
+    bg: '#fee2e2', // red
+    color: '#991b1b',
+  },
+  COLONY_DONATION: {
+    label: 'Donated Points to Colony Fund',
+    icon: 'handshake',
+    bg: '#e0f2fe', // sky blue
+    color: '#0369a1',
+  },
 };
 
 function getTimeAgo(dateString: string): string {

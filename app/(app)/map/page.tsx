@@ -1,4 +1,4 @@
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 'use client';
 // app/(app)/map/page.tsx — Cat Sighting Map (client component)
 

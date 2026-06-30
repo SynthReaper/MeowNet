@@ -1,6 +1,6 @@
 'use client';
 /* eslint-disable @next/next/no-img-element, react-hooks/exhaustive-deps, @typescript-eslint/no-unused-vars */
-// Developed by SynthReaper — https://github.com/SynthReaper/MeoNet
+// Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 // app/(app)/community/CommunityClient.tsx — Full Reddit/Slack-style Community Hub with WhatsApp-style DMs
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
@@ -150,10 +150,8 @@ interface PollProps {
 
 function PollCard({ messageId, messageText }: PollProps) {
   const match = messageText.match(/\[📊 Poll\]\s*([^|]+)\s*\|\s*(.*)/);
-  if (!match) return <p className="text-sm font-body">{messageText}</p>;
-
-  const question = match[1].trim();
-  const options = match[2].split('|').map(o => o.trim()).filter(Boolean);
+  const question = match ? match[1].trim() : '';
+  const options = match ? match[2].split('|').map(o => o.trim()).filter(Boolean) : [];
 
   const localStorageKey = `poll_vote_${messageId}`;
   const [selectedOption, setSelectedOption] = useState<number | null>(() => {
@@ -187,6 +185,8 @@ function PollCard({ messageId, messageText }: PollProps) {
     });
     localStorage.setItem(localStorageKey, String(idx));
   };
+
+  if (!match) return <p className="text-sm font-body">{messageText}</p>;
 
   const totalVotes = voteCounts.reduce((a, b) => a + b, 0);
 
@@ -371,7 +371,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
     const userId = clerkUser?.id ?? supabaseUser?.id;
     if (!userId) {
       if (!isClerkSignedIn && isSupabaseLoaded && !supabaseUser) {
-        setCurrentUser(null);
+        setTimeout(() => setCurrentUser(null), 0);
       }
       return;
     }
