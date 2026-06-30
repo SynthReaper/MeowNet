@@ -334,12 +334,17 @@ export async function claimBingoSquare(squareIndex: number) {
     const card = cardRes.card;
 
     const squares = [...card.squares];
-    if (squares[squareIndex].completed) {
+    const idx = Number(squareIndex);
+    if (isNaN(idx) || idx < 0 || idx >= squares.length) {
+      return { success: false, error: 'invalid_index' };
+    }
+
+    if (squares[idx].completed) {
       return { success: false, error: 'already_completed' };
     }
 
     // Verify the square task is completed
-    const square = squares[squareIndex];
+    const square = squares[idx];
     let isVerified = false;
 
     if (square.type === 'log_cat') {
@@ -373,7 +378,7 @@ export async function claimBingoSquare(squareIndex: number) {
     }
 
     // Toggle complete
-    squares[squareIndex].completed = true;
+    squares[idx].completed = true;
 
     // Check for bingo (horizontal, vertical, diagonals)
     const isWinningPosition = (sqs: any[]) => {

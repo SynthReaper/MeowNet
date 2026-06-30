@@ -5,6 +5,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateCat } from '@/lib/actions/cats';
 import { HEALTH_FLAG_LABELS, type HealthFlag } from '@/lib/veterinary/triageRules';
+import { getSafeImageSrc } from '@/lib/security/url';
 
 interface EditCatFormProps {
   cat: {
@@ -139,7 +140,7 @@ export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
           <div className="flex flex-col md:flex-row gap-6 items-center">
             {previewUrl && (
               <div className="w-40 h-40 rounded-xl overflow-hidden border border-[var(--bg-border)] shrink-0 shadow-sm">
-                <img src={previewUrl} alt="Cat preview" className="w-full h-full object-cover" />
+                <img src={getSafeImageSrc(previewUrl)} alt="Cat preview" className="w-full h-full object-cover" />
               </div>
             )}
             <div className="flex-grow w-full">

@@ -2,6 +2,7 @@
 // app/api/weather/route.ts — Full Open-Meteo proxy with rich weather data
 
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -176,7 +177,10 @@ export async function GET(req: NextRequest) {
       }
     }
   } else {
-    const shelter = CAT_SHELTER_LOCATIONS[Math.floor(Math.random() * CAT_SHELTER_LOCATIONS.length)];
+    const randomBuf = new Uint32Array(1);
+    crypto.getRandomValues(randomBuf);
+    const shelterIndex = randomBuf[0] % CAT_SHELTER_LOCATIONS.length;
+    const shelter = CAT_SHELTER_LOCATIONS[shelterIndex];
     lat          = shelter.lat;
     lng          = shelter.lng;
     locationName = shelter.name;

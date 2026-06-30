@@ -28,6 +28,7 @@ import {
   type DirectMessage,
 } from '@/lib/actions/community';
 import { createClient } from '@/lib/supabase/client';
+import { getSafeImageSrc } from '@/lib/security/url';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -318,7 +319,7 @@ const renderMessageContent = (messageText: string, messageId?: string) => {
               <p className="font-body text-[10px] text-[#6b5a4d]/50 font-bold">{size}</p>
             </div>
           </div>
-          <a href={url} download target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-full hover:bg-[#dbc2b2]/20 flex items-center justify-center text-[#6b5a4d] hover:text-[#eb8424] transition-colors shrink-0">
+          <a href={getSafeImageSrc(url)} download target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-full hover:bg-[#dbc2b2]/20 flex items-center justify-center text-[#6b5a4d] hover:text-[#eb8424] transition-colors shrink-0">
             <span className="material-symbols-outlined text-base">download</span>
           </a>
         </div>
@@ -346,7 +347,7 @@ const renderMessageContent = (messageText: string, messageId?: string) => {
         isSafe = false;
       }
       if (isSafe) {
-        return <img src={rawUrl} alt="Chat Media" className="rounded-xl max-h-48 shadow-sm border border-[#dbc2b2]/35 object-cover mt-1" />;
+        return <img src={getSafeImageSrc(rawUrl)} alt="Chat Media" className="rounded-xl max-h-48 shadow-sm border border-[#dbc2b2]/35 object-cover mt-1" />;
       }
     }
   }
