@@ -43,11 +43,8 @@ export function calculateWelfareScore(cat: WelfareInputs): WelfareResult {
   let bcs = 15; // default if null
   if (cat.bcs_estimate !== null && cat.bcs_estimate !== undefined) {
     const diff = Math.abs(cat.bcs_estimate - 5);
-    if (diff === 0) bcs = 20;
-    else if (diff === 1) bcs = 15;
-    else if (diff === 2) bcs = 10;
-    else if (diff === 3) bcs = 5;
-    else bcs = 0;
+    const lookup: Record<number, number> = { 0: 20, 1: 15, 2: 10, 3: 5 };
+    bcs = lookup[diff] ?? 0;
   }
 
   let health = 20;

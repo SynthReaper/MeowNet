@@ -5,6 +5,8 @@
 import { revalidatePath } from 'next/cache';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { type ActionResponse } from './admin';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/supabase';
 
 export interface Channel {
   id: string;
@@ -66,6 +68,48 @@ export async function getCommunityChannels(): Promise<Channel[]> {
  * Fetches the recent 100 community chat messages.
  * Joins user profile data and channel data, and aggregates emoji reactions.
  */
+async function checkIsStaff(supabase: SupabaseClient<Database>): Promise<boolean> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    const { data: caller } = await supabase
+      .from('profiles' as never)
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle() as unknown as { data: { role: string | null } | null };
+    return caller?.role === 'moderator' || caller?.role === 'admin';
+  } catch {
+    return false;
+  }
+}
+
+function buildReactionsMap(
+  rxns: { message_id: string; emoji: string; user_id: string }[] | null,
+  currentUserId: string | null
+): Record<string, Reaction[]> {
+  const reactionsMap: Record<string, Reaction[]> = {};
+  if (!rxns) return reactionsMap;
+
+  const temp: Record<string, Record<string, { count: number; userIds: string[] }>> = {};
+  for (const r of rxns) {
+    if (!temp[r.message_id]) temp[r.message_id] = {};
+    if (!temp[r.message_id][r.emoji]) {
+      temp[r.message_id][r.emoji] = { count: 0, userIds: [] };
+    }
+    temp[r.message_id][r.emoji].count++;
+    temp[r.message_id][r.emoji].userIds.push(r.user_id);
+  }
+
+  for (const msgId of Object.keys(temp)) {
+    reactionsMap[msgId] = Object.entries(temp[msgId]).map(([emoji, meta]) => ({
+      emoji,
+      count: meta.count,
+      reacted: currentUserId ? meta.userIds.includes(currentUserId) : false,
+    }));
+  }
+  return reactionsMap;
+}
+
 export async function getCommunityMessages(): Promise<CommunityMessage[]> {
   try {
     const supabase = await createServerClient();
@@ -79,21 +123,7 @@ export async function getCommunityMessages(): Promise<CommunityMessage[]> {
 
     if (messagesError || !messagesData) return [];
 
-    // Check if caller is staff (moderator or admin) to view management messages
-    let isStaff = false;
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: caller } = await supabase
-          .from('profiles' as never)
-          .select('role')
-          .eq('id', user.id)
-          .maybeSingle() as unknown as { data: { role: string } | null };
-        isStaff = caller?.role === 'moderator' || caller?.role === 'admin';
-      }
-    } catch {
-      isStaff = false;
-    }
+    const isStaff = await checkIsStaff(supabase);
 
     interface RawCommunityMessage {
       id: string;
@@ -119,7 +149,7 @@ export async function getCommunityMessages(): Promise<CommunityMessage[]> {
       const { data: rxns } = await supabase
         .from('community_reactions' as never)
         .select('message_id, emoji, user_id')
-        .in('message_id', messageIds);
+        .in('message_id', messageIds) as unknown as { data: { message_id: string; emoji: string; user_id: string }[] | null };
 
       // Check current user for marking "reacted: true"
       let currentUserId: string | null = null;
@@ -130,25 +160,8 @@ export async function getCommunityMessages(): Promise<CommunityMessage[]> {
         currentUserId = null;
       }
 
-      if (rxns) {
-        const temp: Record<string, Record<string, { count: number; userIds: string[] }>> = {};
-        for (const r of (rxns || []) as unknown as { message_id: string; emoji: string; user_id: string }[]) {
-          if (!temp[r.message_id]) temp[r.message_id] = {};
-          if (!temp[r.message_id][r.emoji]) {
-            temp[r.message_id][r.emoji] = { count: 0, userIds: [] };
-          }
-          temp[r.message_id][r.emoji].count++;
-          temp[r.message_id][r.emoji].userIds.push(r.user_id);
-        }
-
-        for (const msgId of Object.keys(temp)) {
-          reactionsMap[msgId] = Object.entries(temp[msgId]).map(([emoji, meta]) => ({
-            emoji,
-            count: meta.count,
-            reacted: currentUserId ? meta.userIds.includes(currentUserId) : false,
-          }));
-        }
-      }
+      const mappedReactions = buildReactionsMap(rxns, currentUserId);
+      Object.assign(reactionsMap, mappedReactions);
     }
 
     return messages.map((msg) => ({
@@ -305,6 +318,21 @@ export async function editCommunityMessage(
   }
 }
 
+function checkDeletePermission(
+  callerRole: string | null,
+  authorRole: string | null,
+  isOwner: boolean,
+  isStaff: boolean
+): { allowed: boolean; error?: string } {
+  if (!isOwner && !isStaff) {
+    return { allowed: false, error: 'You do not have permission to delete this message.' };
+  }
+  if (callerRole === 'moderator' && authorRole === 'admin') {
+    return { allowed: false, error: 'Moderators cannot delete administrator messages.' };
+  }
+  return { allowed: true };
+}
+
 /**
  * Deletes a community message (Author deletes, staff redacts and notifies).
  */
@@ -335,13 +363,9 @@ export async function deleteCommunityMessage(messageId: string): Promise<ActionR
     const isStaff = caller?.role === 'moderator' || caller?.role === 'admin';
     const isOwner = msg.user_id === user.id;
 
-    if (!isOwner && !isStaff) {
-      return { success: false, error: 'You do not have permission to delete this message.' };
-    }
-
-    // Role check: moderator cannot delete admin message
-    if (caller?.role === 'moderator' && authorRole === 'admin') {
-      return { success: false, error: 'Moderators cannot delete administrator messages.' };
+    const perm = checkDeletePermission(caller?.role ?? null, authorRole ?? null, isOwner, isStaff);
+    if (!perm.allowed) {
+      return { success: false, error: perm.error };
     }
 
     // If moderator/admin is deleting another user's message, redact it and notify
@@ -482,6 +506,33 @@ export async function getDirectMessages(otherUserId: string): Promise<DirectMess
   }
 }
 
+interface PartnerMeta {
+  lastMessage: string;
+  created_at: string;
+  unread: boolean;
+  partnerId: string;
+}
+
+function groupDMsByPartner(dms: DirectMessage[], userId: string): Map<string, PartnerMeta> {
+  const partnersMap = new Map<string, PartnerMeta>();
+  for (const dm of dms) {
+    const partnerId = dm.sender_id === userId ? dm.receiver_id : dm.sender_id;
+    if (!partnersMap.has(partnerId)) {
+      partnersMap.set(partnerId, {
+        lastMessage: dm.message || (dm.media_type ? `[${dm.media_type}]` : ''),
+        created_at: dm.created_at,
+        unread: dm.receiver_id === userId && !dm.is_read,
+        partnerId
+      });
+    } else if (dm.receiver_id === userId && !dm.is_read) {
+      const existing = partnersMap.get(partnerId);
+      if (existing) {
+        existing.unread = true;
+      }
+    }
+  }
+  return partnersMap;
+}
 export interface DMConversation {
   id: string;
   display_name: string;
@@ -507,32 +558,7 @@ export async function getDMConversations(): Promise<DMConversation[]> {
 
     if (error || !dms) return [];
 
-    // Group by conversation partner
-    interface PartnerMeta {
-      lastMessage: string;
-      created_at: string;
-      unread: boolean;
-      partnerId: string;
-    }
-    const partnersMap = new Map<string, PartnerMeta>();
-    for (const dm of dms) {
-      const partnerId = dm.sender_id === user.id ? dm.receiver_id : dm.sender_id;
-      if (!partnersMap.has(partnerId)) {
-        partnersMap.set(partnerId, {
-          lastMessage: dm.message || (dm.media_type ? `[${dm.media_type}]` : ''),
-          created_at: dm.created_at,
-          unread: dm.receiver_id === user.id && !dm.is_read,
-          partnerId
-        });
-      } else {
-        if (dm.receiver_id === user.id && !dm.is_read) {
-          const existing = partnersMap.get(partnerId);
-          if (existing) {
-            existing.unread = true;
-          }
-        }
-      }
-    }
+    const partnersMap = groupDMsByPartner(dms, user.id);
 
     const partnerIds = Array.from(partnersMap.keys());
     if (partnerIds.length === 0) return [];
@@ -831,6 +857,31 @@ export async function toggleReaction(messageId: string, emoji: string): Promise<
   }
 }
 
+async function processChatImageIfNecessary(
+  buffer: Buffer,
+  contentType: string
+): Promise<{ buffer: Buffer; contentType: string }> {
+  if (contentType.startsWith('image/')) {
+    const { validateImageBuffer, stripExifAndNormalize } = await import('@/lib/security/exif');
+    if (validateImageBuffer(buffer)) {
+      try {
+        const cleanResult = await stripExifAndNormalize(buffer);
+        return { buffer: cleanResult.buffer, contentType: 'image/jpeg' };
+      } catch (e) {
+        console.error('EXIF stripping failed:', e);
+      }
+    }
+  }
+  return { buffer, contentType };
+}
+
+function getMediaType(mimeType: string): string {
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType === 'application/pdf') return 'pdf';
+  return 'file';
+}
+
 export async function uploadChatMedia(formData: FormData): Promise<ActionResponse & { url?: string, type?: string }> {
   try {
     const supabase = await createServerClient();
@@ -854,21 +905,8 @@ export async function uploadChatMedia(formData: FormData): Promise<ActionRespons
       return { success: false, error: 'File type not allowed' };
     }
 
-    let buffer: Buffer = Buffer.from(await file.arrayBuffer());
-    let contentType = file.type;
-
-    if (contentType.startsWith('image/')) {
-      const { validateImageBuffer, stripExifAndNormalize } = await import('@/lib/security/exif');
-      if (validateImageBuffer(buffer)) {
-        try {
-          const cleanResult = await stripExifAndNormalize(buffer);
-          buffer = cleanResult.buffer;
-          contentType = 'image/jpeg';
-        } catch (e) {
-          console.error('EXIF stripping failed:', e);
-        }
-      }
-    }
+    const rawBuffer = Buffer.from(await file.arrayBuffer());
+    const { buffer, contentType } = await processChatImageIfNecessary(rawBuffer, file.type);
 
     const rawExt = file.name.split('.').pop();
     const cleanExt = (rawExt || 'bin').replace(/[^a-zA-Z0-9]/g, '').toLowerCase().slice(0, 10);
@@ -881,11 +919,7 @@ export async function uploadChatMedia(formData: FormData): Promise<ActionRespons
     if (uploadError) return { success: false, error: uploadError.message };
 
     const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(uploadData.path);
-
-    let mediaType = 'file';
-    if (file.type.startsWith('image/')) mediaType = 'image';
-    else if (file.type.startsWith('video/')) mediaType = 'video';
-    else if (file.type === 'application/pdf') mediaType = 'pdf';
+    const mediaType = getMediaType(file.type);
 
     return { success: true, url: publicUrl, type: mediaType };
   } catch (err) {

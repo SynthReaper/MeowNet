@@ -6,6 +6,14 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 
 ## [Unreleased]
 
+### Fixed
+- **Sonar Code Quality Audit**: Resolved code smells, cognitive complexity issues, logic redundancies, and unexpected await warnings in Server Actions (`auth.ts`, `cats.ts`, `gamification.ts`, `admin.ts`, `audit.ts`, `community.ts`), the welfare score calculator (`welfare-score.ts`), the broadcasts notification banner (`Broadcasts.tsx`), and middleware (`proxy.ts`).
+- **FastAPI ML Service**: Modified `verify_service_secret` in `python-ml/main.py` to be a synchronous function to improve performance and compatibility.
+- **Codacy Scanner Workflow**: Deleted the Codacy Security Scan workflow (`.github/workflows/codacy.yml`) to revert the codebase to its state before commit `1dfee60cf819527bbe0b20439c3d2915b907b55e`.
+
+### Security
+- **DOM XSS Remediation**: Integrated `DOMPurify` into the `getSafeImageSrc` helper to sanitize URLs and resolve CodeQL alerts (#31 through #37) for DOM text reinterpreted as HTML. Configured regex overrides to preserve compatibility with `blob:` and `data:` schemes.
+
 ### Planned (Future Expansion)
 - **Winter Weather Micro-Shelter Allocator**: Hypothermia warning indicators, location allocation suggestions, and insulative R-value trackings.
 - **AI Feline Facial & Acoustic Translation (On Hold)**: Facial vector embeddings for duplicate merging, and meow acoustics state classifier translation.

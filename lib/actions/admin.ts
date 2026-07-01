@@ -4,6 +4,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface ActionResponse {
   success: boolean;
@@ -555,6 +556,12 @@ export async function submitUserProfileQuery(message: string): Promise<ActionRes
   }
 }
 
+function calculateNextStatus(isStaff: boolean, setSolved: boolean, currentStatus: string): string {
+  if (isStaff && setSolved) return 'solved';
+  if (!isStaff && currentStatus === 'solved') return 'pending';
+  return currentStatus;
+}
+
 /**
  * Appends a message to the query's chat thread.
  */
@@ -607,12 +614,7 @@ export async function addQueryChatMessage(
       }
     ];
 
-    let nextStatus = ticket.status;
-    if (isStaff && setSolved) {
-      nextStatus = 'solved';
-    } else if (!isStaff && ticket.status === 'solved') {
-      nextStatus = 'pending';
-    }
+    const nextStatus = calculateNextStatus(isStaff, setSolved, ticket.status);
 
     const { error: updateError } = await supabase
       .from('moderator_queries' as never)
@@ -684,6 +686,32 @@ export async function closeModeratorQuery(queryId: string): Promise<ActionRespon
     return { success: false, error: msg };
   }
 }
+async function retryProfileUpdate(
+  serviceClient: SupabaseClient,
+  userId: string,
+  profileData: {
+    display_name: string;
+    role: string;
+    password_expires_at: string | null;
+    max_usages: number | null;
+    usages_count: number;
+    is_enabled: boolean;
+  }
+): Promise<{ error: { message: string } | null }> {
+  let profileError: { message: string } | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    }
+    const { error } = await serviceClient
+      .from('profiles' as never)
+      .update(profileData as never)
+      .eq('id', userId);
+    profileError = error as { message: string } | null;
+    if (!error) break;
+  }
+  return { error: profileError };
+}
 
 /**
  * Creates a new user directly in Supabase Auth and seeds their profile.
@@ -703,9 +731,11 @@ export async function adminCreateUser(
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     if (!currentUser) return { success: false, error: 'Unauthorized' };
 
-    const { data: caller } = await (supabase
+    const { data: caller } = (await supabase
       .from('profiles' as never)
-      .select('role').eq('id', currentUser.id).maybeSingle() as unknown as { data: { role: string | null } | null });
+      .select('role')
+      .eq('id', currentUser.id)
+      .maybeSingle()) as unknown as { data: { role: string | null } | null };
 
     if (caller?.role !== 'admin') return { success: false, error: 'Unauthorized' };
 
@@ -747,36 +777,30 @@ export async function adminCreateUser(
     }
 
     // Update the created profile details (role, password_expires_at, max_usages, usages_count)
-    let profileError: { message: string } | null = null;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      if (attempt > 0) {
-        await new Promise((resolve) => setTimeout(resolve, 600));
-      }
-      const { error } = await serviceClient
-        .from('profiles' as never)
-        .update({
-          display_name: displayName,
-          role: role,
-          password_expires_at: expiryDate || null,
-          max_usages: maxUsages || null,
-          usages_count: 0,
-          is_enabled: true
-        } as never)
-        .eq('id', sbUser.user.id);
-      profileError = error;
-      if (!error) break;
-    }
+    const { error: profileError } = await retryProfileUpdate(serviceClient, sbUser.user.id, {
+      display_name: displayName,
+      role: role,
+      password_expires_at: expiryDate || null,
+      max_usages: maxUsages || null,
+      usages_count: 0,
+      is_enabled: true
+    });
 
     if (profileError) {
       return { success: false, error: `User created but profile update failed: ${profileError.message}` };
     }
+
+    const verificationStr = !skipEmailVerification ? ' [email verification required]' : '';
+    const expiryStr = expiryDate ? ` (expires: ${expiryDate})` : '';
+    const usagesStr = maxUsages ? ` (max usages: ${maxUsages})` : '';
+    const auditDetail = `Created user ${displayName} (${email}) with role ${role}${verificationStr}${expiryStr}${usagesStr}`;
 
     await logAuditActionInternal(
       currentUser.id,
       caller.role,
       'create_user',
       sbUser.user.id,
-      `Created user ${displayName} (${email}) with role ${role}${!skipEmailVerification ? ' [email verification required]' : ''}${expiryDate ? ` (expires: ${expiryDate})` : ''}${maxUsages ? ` (max usages: ${maxUsages})` : ''}`
+      auditDetail
     );
 
     revalidatePath('/admin');
@@ -940,10 +964,11 @@ export async function updateProfileByStaff(
       return { success: false, error: 'Unauthorized' };
     }
 
-    // Moderators cannot edit admin or moderator profiles
-    const { data: target } = await (supabase
+    const { data: target } = (await supabase
       .from('profiles' as never)
-      .select('role').eq('id', targetUserId).maybeSingle() as unknown as { data: { role: string | null } | null });
+      .select('role')
+      .eq('id', targetUserId)
+      .maybeSingle()) as unknown as { data: { role: string | null } | null };
 
     if (caller.role === 'moderator' && target && target.role !== 'user') {
       return { success: false, error: 'Moderators can only update profiles of standard users.' };
@@ -1002,10 +1027,11 @@ export async function submitModeratorApplication(reason: string): Promise<Action
     if (!trimmedReason) return { success: false, error: 'Application statement cannot be empty.' };
     if (trimmedReason.length > 1000) return { success: false, error: 'Statement is too long.' };
 
-    // Fetch user points and active role
-    const { data: profile } = await (supabase
+    const { data: profile } = (await supabase
       .from('profiles' as never)
-      .select('role, empire_points').eq('id', user.id).maybeSingle() as unknown as { data: { role: string | null; empire_points: number | null } | null });
+      .select('role, empire_points')
+      .eq('id', user.id)
+      .maybeSingle()) as unknown as { data: { role: string | null; empire_points: number | null } | null };
 
     if (!profile) return { success: false, error: 'Profile not found.' };
     if (profile.role !== 'user') return { success: false, error: 'You are already a staff member.' };
@@ -1241,7 +1267,7 @@ export async function getAuditLogs() {
       throw new Error('Unauthorized');
     }
 
-    let query = supabase
+    const query = supabase
       .from('staff_audit_logs' as never)
       .select('id, actor_id, actor_role, action, target_id, details, created_at, profiles:profiles!actor_id(display_name)' as never)
       .order('created_at', { ascending: false });
@@ -1456,8 +1482,7 @@ export async function shiftQueryToAdmin(queryId: string, reason: string): Promis
 
     if (fetchErr || !query) return { success: false, error: 'Query not found' };
 
-    // Append shifting header to indicate it is escalated to Admin
-    const cleanReason = reason.trim().replace(/[\[\]]/g, '');
+    const cleanReason = reason.trim().replace(/\[/g, '').replace(/\]/g, '');
     const updatedMessage = `${query.message}\n\n[SHIFTED_TO_ADMIN: ${cleanReason}]`;
 
     const { error: updateErr } = await supabase

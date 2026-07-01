@@ -148,10 +148,9 @@ export default function Broadcasts() {
       {activeBroadcasts.length > 0 && (
         <div className="w-full flex flex-col gap-2 p-2 sm:px-4 z-40 bg-[var(--bg-void)]">
           {activeBroadcasts.map((b) => {
-            // Style map based on broadcast_type
-            let bgColor = 'bg-amber-500/10 text-amber-600 border-amber-500/20';
-            let icon = 'info';
-            let iconColor = 'text-amber-500';
+            let bgColor = 'bg-[rgba(148,74,0,0.08)] text-[var(--empire-gold)] border-[rgba(148,74,0,0.15)]';
+            let icon = 'campaign';
+            let iconColor = 'text-[var(--empire-gold)]';
 
             if (b.broadcast_type === 'error') {
               bgColor = 'bg-red-500/10 text-red-600 border-red-500/20';
@@ -165,11 +164,6 @@ export default function Broadcasts() {
               bgColor = 'bg-teal-500/10 text-teal-600 border-teal-500/20';
               icon = 'check_circle';
               iconColor = 'text-teal-500';
-            } else {
-              // info
-              bgColor = 'bg-[rgba(148,74,0,0.08)] text-[var(--empire-gold)] border-[rgba(148,74,0,0.15)]';
-              icon = 'campaign';
-              iconColor = 'text-[var(--empire-gold)]';
             }
 
             return (

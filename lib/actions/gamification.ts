@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { makeActionKey } from '@/lib/gamification/points';
 import { TRIVIA_QUESTIONS } from '@/lib/gamification/trivia';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/supabase';
 
 // ── TYPES & INTERFACES ───────────────────────────────────────────────────────
 
@@ -79,7 +81,7 @@ export async function getTriviaStats() {
   if (!user) return { success: false, error: 'unauthorized' };
 
   try {
-    let { data: statsData, error } = await supabase
+    const { data: statsData, error } = await supabase
       .from('trivia_stats' as never)
       .select('*')
       .eq('user_id', user.id)
@@ -158,6 +160,40 @@ export async function getTriviaStats() {
   }
 }
 
+interface DBTriviaQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correct_index: number;
+  explanation: string;
+}
+
+async function fetchActiveQuestion(
+  supabase: SupabaseClient<Database>,
+  questionId: string
+): Promise<DBTriviaQuestion | null> {
+  try {
+    const { data: dbQuestion, error: qError } = await supabase
+      .from('trivia_questions' as never)
+      .select('*')
+      .eq('id', questionId)
+      .maybeSingle() as unknown as { data: DBTriviaQuestion | null; error: { message: string } | null };
+    if (!qError && dbQuestion) {
+      return dbQuestion;
+    }
+  } catch {}
+
+  const localQ = TRIVIA_QUESTIONS.find((q) => q.id === questionId);
+  if (!localQ) return null;
+  return {
+    id: localQ.id,
+    question: localQ.question,
+    options: localQ.options,
+    correct_index: localQ.correctIndex,
+    explanation: localQ.explanation,
+  };
+}
+
 export async function submitTriviaAnswer(questionId: string, answerIndex: number) {
   const { supabase, user } = await getAuthUser();
   if (!user) return { success: false, error: 'unauthorized' };
@@ -172,30 +208,8 @@ export async function submitTriviaAnswer(questionId: string, answerIndex: number
 
     if (playedToday) return { success: false, error: 'already_played_today' };
 
-    // Fetch active question from Supabase
-    let activeQuestion: any = null;
-    try {
-      const { data: dbQuestion, error: qError } = await supabase
-        .from('trivia_questions' as never)
-        .select('*')
-        .eq('id', questionId)
-        .maybeSingle();
-      if (!qError && dbQuestion) {
-        activeQuestion = dbQuestion;
-      }
-    } catch { }
-
-    if (!activeQuestion) {
-      const localQ = TRIVIA_QUESTIONS.find(q => q.id === questionId);
-      if (!localQ) return { success: false, error: 'invalid_question' };
-      activeQuestion = {
-        id: localQ.id,
-        question: localQ.question,
-        options: localQ.options,
-        correct_index: localQ.correctIndex,
-        explanation: localQ.explanation
-      };
-    }
+    const activeQuestion = await fetchActiveQuestion(supabase, questionId);
+    if (!activeQuestion) return { success: false, error: 'invalid_question' };
 
     const isCorrect = activeQuestion.correct_index === answerIndex;
     const newStreak = isCorrect ? stats.current_streak + 1 : 0;
@@ -322,6 +336,64 @@ export async function getBingoCard() {
   }
 }
 
+async function verifyBingoSquare(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  squareType: string
+): Promise<boolean> {
+  if (squareType === 'log_cat' || squareType === 'fuzz_location' || squareType === 'clean_exif') {
+    const { count } = await supabase
+      .from('cats' as never)
+      .select('*', { count: 'exact', head: true })
+      .eq('owner_id', userId);
+    return !!(count && count > 0);
+  }
+
+  if (squareType === 'trivia_complete') {
+    const { data: stats } = await supabase
+      .from('trivia_stats' as never)
+      .select('total_played')
+      .eq('user_id', userId)
+      .maybeSingle() as unknown as { data: { total_played: number } | null };
+    return !!(stats && stats.total_played > 0);
+  }
+
+  if (squareType === 'join_chat') {
+    const { count } = await supabase
+      .from('community_messages' as never)
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+    return !!(count && count > 0);
+  }
+
+  if (squareType === 'view_map' || squareType === 'check_weather' || squareType === 'read_notice') {
+    return true;
+  }
+
+  if (squareType === 'colony_check') {
+    const { count: countCreated } = await supabase
+      .from('colonies' as never)
+      .select('*', { count: 'exact', head: true })
+      .eq('created_by', userId);
+    const { count: countCaretaker } = await supabase
+      .from('colonies' as never)
+      .select('*', { count: 'exact', head: true })
+      .eq('caretaker_id', userId);
+    return !!((countCreated && countCreated > 0) || (countCaretaker && countCaretaker > 0));
+  }
+
+  if (squareType === 'point_transfer') {
+    const { count } = await supabase
+      .from('point_log' as never)
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .lt('points', 0);
+    return !!(count && count > 0);
+  }
+
+  return true;
+}
+
 export async function claimBingoSquare(squareIndex: number) {
   const { supabase, user } = await getAuthUser();
   if (!user) return { success: false, error: 'unauthorized' };
@@ -345,33 +417,7 @@ export async function claimBingoSquare(squareIndex: number) {
 
     // Verify the square task is completed
     const square = squares[idx];
-    let isVerified = false;
-
-    if (square.type === 'log_cat') {
-      const { count } = await supabase.from('cats' as never).select('*', { count: 'exact', head: true }).eq('owner_id', user.id);
-      if (count && count > 0) isVerified = true;
-    } else if (square.type === 'trivia_complete') {
-      const { data: stats } = await supabase.from('trivia_stats' as never).select('total_played').eq('user_id', user.id).maybeSingle() as any;
-      if (stats && stats.total_played > 0) isVerified = true;
-    } else if (square.type === 'join_chat') {
-      const { count } = await supabase.from('community_messages' as never).select('*', { count: 'exact', head: true }).eq('user_id', user.id);
-      if (count && count > 0) isVerified = true;
-    } else if (square.type === 'view_map' || square.type === 'check_weather' || square.type === 'read_notice') {
-      // Client-side interactions
-      isVerified = true;
-    } else if (square.type === 'fuzz_location' || square.type === 'clean_exif') {
-      const { count } = await supabase.from('cats' as never).select('*', { count: 'exact', head: true }).eq('owner_id', user.id);
-      if (count && count > 0) isVerified = true;
-    } else if (square.type === 'colony_check') {
-      const { count: countCreated } = await supabase.from('colonies' as never).select('*', { count: 'exact', head: true }).eq('created_by', user.id);
-      const { count: countCaretaker } = await supabase.from('colonies' as never).select('*', { count: 'exact', head: true }).eq('caretaker_id', user.id);
-      if ((countCreated && countCreated > 0) || (countCaretaker && countCaretaker > 0)) isVerified = true;
-    } else if (square.type === 'point_transfer') {
-      const { count } = await supabase.from('point_log' as never).select('*', { count: 'exact', head: true }).eq('user_id', user.id).lt('points', 0);
-      if (count && count > 0) isVerified = true;
-    } else {
-      isVerified = true;
-    }
+    const isVerified = await verifyBingoSquare(supabase, user.id, square.type);
 
     if (!isVerified) {
       return { success: false, error: `Verification failed. You haven't completed the task: "${square.label}" yet.` };

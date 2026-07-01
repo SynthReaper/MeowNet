@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 # ─── Service-level auth middleware ────────────────────────────────────────────
 ML_SERVICE_SECRET = os.environ.get("ML_SERVICE_SECRET", "")
 
-async def verify_service_secret(request: Request) -> None:
+def verify_service_secret(request: Request) -> None:
     """Next.js API proxy passes X-Service-Secret; reject all other callers."""
     if ML_SERVICE_SECRET and request.headers.get("X-Service-Secret") != ML_SERVICE_SECRET:
         raise HTTPException(status_code=401, detail="Unauthorized")

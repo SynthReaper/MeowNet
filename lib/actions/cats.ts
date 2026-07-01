@@ -8,6 +8,8 @@ import { sanitizeText, sanitizeUrl } from '@/lib/security/sanitize';
 import { makeActionKey, POINT_VALUES } from '@/lib/gamification/points';
 import { getSystemSetting } from '@/lib/supabase/settings';
 import { z } from 'zod';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/supabase';
 
 const CatCreateSchema = z.object({
   name: z.string().max(100).optional(),
@@ -171,6 +173,26 @@ export async function deleteCat(catId: string): Promise<{ success: boolean; erro
   }
 }
 
+async function handleCatPhotoUpload(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  photoFile: File
+): Promise<{ photoUrl?: string; error?: string }> {
+  if (photoFile.size > 5 * 1024 * 1024) return { error: 'photo_too_large' };
+  const rawBuffer = Buffer.from(await photoFile.arrayBuffer());
+  if (!validateImageBuffer(rawBuffer)) return { error: 'invalid_image_format' };
+  const { buffer: cleanBuffer } = await stripExifAndNormalize(rawBuffer);
+
+  const fileName = `${userId}/${Date.now()}.jpg`;
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from('MeowNet')
+    .upload(fileName, cleanBuffer, { contentType: 'image/jpeg', upsert: false });
+  if (uploadError) return { error: 'upload_failed' };
+
+  const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(uploadData.path);
+  return { photoUrl: publicUrl };
+}
+
 export async function updateCat(catId: string, formData: FormData): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = await createServerClient();
@@ -197,19 +219,9 @@ export async function updateCat(catId: string, formData: FormData): Promise<{ su
     let photoUrl = existingCat.photo_url;
     const photoFile = formData.get('photo') as File | null;
     if (photoFile && photoFile.size > 0) {
-      if (photoFile.size > 5 * 1024 * 1024) return { success: false, error: 'photo_too_large' };
-      const rawBuffer = Buffer.from(await photoFile.arrayBuffer());
-      if (!validateImageBuffer(rawBuffer)) return { success: false, error: 'invalid_image_format' };
-      const { buffer: cleanBuffer } = await stripExifAndNormalize(rawBuffer);
-
-      const fileName = `${user.id}/${Date.now()}.jpg`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('MeowNet')
-        .upload(fileName, cleanBuffer, { contentType: 'image/jpeg', upsert: false });
-      if (uploadError) return { success: false, error: 'upload_failed' };
-
-      const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(uploadData.path);
-      photoUrl = publicUrl;
+      const uploadRes = await handleCatPhotoUpload(supabase, user.id, photoFile);
+      if (uploadRes.error) return { success: false, error: uploadRes.error };
+      photoUrl = uploadRes.photoUrl!;
     }
 
     const { error: updateError } = await supabase

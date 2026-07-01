@@ -2,7 +2,6 @@
 
 // lib/actions/audit.ts — Unified System Activity & Audit Logs Server Actions
 import { createServerClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
 
 async function getAuthUser() {
   const supabase = await createServerClient();
