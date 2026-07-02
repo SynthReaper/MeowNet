@@ -63,26 +63,8 @@ export default function HelperWidget() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll chat history
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // Attempt auto-unlock on mount
-  useEffect(() => {
-    const cached = localStorage.getItem('meownet_vault_key');
-    if (cached) {
-      handleUnlockWithPassphrase(cached);
-    }
-  }, []);
-
-  const handleUnlockSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!passphrase) return;
-    handleUnlockWithPassphrase(passphrase);
-  };
-
-  const handleUnlockWithPassphrase = async (phrase: string) => {
+  // Decrypt and unlock the vault
+  async function handleUnlockWithPassphrase(phrase: string) {
     setUnlockError('');
     try {
       const configRes = await getPrivateConfig();
@@ -156,6 +138,25 @@ export default function HelperWidget() {
     } catch {
       setUnlockError('Decryption failed. Incorrect password.');
     }
+  }
+
+  // Auto-scroll chat history
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Attempt auto-unlock on mount
+  useEffect(() => {
+    const cached = localStorage.getItem('meownet_vault_key');
+    if (cached) {
+      handleUnlockWithPassphrase(cached);
+    }
+  }, []);
+
+  const handleUnlockSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passphrase) return;
+    handleUnlockWithPassphrase(passphrase);
   };
 
   // Commit dynamic actions suggested by AI

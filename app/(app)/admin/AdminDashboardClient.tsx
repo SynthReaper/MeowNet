@@ -764,10 +764,10 @@ export default function AdminDashboardClient({
   const [editUsagesCount, setEditUsagesCount] = useState<number>(0);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const showNotification = (type: 'success' | 'error', message: string) => {
+  function showNotification(type: 'success' | 'error', message: string) {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 4000);
-  };
+  }
 
   const [volunteerApprovals, setVolunteerApprovals] = useState([
     { id: '1', name: 'Marcus Chen', initials: 'MC', status: 'Cleared background check', statusColor: 'text-[var(--life-teal)]', progress: '90%', action: 'approve' },
