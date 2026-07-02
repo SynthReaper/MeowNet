@@ -274,8 +274,9 @@ export default function ModeratorHotspotsMap({
             <Popup>
               <div className="p-2 min-w-[220px] flex flex-col gap-2 font-body text-xs text-[var(--empire-cream)] bg-[var(--bg-surface)]">
                 <div className="border-b border-zinc-200 dark:border-zinc-700 pb-2">
-                  <h5 className="font-bold font-display text-sm m-0 leading-tight">
-                    📅 {ev.title}
+                  <h5 className="font-bold font-display text-sm m-0 leading-tight flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm text-[var(--empire-gold)]">calendar_month</span>
+                    <span>{ev.title}</span>
                   </h5>
                   <span className="text-[9px] text-zinc-500 font-semibold block mt-0.5">
                     TNR Campaign

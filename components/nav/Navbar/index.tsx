@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { createClient } from '@/lib/supabase/client';
 import { getSafeImageSrc } from '@/lib/security/url';
@@ -13,6 +13,7 @@ interface NavLink {
   label: string;
   id: string;
   icon: string;
+  description?: string;
 }
 
 interface NavGroup {
@@ -23,49 +24,91 @@ interface NavGroup {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    label: 'Mission Control',
+    label: 'Field Ops',
     icon: 'explore',
     links: [
-      { href: '/map', label: 'Interactive Map', id: 'nav-map', icon: 'explore' },
-      { href: '/safety', label: 'Safety Guides', id: 'nav-safety', icon: 'health_and_safety' },
-      { href: '/weather', label: 'Weather Watch', id: 'nav-weather', icon: 'partly_cloudy_day' },
+      { href: '/map', label: 'Interactive Map', id: 'nav-map', icon: 'explore', description: 'Real-time stray sighting map' },
+      { href: '/cats', label: 'Find Cats', id: 'nav-cats', icon: 'pets', description: 'Browse and search stray profiles' },
+      { href: '/colonies', label: 'Cat Colonies', id: 'nav-colonies', icon: 'home_work', description: 'Manage colony feed routes' },
+      { href: '/events', label: 'TNR Events', id: 'nav-events', icon: 'event', description: 'Join trap-neuter-return actions' },
+      { href: '/reports', label: 'Field Reports', id: 'nav-reports', icon: 'analytics', description: 'View field log summaries & stats' },
+      { href: '/safety', label: 'Safety Guides', id: 'nav-safety', icon: 'health_and_safety', description: 'Feline welfare and rescue guides' },
+      { href: '/weather', label: 'Weather Watch', id: 'nav-weather', icon: 'partly_cloudy_day', description: 'Feline safety alerts & WMO metrics' },
     ],
   },
   {
-    label: 'Cat Logs',
-    icon: 'pets',
+    label: 'Community & Empire',
+    icon: 'groups',
     links: [
-      { href: '/cats', label: 'Find Cats', id: 'nav-cats', icon: 'pets' },
-      { href: '/colonies', label: 'Cat Colonies', id: 'nav-colonies', icon: 'home_work' },
+      { href: '/empire', label: 'Empire Hub', id: 'nav-empire-hub', icon: 'military_tech', description: 'Leaderboards, ranks & badges' },
+      { href: '/empire/trivia', label: 'Daily Trivia', id: 'nav-trivia', icon: 'quiz', description: 'Play daily to earn extra points' },
+      { href: '/empire/bingo', label: 'Stray Bingo', id: 'nav-bingo', icon: 'grid_on', description: 'Complete weekly quest lines' },
+      { href: '/empire/guilds', label: 'Volunteer Guilds', id: 'nav-guilds', icon: 'groups', description: 'Join regional volunteer teams' },
+      { href: '/empire/tycoon', label: 'Colony Tycoon', id: 'nav-tycoon', icon: 'castle', description: 'Idle feline sanctuary game' },
+      { href: '/community', label: 'Community Forum', id: 'nav-community', icon: 'forum', description: 'Discuss & DM with other guardians' },
+      { href: '/stories', label: 'Success Stories', id: 'nav-stories', icon: 'auto_stories', description: 'Read adopted cat rescue diaries' },
+      { href: '/notices', label: 'Notice Board', id: 'nav-notices', icon: 'campaign', description: 'Targeted announcements' },
     ],
   },
   {
-    label: 'Feline Empire',
-    icon: 'military_tech',
+    label: 'Personal Care',
+    icon: 'favorite',
     links: [
-      { href: '/empire', label: 'Empire Dashboard', id: 'nav-empire-hub', icon: 'military_tech' },
-      { href: '/empire/trivia', label: 'Daily Trivia', id: 'nav-trivia', icon: 'quiz' },
-      { href: '/empire/bingo', label: 'Stray Bingo', id: 'nav-bingo', icon: 'grid_on' },
-      { href: '/empire/guilds', label: 'Volunteer Guilds', id: 'nav-guilds', icon: 'groups' },
-      { href: '/empire/tycoon', label: 'Colony Tycoon', id: 'nav-tycoon', icon: 'castle' },
-    ],
-  },
-  {
-    label: 'TNR & Community',
-    icon: 'group',
-    links: [
-      { href: '/events', label: 'TNR Events', id: 'nav-events', icon: 'event' },
-      { href: '/stories', label: 'Success Stories', id: 'nav-stories', icon: 'auto_stories' },
-      { href: '/community', label: 'Community Forum', id: 'nav-community', icon: 'forum' },
-      { href: '/notices', label: 'Notice Board', id: 'nav-notices', icon: 'campaign' },
+      { href: '/profile/care-center', label: 'Care Center', id: 'nav-care-center', icon: 'health_and_safety', description: 'Zero-knowledge encrypted vitals' },
+      { href: '/personal-helper', label: 'AI Helper', id: 'nav-personal-helper', icon: 'chat', description: 'Contextual feline assistant' },
+      { href: '/profile', label: 'My Profile', id: 'nav-profile-link', icon: 'person', description: 'Manage accounts & GDPR details' },
+      { href: '/profile/certificate', label: 'My Certificates', id: 'nav-certificates', icon: 'workspace_premium', description: 'Cryptographic verification proofs' },
     ],
   },
 ];
 
+interface SearchItem {
+  title: string;
+  href: string;
+  category: string;
+  icon: string;
+  keywords: string[];
+}
+
+const SEARCH_ITEMS: SearchItem[] = [
+  { title: 'Interactive Map', href: '/map', category: 'Field Ops', icon: 'explore', keywords: ['map', 'live', 'strays', 'gps', 'cats', 'location'] },
+  { title: 'Find Cats', href: '/cats', category: 'Field Ops', icon: 'pets', keywords: ['find', 'search', 'cats', 'profiles', 'sightings'] },
+  { title: 'Log Cat Sighting', href: '/cats/new', category: 'Field Ops', icon: 'add_location_alt', keywords: ['log', 'sighting', 'report', 'add cat', 'new cat'] },
+  { title: 'Cat Colonies', href: '/colonies', category: 'Field Ops', icon: 'home_work', keywords: ['colonies', 'colony', 'shelters', 'stray cats'] },
+  { title: 'TNR Events', href: '/events', category: 'Field Ops', icon: 'event', keywords: ['tnr', 'events', 'trap', 'neuter', 'return', 'campaigns'] },
+  { title: 'Field Reports', href: '/reports', category: 'Field Ops', icon: 'analytics', keywords: ['reports', 'field', 'volunteer', 'logs'] },
+  { title: 'Safety Guides', href: '/safety', category: 'Field Ops', icon: 'health_and_safety', keywords: ['safety', 'guides', 'help', 'instructions'] },
+  { title: 'Weather Watch', href: '/weather', category: 'Field Ops', icon: 'partly_cloudy_day', keywords: ['weather', 'watch', 'forecast', 'temperature', 'safety'] },
+  
+  { title: 'Empire Hub', href: '/empire', category: 'Community & Empire', icon: 'military_tech', keywords: ['empire', 'points', 'leaderboard', 'badges', 'rewards'] },
+  { title: 'Daily Trivia', href: '/empire/trivia', category: 'Community & Empire', icon: 'quiz', keywords: ['trivia', 'quiz', 'daily', 'streak', 'points'] },
+  { title: 'Stray Bingo', href: '/empire/bingo', category: 'Community & Empire', icon: 'grid_on', keywords: ['bingo', 'quests', 'weekly', 'challenges'] },
+  { title: 'Volunteer Guilds', href: '/empire/guilds', category: 'Community & Empire', icon: 'groups', keywords: ['guilds', 'guild', 'teams', 'groups', 'regions'] },
+  { title: 'Colony Tycoon', href: '/empire/tycoon', category: 'Community & Empire', icon: 'castle', keywords: ['tycoon', 'game', 'idle', 'empire', 'sanctuary'] },
+  { title: 'Community Forum', href: '/community', category: 'Community & Empire', icon: 'forum', keywords: ['forum', 'community', 'chat', 'discussion', 'messages'] },
+  { title: 'Success Stories', href: '/stories', category: 'Community & Empire', icon: 'auto_stories', keywords: ['stories', 'success', 'adoption', 'rescues'] },
+  { title: 'Notice Board', href: '/notices', category: 'Community & Empire', icon: 'campaign', keywords: ['notices', 'announcements', 'broadcasts'] },
+  
+  { title: 'Care Center', href: '/profile/care-center', category: 'My Workspace', icon: 'health_and_safety', keywords: ['care', 'center', 'private', 'encrypted', 'vitals', 'meds'] },
+  { title: 'AI Helper', href: '/personal-helper', category: 'My Workspace', icon: 'chat', keywords: ['helper', 'ai', 'gemini', 'chat', 'ask'] },
+  { title: 'My Profile', href: '/profile', category: 'My Workspace', icon: 'person', keywords: ['profile', 'me', 'settings', 'account'] },
+  { title: 'My Certificates', href: '/profile/certificate', category: 'My Workspace', icon: 'workspace_premium', keywords: ['certificates', 'verification', 'signature', 'volunteer'] },
+
+  { title: 'Admin Control', href: '/admin', category: 'Staff Commands', icon: 'admin_panel_settings', keywords: ['admin', 'dashboard', 'settings', 'backend', 'roles'] },
+  { title: 'Moderator Queue', href: '/moderator', category: 'Staff Commands', icon: 'shield', keywords: ['moderator', 'queue', 'tickets', 'queries', 'support'] },
+];
+
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isSignedIn } = useUser();
   const { signOut } = useClerk();
+
+  // State variables for quick command palette search
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchSelectedIndex, setSearchSelectedIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // State initialized to safe default values to prevent hydration mismatch
   const [mounted, setMounted] = useState(false);
@@ -94,6 +137,28 @@ export default function Navbar() {
     setUserRole(localStorage.getItem('cached_role') || 'user');
     setDbAvatarUrl(localStorage.getItem('cached_avatar'));
   }, []);
+
+  // Global Ctrl+K / Cmd+K search trigger
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+      setSearchQuery('');
+      setSearchSelectedIndex(0);
+    }
+  }, [isSearchOpen]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -316,10 +381,10 @@ export default function Navbar() {
   // Build list of staff links
   const staffLinks: NavLink[] = [];
   if (showAdmin) {
-    staffLinks.push({ href: '/admin', label: 'Admin Control', id: 'nav-admin', icon: 'admin_panel_settings' });
+    staffLinks.push({ href: '/admin', label: 'Admin Control', id: 'nav-admin', icon: 'admin_panel_settings', description: 'System settings & audit logs' });
   }
   if (showStaff) {
-    staffLinks.push({ href: '/moderator', label: 'Moderator Queue', id: 'nav-moderator', icon: 'shield' });
+    staffLinks.push({ href: '/moderator', label: 'Moderator Queue', id: 'nav-moderator', icon: 'shield', description: 'Verify sighting logs & tickets' });
   }
 
   // Active Dropdowns list
@@ -331,6 +396,48 @@ export default function Navbar() {
       links: staffLinks,
     });
   }
+
+  // Filter search items based on input, keywords, and role rules
+  const filteredSearchItems = SEARCH_ITEMS.filter((item) => {
+    if (item.href === '/admin' && userRole !== 'admin') return false;
+    if (item.href === '/moderator' && userRole !== 'admin' && userRole !== 'moderator') return false;
+
+    if (!searchQuery.trim()) {
+      return ['Interactive Map', 'Find Cats', 'Care Center', 'Colony Tycoon', 'Daily Trivia'].includes(item.title);
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    return (
+      item.title.toLowerCase().includes(query) ||
+      item.category.toLowerCase().includes(query) ||
+      item.keywords.some((k) => k.toLowerCase().includes(query))
+    );
+  });
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSearchSelectedIndex((prev) => (prev + 1) % filteredSearchItems.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSearchSelectedIndex((prev) => (prev - 1 + filteredSearchItems.length) % filteredSearchItems.length);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (filteredSearchItems[searchSelectedIndex]) {
+        const item = filteredSearchItems[searchSelectedIndex];
+        const isGuestAllowed = ['/map', '/cats', '/events', '/colonies', '/stories'].includes(item.href);
+        setIsSearchOpen(false);
+        if (!isUserLoggedIn && !isGuestAllowed) {
+          router.push('/auth/login');
+        } else {
+          router.push(item.href);
+        }
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsSearchOpen(false);
+    }
+  };
 
   return (
     <header
@@ -393,23 +500,26 @@ export default function Navbar() {
                   <span className={`material-symbols-outlined text-[12px] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>expand_more</span>
                 </button>
 
-                {/* Premium Dropdown */}
+                {/* Premium Mega Dropdown */}
                 {isOpen && (
                   <div
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2.5 w-60 rounded-2xl z-50 flex flex-col overflow-hidden"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2.5 rounded-2xl z-50 flex flex-col overflow-hidden transition-all duration-300 animate-in fade-in slide-in-from-top-2"
                     style={{
+                      width: group.links.length > 4 ? '520px' : '280px',
                       background: 'var(--dropdown-bg)',
-                      backdropFilter: 'blur(20px)',
+                      backdropFilter: 'blur(24px)',
+                      WebkitBackdropFilter: 'blur(24px)',
                       border: '1px solid var(--dropdown-border)',
-                      boxShadow: '0 20px 60px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08)'
+                      boxShadow: '0 20px 60px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)'
                     }}
                   >
                     {/* Dropdown header */}
                     <div className="px-4 py-3 flex items-center gap-2 border-b" style={{borderColor:'var(--dropdown-border)',background:'linear-gradient(135deg,rgba(217,119,6,0.06),rgba(249,115,22,0.03))'}}>
                       <span className="material-symbols-outlined text-sm" style={{color:'var(--empire-gold)',fontVariationSettings:"'FILL' 1"}}>{group.icon}</span>
-                      <span className="font-display text-[11px] font-black uppercase tracking-widest" style={{color:'var(--empire-gold)'}}>{group.label}</span>
+                      <span className="font-display text-[10px] font-black uppercase tracking-widest" style={{color:'var(--empire-gold)'}}>{group.label}</span>
                     </div>
-                    <div className="p-1.5 flex flex-col gap-0.5">
+                    
+                    <div className={`p-3.5 ${group.links.length > 4 ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-2'}`}>
                       {group.links.map((link) => {
                         const isLinkActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
                         const isGuestAllowed = ['/map', '/cats', '/events', '/colonies', '/stories'].includes(link.href);
@@ -421,14 +531,16 @@ export default function Navbar() {
                               href="/auth/login"
                               title="Sign in required"
                               onClick={() => setOpenDropdown(null)}
-                              className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold no-underline transition-all"
-                              style={{color:'var(--text-primary)',opacity:0.35}}
+                              className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold no-underline transition-all hover:bg-[rgba(var(--bg-border-rgb,0,0,0),0.03)] cursor-pointer"
+                              style={{color:'var(--text-primary)',opacity:0.4}}
                             >
-                              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{background:'rgba(var(--bg-border-rgb,0,0,0),0.06)'}}>
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{background:'rgba(var(--bg-border-rgb,0,0,0),0.06)'}}>
                                 <span className="material-symbols-outlined text-sm">lock</span>
                               </div>
-                              <span className="flex-1 truncate">{link.label}</span>
-                              <span className="text-[8px] uppercase tracking-wider font-bold" style={{color:'var(--empire-gold)',opacity:0.5}}>Join</span>
+                              <div className="flex-grow min-w-0 flex flex-col gap-0.5">
+                                <span className="truncate font-bold text-[11px] leading-tight">{link.label}</span>
+                                {link.description && <span className="text-[9px] text-[var(--text-secondary)] opacity-60 truncate font-normal leading-normal">{link.description}</span>}
+                              </div>
                             </Link>
                           );
                         }
@@ -439,17 +551,19 @@ export default function Navbar() {
                             href={link.href}
                             id={link.id}
                             onClick={() => setOpenDropdown(null)}
-                            className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold no-underline transition-all"
+                            className="flex items-center gap-3 px-3 py-2 rounded-xl no-underline transition-all hover:bg-[rgba(var(--bg-border-rgb,0,0,0),0.04)] cursor-pointer"
                             style={isLinkActive ? {
                               background:'linear-gradient(135deg,rgba(217,119,6,0.12),rgba(249,115,22,0.07))',
                               color:'var(--empire-gold)'
-                            } : {color:'var(--text-primary)',opacity:0.75}}
+                            } : {color:'var(--text-primary)',opacity:0.9}}
                           >
-                            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all" style={isLinkActive ? {background:'linear-gradient(135deg,rgba(217,119,6,0.2),rgba(249,115,22,0.12))'} : {background:'rgba(var(--bg-border-rgb,0,0,0),0.05)'}}>
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all" style={isLinkActive ? {background:'linear-gradient(135deg,rgba(217,119,6,0.2),rgba(249,115,22,0.12))'} : {background:'rgba(var(--bg-border-rgb,0,0,0),0.05)'}}>
                               <span className="material-symbols-outlined text-sm" style={{fontVariationSettings:"'FILL' " + (isLinkActive?'1':'0')}}>{link.icon}</span>
                             </div>
-                            <span className="truncate font-semibold">{link.label}</span>
-                            {isLinkActive && <span className="material-symbols-outlined text-xs ml-auto" style={{color:'var(--empire-gold)'}}>arrow_forward_ios</span>}
+                            <div className="flex-grow min-w-0 flex flex-col gap-0.5 text-left">
+                              <span className="truncate font-bold text-[11px] leading-tight">{link.label}</span>
+                              {link.description && <span className="text-[9px] text-[var(--text-secondary)] opacity-60 truncate font-normal leading-normal">{link.description}</span>}
+                            </div>
                           </Link>
                         );
                       })}
@@ -465,6 +579,31 @@ export default function Navbar() {
 
         {/* Right Controls */}
         <div className="flex items-center gap-1.5 shrink-0">
+
+          {/* Desktop Search Trigger */}
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            type="button"
+            id="nav-search-trigger"
+            className="hidden md:flex items-center gap-2 h-8 px-3 rounded-xl border border-[var(--bg-border)]/20 cursor-pointer transition-all hover:bg-[rgba(var(--bg-border-rgb,0,0,0),0.04)] text-xs text-[var(--text-primary)] opacity-70 hover:opacity-100 font-semibold"
+            style={{ background: 'rgba(var(--bg-border-rgb,0,0,0),0.03)' }}
+          >
+            <span className="material-symbols-outlined text-[15px]">search</span>
+            <span>Search...</span>
+            <span className="ml-1 font-mono text-[9px] opacity-55 border rounded px-1" style={{ borderColor: 'currentColor' }}>Cmd+K</span>
+          </button>
+
+          {/* Mobile Search Trigger */}
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            type="button"
+            id="nav-search-trigger-mobile"
+            className="md:hidden h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer"
+            style={{ background: 'rgba(var(--bg-border-rgb,0,0,0),0.06)', color: 'var(--text-primary)', opacity: 0.7 }}
+            aria-label="Search"
+          >
+            <span className="material-symbols-outlined text-[17px]">search</span>
+          </button>
 
           {/* Theme Toggle */}
           <button
@@ -805,6 +944,120 @@ export default function Navbar() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Command Search Modal Overlay */}
+      {isSearchOpen && (
+        <div
+          className="fixed inset-0 z-[10000] bg-black/65 backdrop-blur-sm flex items-start justify-center pt-[12vh] px-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setIsSearchOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-lg rounded-2xl flex flex-col overflow-hidden max-h-[70vh]"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'var(--dropdown-bg)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid var(--dropdown-border)',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            {/* Search Header */}
+            <div className="flex items-center gap-3 px-4 py-3.5 border-b" style={{ borderColor: 'var(--dropdown-border)', background: 'linear-gradient(135deg,rgba(217,119,6,0.04),rgba(249,115,22,0.02))' }}>
+              <span className="material-symbols-outlined text-[20px]" style={{ color: 'var(--empire-gold)' }}>search</span>
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search commands & pages..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSearchSelectedIndex(0);
+                }}
+                onKeyDown={handleSearchKeyDown}
+                className="flex-1 bg-transparent border-none text-[13px] font-semibold font-body focus:outline-none placeholder-[var(--text-primary)]/40 text-[var(--text-primary)]"
+                style={{ caretColor: 'var(--empire-gold)' }}
+              />
+              <button
+                onClick={() => setIsSearchOpen(false)}
+                className="bg-transparent border-none cursor-pointer flex items-center justify-center p-0.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
+                aria-label="Close search"
+              >
+                <span className="material-symbols-outlined text-sm" style={{ color: 'var(--text-primary)', opacity: 0.5 }}>close</span>
+              </button>
+            </div>
+
+            {/* Results area */}
+            <div className="flex-1 overflow-y-auto p-2 min-h-[150px] max-h-[350px]">
+              {filteredSearchItems.length === 0 ? (
+                <div className="py-10 text-center flex flex-col items-center gap-2">
+                  <span className="material-symbols-outlined text-3xl" style={{ color: 'var(--text-primary)', opacity: 0.2 }}>search_off</span>
+                  <span className="text-xs font-semibold font-body" style={{ color: 'var(--text-primary)', opacity: 0.4 }}>No matches found for "{searchQuery}"</span>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-0.5">
+                  <div className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-[var(--empire-gold)] opacity-70">
+                    {searchQuery.trim() ? 'Search Results' : 'Suggested Pages'}
+                  </div>
+                  {filteredSearchItems.map((item, idx) => {
+                    const isSelected = idx === searchSelectedIndex;
+                    const isGuestAllowed = ['/map', '/cats', '/events', '/colonies', '/stories'].includes(item.href);
+                    const isLocked = !isUserLoggedIn && !isGuestAllowed;
+
+                    return (
+                      <div
+                        key={item.href}
+                        onClick={() => {
+                          setIsSearchOpen(false);
+                          if (isLocked) {
+                            router.push('/auth/login');
+                          } else {
+                            router.push(item.href);
+                          }
+                        }}
+                        onMouseEnter={() => setSearchSelectedIndex(idx)}
+                        className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all"
+                        style={isSelected ? {
+                          background: 'linear-gradient(135deg,rgba(217,119,6,0.12),rgba(249,115,22,0.07))',
+                          color: 'var(--empire-gold)'
+                        } : { color: 'var(--text-primary)', opacity: 0.85 }}
+                      >
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={isSelected ? { background: 'linear-gradient(135deg,rgba(217,119,6,0.2),rgba(249,115,22,0.12))' } : { background: 'rgba(var(--bg-border-rgb,0,0,0),0.05)' }}>
+                          <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: isSelected ? "'FILL' 1" : "'FILL' 0" }}>
+                            {isLocked ? 'lock' : item.icon}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="truncate font-semibold">{item.title}</div>
+                          <div className="text-[9px] opacity-50 font-normal mt-0.5">{item.category}</div>
+                        </div>
+                        {isLocked && (
+                          <span className="text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded" style={{ background: 'rgba(217,119,6,0.1)', color: 'var(--empire-gold)' }}>Sign In</span>
+                        )}
+                        {isSelected && !isLocked && (
+                          <span className="material-symbols-outlined text-xs ml-auto" style={{ color: 'var(--empire-gold)' }}>keyboard_return</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer tips */}
+            <div className="px-4 py-2 bg-black/5 dark:bg-white/5 border-t flex items-center justify-between text-[9px] font-medium" style={{ borderColor: 'var(--dropdown-border)', color: 'var(--text-primary)', opacity: 0.5 }}>
+              <div className="flex items-center gap-1.5">
+                <span className="flex items-center gap-0.5 bg-black/10 dark:bg-white/10 px-1 rounded">↑↓</span>
+                <span>to navigate</span>
+                <span className="flex items-center gap-0.5 bg-black/10 dark:bg-white/10 px-1 rounded ml-1.5">Enter</span>
+                <span>to select</span>
+              </div>
+              <div>Press Esc to close</div>
+            </div>
           </div>
         </div>
       )}

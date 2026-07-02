@@ -14,6 +14,7 @@ Layer           Control
 Browser         EXIF stripping (sharp WASM)
                 No raw GPS transmitted
                 Content Security Policy enforcement
+                Client-side AES-GCM-256 decryption & encryption (PBKDF2)
 ─────────────────────────────────────────────────────
 Server          Auth check on every API route + Server Action
                 Role re-read from DB (no client-trusted claims)
@@ -27,7 +28,7 @@ Server          Auth check on every API route + Server Action
                 No secrets in client bundle
                 External APIs proxied server-side only
 ─────────────────────────────────────────────────────
-Database        Row-Level Security on every table (2 consolidated migrations)
+Database        Row-Level Security on every table (3 migrations)
                 SECURITY DEFINER for privileged ops
                 Location fuzzing trigger (BEFORE INSERT)
                 Role escalation prevention trigger
@@ -82,6 +83,8 @@ Infrastructure  CSP, HSTS, X-Frame-Options headers
 | Camera/device metadata in photos | EXIF strip before Supabase Storage write. |
 | Supabase service_role key in bundle | CI gitleaks scan; `SUPABASE_SERVICE_ROLE` never in `NEXT_PUBLIC_*`. |
 | ML API key exposed in client | All ML calls proxied through `/api/ai/breed` — key is server env var only. |
+| AI API Key exposed to server/db | Keys are client-side encrypted; proxy route executes calls in-memory only. |
+| Private cat vital log leakage | Private logs stored fully client-side encrypted; decrypted locally in-browser only. |
 | User data cross-contamination | RLS `WHERE user_id = auth.uid()` on all user data tables. |
 | HTML tag injection through text fields | `sanitizeText()` applies 3-pass regex strip then HTML-encodes `< > & " ' \`` — nested/malformed tags neutralised. |
 
@@ -350,4 +353,22 @@ The following mappings outline how MeowNet aligns with essential middleware, per
 * **Request Logging:** Telemetry streams, status codes, and endpoint execution times are captured by standard container stdout logs, Vercel logging integrations, and dedicated staff operations auditing logs (`staff_audit_log`).
 * **Global Error Handlers:** Handled through Next.js global boundaries (`error.tsx`/`not-found.tsx`) and robust try-catch response structures in Server Actions to catch exceptions and conceal database schemas or stack traces from users.
 * **Health Check Endpoints:** Exposed via the root health path [/health](../app/health/route.ts) returning `200 OK` with timestamp and uptime telemetry, alongside the target [/api/ai/health](../app/api/ai/health/route.ts) warmup route.
+
+---
+
+## Client-Side Zero-Knowledge Encryption
+
+MeowNet provides a fully private Personal Care Center and Personal AI Helper using **Zero-Knowledge client-side encryption**.
+
+### Encryption Flow
+1. **Passphrase Derivation**: A user-supplied passphrase is input in the browser. Using the Web Crypto API, the browser derives a 256-bit AES key via PBKDF2 (100,000 iterations of SHA-256 with a unique salt).
+2. **Client-Side Encryption**:
+   - Vitals, logs, medications, and photos (compressed to base64) are compiled into a JSON document.
+   - The JSON document is serialized, then encrypted client-side using `AES-GCM` with a cryptographically secure random 12-byte Initialization Vector (IV).
+   - The salt (16 bytes) and IV (12 bytes) are prepended to the ciphertext and encoded in Base64.
+3. **Encrypted Storage**: The Base64 string is transmitted to the database via authenticated Server Actions. Database administrators and host servers can only see the Base64 ciphertext string, keeping health details completely private.
+4. **API Key Proxy Routing**:
+   - To interact with Gemini, OpenAI, or Anthropic, the client decrypts the API key in the browser and sends it over HTTPS in the payload to `/api/ai/personal-helper`.
+   - The server processes the request in-memory, forwards it to the provider, returns the output, and discards the key immediately. Keys are never saved or cached on the server.
+
 

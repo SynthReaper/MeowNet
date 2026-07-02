@@ -184,11 +184,11 @@ function CatLoader() {
         <CatFace />
 
         {/* Paws loader */}
-        <div className="flex gap-3 text-2xl text-[var(--empire-gold)] mt-2">
-          <span className="animate-paw-1">🐾</span>
-          <span className="animate-paw-2">🐾</span>
-          <span className="animate-paw-3">🐾</span>
-          <span className="animate-paw-4">🐾</span>
+        <div className="flex gap-3 text-lg text-[var(--empire-gold)] mt-2">
+          <span className="material-symbols-outlined animate-paw-1">pets</span>
+          <span className="material-symbols-outlined animate-paw-2">pets</span>
+          <span className="material-symbols-outlined animate-paw-3">pets</span>
+          <span className="material-symbols-outlined animate-paw-4">pets</span>
         </div>
 
         {/* Loading text */}
@@ -313,7 +313,7 @@ export default function LandingPage() {
         }
 
         // Build alert based on live temperature + location
-        const prefix = userLoc ? `📍 ${location}` : `🌍 ${location}`;
+        const prefix = userLoc ? `Local ${location}` : `Global ${location}`;
         if (temp < 35) {
           setActiveAlert({
             message: `Hazardous Cold at ${prefix}: ${temp}°F — Emergency heated shelters urgently needed for community cats.`,
@@ -343,7 +343,7 @@ export default function LandingPage() {
         console.warn('Failed to fetch live weather details: fallback used.', err);
         setTemperature(65);
         setActiveAlert({
-          message: `Status OK at 🌍 Global Cat Shelter: 65°F — Comfortable conditions for community cats. Stay pawsome!`,
+          message: `Status OK at Global Cat Shelter: 65°F — Comfortable conditions for community cats. Stay pawsome!`,
           type: 'info',
           neighborhood: 'Global Cat Shelter',
         });
@@ -566,7 +566,7 @@ export default function LandingPage() {
             <div>
               <h2 className="font-display text-3xl font-bold text-[var(--empire-cream)] flex items-center gap-2">
                 <span>Meet Your Neighbors</span>
-                <span className="text-xl">🐾</span>
+                <span className="material-symbols-outlined text-xl text-[var(--empire-gold)]">pets</span>
               </h2>
               <p className="font-body text-sm text-[var(--empire-cream)]/70 mt-1">Recent sightings by our amazing community.</p>
             </div>

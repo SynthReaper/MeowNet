@@ -19,12 +19,12 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
   const containerRef = useRef<HTMLDivElement>(null);
   const [pupilOffset, setPupilOffset] = useState({ x: 0, y: 0 });
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
-  
+
   // Interactive Options
   const [isLaserMode, setIsLaserMode] = useState(false);
   const [isSwiping, setIsSwiping] = useState(false);
   const [isPetting, setIsPetting] = useState(false);
-  
+
   // Core Cat states
   const [isSleeping, setIsSleeping] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -35,7 +35,7 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
   const [isBlinking, setIsBlinking] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [hearts, setHearts] = useState<Heart[]>([]);
-  
+
   const lastMoveRef = useRef<number>(0);
   const heartIdCounter = useRef<number>(0);
   const wakeLockRef = useRef<NodeJS.Timeout | null>(null);
@@ -49,10 +49,10 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       lastMoveRef.current = Date.now();
-      
+
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
-      
+
       // Relative mouse coords inside container (for laser dot positioning)
       const relX = e.clientX - rect.left;
       const relY = e.clientY - rect.top;
@@ -69,12 +69,12 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
       const dx = e.clientX - centerX;
       const dy = e.clientY - centerY;
       const angle = Math.atan2(dy, dx);
-      
+
       // Clamp pupil travel radius
       const maxOffset = isLaserMode ? 7.5 : 6;
       const scaleDivisor = isLaserMode ? 12 : 18; // More alert tracking in laser mode
       const dist = Math.min(maxOffset, Math.sqrt(dx * dx + dy * dy) / scaleDivisor);
-      
+
       setPupilOffset({
         x: Math.cos(angle) * dist,
         y: Math.sin(angle) * dist
@@ -93,7 +93,7 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
       const idleTime = Date.now() - lastMoveRef.current;
       // If we woke up manually via a click, wait 10 seconds before going back to sleep
       const threshold = wakeLockRef.current ? 10000 : 6000;
-      
+
       if (idleTime > threshold && !isSleeping && !isHovered && !isPetting) {
         setIsSleeping(true);
         if (wakeLockRef.current) {
@@ -139,10 +139,10 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
   // Generate hearts when hovered (purring/petting state)
   useEffect(() => {
     if (!isHovered && !isPetting) return;
-    
+
     // Spawn faster if user is actively petting the cat
     const rate = isPetting ? 220 : 550;
-    
+
     const interval = setInterval(() => {
       heartIdCounter.current++;
       const newHeart: Heart = {
@@ -166,13 +166,13 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
       setIsSleeping(false);
       setIsYawning(true);
       setTimeout(() => setIsYawning(false), 2200);
-      
+
       // Lock awake state for 10 seconds
       if (wakeLockRef.current) clearTimeout(wakeLockRef.current);
       wakeLockRef.current = setTimeout(() => {
         wakeLockRef.current = null;
       }, 10000);
-      
+
       lastMoveRef.current = Date.now();
       return;
     }
@@ -291,7 +291,7 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
         />
         {/* Highlight */}
         <circle cx={110 + pupilOffset.x - (isLaserMode ? 3 : 2)} cy={178 + pupilOffset.y - (isLaserMode ? 4 : 3)} r={isLaserMode ? 3 : 2} fill="white" />
-        
+
         {/* Right Eye */}
         <ellipse cx="188" cy="178" rx="15" ry="15" className="fill-[var(--bg-elevated)] stroke-[var(--bg-border)]" strokeWidth="2" />
         {/* Pupil (Dilated in Laser Mode) */}
@@ -346,7 +346,7 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
   };
 
   return (
-    <div 
+    <div
       ref={containerRef}
       role="button"
       tabIndex={0}
@@ -365,9 +365,8 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
         setHearts([]);
       }}
       onClick={handleContainerClick}
-      className={`w-full h-full flex items-center justify-center relative bg-gradient-to-b from-[var(--bg-elevated)] to-[var(--bg-void)] select-none overflow-hidden ${
-        isLaserMode ? 'cursor-crosshair' : 'cursor-default'
-      }`}
+      className={`w-full h-full flex items-center justify-center relative bg-gradient-to-b from-[var(--bg-elevated)] to-[var(--bg-void)] select-none overflow-hidden ${isLaserMode ? 'cursor-crosshair' : 'cursor-default'
+        }`}
     >
       {/* 1. Status Mood Pill Badge */}
       <div className="absolute top-4 left-4 bg-white/80 dark:bg-[#1c1a17]/80 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-semibold text-[var(--text-secondary)] border border-[var(--bg-border)]/30 flex items-center gap-1.5 pointer-events-none select-none z-30 shadow-sm transition-all duration-300">
@@ -379,17 +378,16 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
       </div>
 
       {/* 2. Interactive Laser Mode Toggle Button */}
-      <button 
+      <button
         onClick={(e) => {
           e.stopPropagation();
           setIsLaserMode(!isLaserMode);
           if (isSleeping) setIsSleeping(false);
         }}
-        className={`absolute top-4 right-4 p-2.5 rounded-full shadow-md backdrop-blur-md border transition-all duration-300 z-30 ${
-          isLaserMode 
-            ? 'bg-red-600 text-white border-red-500 scale-110 shadow-red-500/20' 
+        className={`absolute top-4 right-4 p-2.5 rounded-full shadow-md backdrop-blur-md border transition-all duration-300 z-30 ${isLaserMode
+            ? 'bg-red-600 text-white border-red-500 scale-110 shadow-red-500/20'
             : 'bg-white/90 dark:bg-[#1c1a17]/90 text-[var(--empire-gold)] border-[var(--bg-border)]/40 hover:scale-105'
-        }`}
+          }`}
         title={isLaserMode ? "Deactivate Laser Pointer" : "Activate Laser Pointer"}
       >
         <span className="material-symbols-outlined text-lg flex items-center justify-center">
@@ -399,7 +397,7 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
 
       {/* 3. Glowing Laser Dot */}
       {isLaserMode && !isSleeping && isHovered && (
-        <div 
+        <div
           className="absolute rounded-full w-3 h-3 bg-red-500 border border-white shadow-[0_0_12px_#ef4444,0_0_4px_#ffffff] pointer-events-none z-20"
           style={{
             left: `${cursorPos.x - 6}px`,
@@ -415,9 +413,8 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
           key={heart.id}
           viewBox="0 0 24 24"
           fill="currentColor"
-          className={`absolute opacity-0 pointer-events-none z-20 ${
-            isPetting ? 'text-red-500' : 'text-red-400'
-          }`}
+          className={`absolute opacity-0 pointer-events-none z-20 ${isPetting ? 'text-red-500' : 'text-red-400'
+            }`}
           style={{
             left: `${heart.x}px`,
             top: `${heart.y}px`,
@@ -444,9 +441,8 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
       <svg
         viewBox="0 0 300 300"
         onMouseDown={handleCatMouseDown}
-        className={`w-full h-full max-w-[340px] max-h-[340px] transform transition-transform duration-300 ${
-          isPetting || (isHovered && !isSleeping) ? 'animate-purr scale-102 cursor-pointer' : ''
-        }`}
+        className={`w-full h-full max-w-[340px] max-h-[340px] transform transition-transform duration-300 ${isPetting || (isHovered && !isSleeping) ? 'animate-purr scale-102 cursor-pointer' : ''
+          }`}
       >
         {/* Cozy cushion / base pad */}
         <path
@@ -454,7 +450,7 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
           className="fill-[var(--bg-border)]/50 stroke-[var(--bg-border)]"
           strokeWidth="3"
         />
-        
+
         {/* Cat body & tail */}
         <path
           d="M 80,245 C 80,180 220,180 220,245 Z"
@@ -534,24 +530,24 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
         {isCold && (
           <g className="transition-opacity duration-500">
             {/* Scarf Tail */}
-            <path 
-              d="M 98,232 L 84,272 L 106,274 L 114,233 Z" 
-              fill="#b91c1c" 
-              stroke="#7f1d1d" 
-              strokeWidth="2" 
+            <path
+              d="M 98,232 L 84,272 L 106,274 L 114,233 Z"
+              fill="#b91c1c"
+              stroke="#7f1d1d"
+              strokeWidth="2"
               strokeLinejoin="round"
             />
             {/* Gold Stripes on Scarf Tail */}
             <line x1="93" y1="243" x2="103" y2="244" stroke="#fbbf24" strokeWidth="4.5" />
             <line x1="89" y1="254" x2="99" y2="255" stroke="#fbbf24" strokeWidth="4.5" />
             <line x1="85" y1="265" x2="95" y2="266" stroke="#fbbf24" strokeWidth="4.5" />
-            
+
             {/* Scarf Main Loop */}
-            <path 
-              d="M 95,212 Q 150,225 205,212 C 215,225 210,236 200,239 Q 150,250 100,239 C 90,236 85,225 95,212 Z" 
-              fill="#b91c1c" 
-              stroke="#7f1d1d" 
-              strokeWidth="2.5" 
+            <path
+              d="M 95,212 Q 150,225 205,212 C 215,225 210,236 200,239 Q 150,250 100,239 C 90,236 85,225 95,212 Z"
+              fill="#b91c1c"
+              stroke="#7f1d1d"
+              strokeWidth="2.5"
               strokeLinejoin="round"
             />
             {/* Gold Stripes on Main Loop */}
@@ -571,9 +567,8 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
           fill="var(--bg-surface)"
           stroke="var(--bg-border)"
           strokeWidth="3"
-          className={`transition-all duration-200 origin-[100px_232px] ${
-            isSwiping ? 'translate-x-[-12px] translate-y-[-48px] rotate-[-25deg]' : ''
-          }`}
+          className={`transition-all duration-200 origin-[100px_232px] ${isSwiping ? 'translate-x-[-12px] translate-y-[-48px] rotate-[-25deg]' : ''
+            }`}
         />
         {/* Right Paw */}
         <path
@@ -585,7 +580,8 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
       </svg>
 
       {/* Styled Heart Float Inline Animation Rules */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes heart-float-up {
           0% {
             transform: translateY(0) scale(0.6);

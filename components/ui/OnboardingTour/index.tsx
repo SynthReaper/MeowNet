@@ -13,25 +13,25 @@ interface TourStep {
 const TOUR_STEPS: TourStep[] = [
   {
     targetId: 'nav-logo',
-    title: 'Welcome, Cat Guardian! 🐾',
+    title: 'Welcome, Cat Guardian!',
     body: 'Welcome to MeowNet, the live mission-control command center for protecting and coordinating community cats.',
     placement: 'bottom',
   },
   {
     targetId: 'nav-map',
-    title: 'Mission Control Map 🗺️',
+    title: 'Mission Control Map',
     body: 'Visualize colonies, report new sightings, and watch real-time active TNR areas around your community.',
     placement: 'bottom',
   },
   {
     targetId: 'nav-cats',
-    title: 'Cat Log Registry 🐱',
+    title: 'Cat Log Registry',
     body: 'View detailed registries of stray, adoptable, and adopted cats, and report a new feline friend in 30 seconds.',
     placement: 'bottom',
   },
   {
     targetId: 'nav-empire',
-    title: 'The Empire Leaderboard 👑',
+    title: 'The Empire Leaderboard',
     body: 'Earn Empire Points for every helpful action you log, collect prestigious badges, and climb the rescue ranks!',
     placement: 'bottom',
   },

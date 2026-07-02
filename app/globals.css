@@ -1021,3 +1021,127 @@ body:has(#map-page-root) footer {
 .dashboard-scroll-area::-webkit-scrollbar-thumb:hover {
   background: var(--empire-gold);
 }
+
+/* ============================================================
+   Cozy Warm Light Theme & Dark Theme Overrides for Personal Care
+   ============================================================ */
+
+/* Main Card and Panels backgrounds */
+[class*="bg-[#1b1724]"],
+[class*="bg-[#16121f]"],
+[class*="bg-[#241c30]"] {
+  background-color: var(--dropdown-bg) !important;
+  border-color: var(--dropdown-border) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Inputs and Forms backgrounds */
+[class*="bg-[#2a2235]"],
+[class*="bg-[#20182b]"] {
+  background-color: var(--bg-elevated) !important;
+  border-color: var(--dropdown-border) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Standard nested elements text color corrections */
+[class*="bg-[#1b1724]"] h2,
+[class*="bg-[#1b1724]"] h3,
+[class*="bg-[#1b1724]"] h4,
+[class*="bg-[#16121f]"] h4,
+[class*="bg-[#1b1724]"] p,
+[class*="bg-[#16121f]"] p,
+[class*="bg-[#1b1724]"] label,
+[class*="bg-[#16121f]"] label,
+[class*="bg-[#1b1724]"] span:not(.material-symbols-outlined):not([class*="bg-[var(--empire-gold)]"] *):not([class*="bg-[#f97316]"] *),
+[class*="bg-[#16121f]"] span:not(.material-symbols-outlined):not([class*="bg-[var(--empire-gold)]"] *):not([class*="bg-[#f97316]"] *),
+[class*="bg-[#2a2235]"] option,
+[class*="bg-[#2a2235]"] select,
+[class*="bg-[#2a2235]"] input,
+[class*="bg-[#20182b]"] input {
+  color: var(--text-primary) !important;
+}
+
+/* Muted or secondary elements text color corrections */
+[class*="bg-[#1b1724]"] .text-white\/60,
+[class*="bg-[#16121f]"] .text-white\/60,
+[class*="bg-[#1b1724]"] .text-white\/50,
+[class*="bg-[#16121f]"] .text-white\/50,
+[class*="bg-[#1b1724]"] .text-white\/40,
+[class*="bg-[#16121f]"] .text-white\/40,
+[class*="bg-[#1b1724]"] .text-white\/30,
+[class*="bg-[#16121f]"] .text-white\/30 {
+  color: var(--text-secondary) !important;
+  opacity: 0.8 !important;
+}
+
+/* Borders overrides */
+[class*="border-white/5"],
+[class*="border-white/10"],
+[class*="border-white/20"] {
+  border-color: var(--dropdown-border) !important;
+  opacity: 1 !important;
+}
+
+/* Base64 image inputs & standard file list overrides */
+[class*="bg-white/5"] {
+  background-color: var(--bg-elevated) !important;
+  border-color: var(--dropdown-border) !important;
+  color: var(--text-primary) !important;
+}
+[class*="bg-white/5"] span:not(.material-symbols-outlined),
+[class*="bg-white/5"] div {
+  color: var(--text-primary) !important;
+}
+[class*="file:bg-white/5"]::file-selector-button {
+  background-color: var(--bg-elevated) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--dropdown-border) !important;
+  transition: opacity 0.2s ease;
+}
+[class*="file:bg-white/5"]::file-selector-button:hover {
+  opacity: 0.8;
+}
+
+/* Active tab buttons */
+.bg-white\/10 {
+  background-color: var(--bg-elevated) !important;
+  color: var(--empire-gold) !important;
+  border: 1px solid var(--dropdown-border) !important;
+}
+
+/* 3D Antigravity & Cyberpunk Animations */
+@keyframes dominoFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.domino-fade-item {
+  animation: dominoFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Cyberpunk Neon Glow Borders */
+.neon-border-gold {
+  border: 1px solid rgba(242, 140, 56, 0.25) !important;
+  box-shadow: 0 0 15px rgba(242, 140, 56, 0.05), inset 0 0 10px rgba(242, 140, 56, 0.03) !important;
+}
+
+.neon-border-teal {
+  border: 1px solid rgba(0, 106, 99, 0.25) !important;
+  box-shadow: 0 0 15px rgba(0, 106, 99, 0.05), inset 0 0 10px rgba(0, 106, 99, 0.03) !important;
+}
+

@@ -99,6 +99,38 @@ Warmup ping to keep the ML service warm. Called on app initialization.
 { "status": "ok", "model": "loaded" }
 ```
 
+### `POST /api/ai/personal-helper`
+
+Secure proxy to route chat completions to Google Gemini, OpenAI, or Anthropic Claude using the user's decrypted API key. Prevents browser CORS blocks and does not cache keys on the server.
+
+**Auth:** Requires an active authenticated session.
+
+**Request Body:**
+```json
+{
+  "apiKey": "your-decrypted-api-key",
+  "provider": "gemini | openai | anthropic",
+  "model": "model-name",
+  "messages": [
+    { "role": "system", "content": "..." },
+    { "role": "user", "content": "..." }
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "text": "Decrypted AI response text..."
+}
+```
+
+**Errors:**
+- `400` — Missing parameter, empty key, or unsupported provider.
+- `401` — Unauthorized session.
+- `500` — Provider connection failed.
+
 ---
 
 ### `GET /api/catfact`

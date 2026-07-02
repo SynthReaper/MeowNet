@@ -6,6 +6,7 @@ import Navbar from '@/components/nav/Navbar';
 import OnboardingTour from '@/components/ui/OnboardingTour';
 import JudgeWelcomePopup from '@/components/ui/JudgeWelcomePopup';
 import Footer from '@/components/nav/Footer';
+import HelperWidget from '@/components/personal-care/HelperWidget';
 
 // All pages in this group require auth — skip static prerender
 export const dynamic = 'force-dynamic';
@@ -23,6 +24,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <main id="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {children}
       </main>
+      <HelperWidget />
       <Footer />
     </div>
   );

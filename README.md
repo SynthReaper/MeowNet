@@ -75,9 +75,10 @@ MeowNet is a full-stack, privacy-first web platform that turns urban cat rescue 
 | **Location Fuzzing** | PostGIS `ST_SnapToGrid(0.005°)` — colony GPS never stored raw | `supabase/migrations` |
 | **GDPR Erasure** | One-click account deletion cascading all tables + session invalidation | `app/api/privacy` |
 | **Verification Registry** | Public portal for authenticating Proof of Neuter UUIDs and volunteer reports | `app/verify` |
-| **Verifiable Certificates** | Dynamic certificates with HMAC-SHA256 tokens and print-ready landscape layout | `app/(app)/profile/certificate` |
 | **Support Query System** | Three-tier escalation: Volunteer → Moderator → Admin | `app/(app)/moderator` |
 | **Meow Translator** | Mood-classifier ML endpoint for cat vocalisation analysis | `app/api/ai/meow` |
+| **Personal Care Center** | Zero-knowledge cockpit tracking physical metrics, treatments, nutrition, sleep, behavior, and custom registry metadata | `app/(app)/profile/care-center` |
+| **Personal AI Helper** | Interactive Direct Action AI Copilot parsing response templates to suggest log entries and alert thresholds | `app/(app)/personal-helper` |
 
 ---
 
@@ -122,7 +123,7 @@ Browser
   |
   +-- Supabase (PostgreSQL + PostGIS)
   |     +-- Auth            -- email/password + Google/GitHub + direct creds
-  |     +-- Database        -- cats, events, profiles, gamification (2 migrations)
+  |     +-- Database        -- cats, events, profiles, gamification (3 migrations)
   |     +-- Storage         -- Cat photos (EXIF stripped before upload)
   |     +-- Realtime        -- Live cat map + community chat + guilds
   |     +-- system_settings -- Dynamic key-value configuration store
@@ -152,7 +153,9 @@ MeowNet/
 |   |   +-- map/            # Realtime Leaflet cat map
 |   |   +-- moderator/      # Moderator dashboard + verification map
 |   |   +-- notices/        # Targeted notices and announcements
+|   |   +-- personal-helper/# Full-screen Personal AI Helper console page
 |   |   +-- profile/        # Profile + GDPR account erasure
+|   |   |   +-- care-center/# Private client-side encrypted Care Center
 |   |   +-- reports/        # Field reports
 |   |   +-- safety/         # Colony safety guides
 |   |   +-- stories/        # Cat success stories
@@ -161,6 +164,7 @@ MeowNet/
 |   |   +-- ai/breed/       # ML breed estimation proxy
 |   |   +-- ai/meow/        # ML meow mood classification proxy
 |   |   +-- ai/health/      # ML service warmup ping
+|   |   +-- ai/personal-helper/# User-supplied keys AI proxy API
 |   |   +-- catfact/        # Cat fact API proxy
 |   |   +-- privacy/        # GDPR cascading account deletion
 |   |   +-- tenor/          # Tenor GIF search proxy
@@ -186,7 +190,7 @@ MeowNet/
 |   +-- docker-compose.yml
 |   +-- main.py
 +-- supabase/
-|   +-- migrations/         # 0001-0002 consolidated migrations
+|   +-- migrations/         # 0001-0003 migrations (including personal care tables)
 |   +-- seed.sql
 +-- proxy.ts                # Next.js middleware (auth guard + maintenance gate)
 ```
@@ -198,7 +202,8 @@ MeowNet/
 | Control | Implementation |
 |---------|---------------|
 | **EXIF Stripping** | `sharp` WASM strips GPS metadata client-side before any upload |
-| **Location Fuzzing** | `ST_SnapToGrid(0.005)` ~500m grid in PostGIS — raw GPS never stored |
+| **Zero-Knowledge Encryption** | In-browser AES-GCM-256 + PBKDF2 local key derivation for private cat logs & user AI keys |
+| **Location Fuzzing** | PostGIS `ST_SnapToGrid(0.005°)` — colony GPS never stored raw |
 | **Auth Bridge** | Clerk sessions sync to Supabase; direct credential accounts isolated |
 | **GDPR Erasure** | Cascade `DELETE` removes all user data and signs out all sessions |
 | **Points Idempotency** | `action_key UNIQUE` in `point_log` — points awarded exactly once |

@@ -130,7 +130,7 @@ export default function TicketChatWindow({ ticket, currentUserId, currentUserRol
           </div>
         </div>
 
-        <span className="text-xl">📡</span>
+        <span className="material-symbols-outlined text-xl text-[var(--empire-gold)] animate-pulse">sensors</span>
       </div>
 
       {/* Messages Window */}
@@ -229,8 +229,9 @@ export default function TicketChatWindow({ ticket, currentUserId, currentUserRol
       {ticket.status !== 'closed' && (
         <form onSubmit={handleSendMessage} className="bg-[var(--bg-elevated)]/40 border-t border-[var(--bg-border)]/35 p-4 flex flex-col gap-3 z-10">
           {error && (
-            <div className="text-[9px] text-rose-500 font-semibold px-1">
-              ⚠️ {error}
+            <div className="text-[9px] text-rose-500 font-semibold px-1 flex items-center gap-1">
+              <span className="material-symbols-outlined text-[10px]">warning</span>
+              <span>{error}</span>
             </div>
           )}
           

@@ -6,7 +6,19 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 
 ## [Unreleased]
 
+### Added
+- **Navbar Mega Menu Dropdowns**: Upgraded standard single-column navbar dropdowns into spacious, dual-column structured Mega Menus with descriptive captions for all navigation links to reduce visual congestion.
+- **Personal Care Cockpit Redesign**: Transformed Care Center Dashboard, Helper Page, and Helper floating widget into a high-fidelity cyberpunk cockpit with 3D cursor perspective tilts, staggered domino entrance animations, and neon telemetry status rings.
+- **Zero-Knowledge Logs Schema Extension**: Added support for comprehensive medical records, vaccine boosters, nutrition trackers, hydration trackers, and dynamic key-value Custom Metadata registries.
+- **Direct Action AI Copilot**: Structured AI response prompts to suggest JSON action templates, parsing them client-side to render interactive log commit shortcuts within chat bubbles.
+- **Personal Care Center**: Implemented a private, zero-knowledge, client-side encrypted workspace at `/profile/care-center` for tracking personal cats (including vital metrics, medication schedules, and log entries) with custom responsive SVG vitals charts. Data is secured via in-browser Web Crypto AES-GCM-256 encryption.
+- **Personal AI Helper**: Integrated a site-wide collapsible AI helper widget (`HelperWidget.tsx`) and a full-screen helper dashboard (`HelperPage.tsx`). The helper fetches the user's decrypted API credentials (Gemini, OpenAI, or Anthropic) and uses locally decrypted cat logs for context.
+- **AI Helper Proxy Route**: Created `/api/ai/personal-helper` proxy route to forward queries to AI providers using the user's decrypted keys, mitigating CORS issues and server storage risk.
+- **Database Migrations**: Added migration `0003_personal_care.sql` creating the `personal_cats` and `user_private_config` tables with owner-only RLS policies.
+
 ### Fixed
+- **Emoji Source Code Sweeps**: Removed all prohibited emoji character sequences from `app/page.tsx`, `components/auth/AuthTabs.tsx`, `components/ui/OnboardingTour/index.tsx`, `components/ui/ShareCard/index.tsx`, `components/profile/TicketChatWindow.tsx`, and `components/map/ModeratorHotspotsMap.tsx`, replacing them with CSS animations, clean text labels, and standard Material Symbols.
+- **Personal Care Theme Support**: Added CSS variable overrides and refactored helper widgets (`HelperWidget.tsx`, `HelperPage.tsx`) to support both cozy warm light mode and dark mode theme palettes. Resolves accessibility contrast issues in light mode for the private care center dashboard, inputs, dropdowns, and chat bubbles.
 - **Sonar Code Quality Audit**: Resolved code smells, cognitive complexity issues, logic redundancies, and unexpected await warnings in Server Actions (`auth.ts`, `cats.ts`, `gamification.ts`, `admin.ts`, `audit.ts`, `community.ts`), the welfare score calculator (`welfare-score.ts`), the broadcasts notification banner (`Broadcasts.tsx`), and middleware (`proxy.ts`).
 - **FastAPI ML Service**: Modified `verify_service_secret` in `python-ml/main.py` to be a synchronous function to improve performance and compatibility.
 - **Codacy Scanner Workflow**: Deleted the Codacy Security Scan workflow (`.github/workflows/codacy.yml`) to revert the codebase to its state before commit `1dfee60cf819527bbe0b20439c3d2915b907b55e`.

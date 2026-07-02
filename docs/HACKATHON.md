@@ -50,11 +50,11 @@ MeowNet runs two parallel authentication systems. Standard Clerk email sign-in m
 
 ### 1. Landing Page and Interactive Cat Companion
 
-**What it does:** The home page displays an interactive SVG cat companion that reacts dynamically to the current local temperature — it shivers in cold weather and fans itself in heat. A real-time weather safety banner appears based on your geolocation.
+**What it does:** The home page displays an interactive 3D WebGL cat companion (using React Three Fiber) that reacts dynamically to local temperature alerts (shivers when cold), breathes slowly during sleep cycles, tracks the cursor dynamically, and features interactive laser play and petting (spawning floating 3D hearts). A real-time weather safety watch banner appears based on geolocation.
 
-**Try it:** Visit [meownet-sr.vercel.app](https://meownet-sr.vercel.app/). Interact with the cat. Check the weather strip at the top.
+**Try it:** Visit [meownet-sr.vercel.app](https://meownet-sr.vercel.app/). Interact with the 3D cat companion. Check the weather safety strip at the top.
 
-**Code:** [`components/ui/InteractiveCat/index.tsx`](../components/ui/InteractiveCat/index.tsx)
+**Code:** [`components/ui/InteractiveCat.tsx`](../components/ui/InteractiveCat.tsx)
 
 ---
 
@@ -222,6 +222,29 @@ Volunteer raises query (status: open)
 
 ---
 
+### 12. Personal Zero-Knowledge Care Center
+
+**What it does:** Volunteers track their cats' private logs under browser-side Web Crypto AES-GCM-256 encryption. Features cursor 3D perspective tilts, staggered domino animations, medical logs, vaccine trackers, custom attributes, chronological Care Ledger activity stream, and dynamic safety alerts.
+
+**Try it:** Open **Profile → Care Center**, initialize your vault password, register a cat, and explore the high-fidelity console telemetry.
+
+**Code:**
+- [`components/personal-care/CareCenterDashboard.tsx`](../components/personal-care/CareCenterDashboard.tsx) — zero-knowledge dashboard cockpit
+
+---
+
+### 13. AI Direct Action Copilot Cockpit
+
+**What it does:** Full-screen cockpit and floating assistant widget powered by local private API keys. AI analyzes logs locally and suggests specific actions (like medication reminders, food logs, water intake, or vitals logs), which are parsed to render interactive database commit shortcuts.
+
+**Try it:** Open **Profile → Personal AI Helper** or toggle the site-wide helper companion bubble in the bottom right corner. Enter password and API key, message the assistant, and click the suggest button to commit the database record.
+
+**Code:**
+- [`components/personal-care/HelperPage.tsx`](../components/personal-care/HelperPage.tsx) — helper cockpit page
+- [`components/personal-care/HelperWidget.tsx`](../components/personal-care/HelperWidget.tsx) — helper floating widget
+
+---
+
 ## How Everything Ties Together
 
 ### Dual Authentication System
@@ -264,6 +287,8 @@ The breed estimation AI runs in a separate Docker container (Python FastAPI on R
 | Certificate verification | [`app/verify/volunteer/[id]/page.tsx`](../app/verify/volunteer/%5Bid%5D/page.tsx) |
 | Weather proxy | [`app/api/weather/route.ts`](../app/api/weather/route.ts) |
 | Clerk-Supabase bridge | [`components/auth/AuthBridge/index.tsx`](../components/auth/AuthBridge/index.tsx) |
+| Zero-knowledge cockpit | [`components/personal-care/CareCenterDashboard.tsx`](../components/personal-care/CareCenterDashboard.tsx) |
+| AI Direct Action companion | [`components/personal-care/HelperPage.tsx`](../components/personal-care/HelperPage.tsx) · [`components/personal-care/HelperWidget.tsx`](../components/personal-care/HelperWidget.tsx) |
 
 ---
 
@@ -319,6 +344,8 @@ Use this to guide a structured evaluation:
 | Verification | Generate certificate → copy token → verify at /verify | Profile → Certificate |
 | Community | Chat channels, DMs, GIF search | Community section |
 | Weather | Geolocation-based feline safety grid | Weather section |
+| Private Care Center | Access the zero-knowledge cockpit, add custom attributes, view SVG vitals | Profile → Care Center |
+| AI Copilot Cockpit | Enter keys, trigger AI response actions, commit logs dynamically | Profile → AI Helper |
 | Code quality | TypeScript strict, 0 type errors, ESLint clean | Source code |
 | Security | HMAC bridge, RLS, CSP headers, no service keys in client | [docs/security.md](security.md) |
 

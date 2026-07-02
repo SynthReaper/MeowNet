@@ -39,7 +39,7 @@ export default function AuthTabs({ clerkForm, databaseForm, credentialsBlock }: 
             activeTab === 'clerk' ? 'text-white' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
-          🔐 Clerk Social
+          Clerk Social
         </button>
         <button
           type="button"
@@ -48,7 +48,7 @@ export default function AuthTabs({ clerkForm, databaseForm, credentialsBlock }: 
             activeTab === 'database' ? 'text-white' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
           }`}
         >
-          🗄️ Database Direct
+          Database Direct
         </button>
       </div>
 

@@ -153,13 +153,29 @@ export default async function ProfilePage() {
             Manage your account information, review your contributions history, and download data.
           </p>
         </div>
-        <Link
-          href="/profile/certificate"
-          className="bg-[var(--empire-gold)] text-white hover:bg-[#e6b020] px-4 py-2.5 rounded-xl text-xs font-bold uppercase transition-all shadow-md flex items-center gap-1.5 no-underline mt-2 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-base">workspace_premium</span>
-          <span>Volunteer Certificate</span>
-        </Link>
+        <div className="flex gap-3 flex-wrap mt-2">
+          <Link
+            href="/profile/care-center"
+            className="bg-white/5 border border-white/5 text-white hover:bg-white/10 px-4 py-2.5 rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1.5 no-underline cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-base">pets</span>
+            <span>Care Center</span>
+          </Link>
+          <Link
+            href="/personal-helper"
+            className="bg-white/5 border border-white/5 text-white hover:bg-white/10 px-4 py-2.5 rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-1.5 no-underline cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-base">support_agent</span>
+            <span>AI Helper</span>
+          </Link>
+          <Link
+            href="/profile/certificate"
+            className="bg-[var(--empire-gold)] text-white hover:bg-[#e6b020] px-4 py-2.5 rounded-xl text-xs font-bold uppercase transition-all shadow-md flex items-center gap-1.5 no-underline cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-base">workspace_premium</span>
+            <span>Volunteer Certificate</span>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

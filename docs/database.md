@@ -1,6 +1,6 @@
 # MeowNet Database Documentation
 
-> Last updated: 2026-06-30 · v0.8.0 · Migrations: 0001–0002 (Consolidated)
+> Last updated: 2026-07-02 · v0.8.0 · Migrations: 0001–0003 (Consolidated + Personal Care)
 
 ---
 
@@ -42,7 +42,9 @@ public schema
 ├── medical_logs      — Colony medical event logs (0051)
 ├── proof_of_neuter   — Proof of neuter verification records (0052)
 ├── moderator_queries — Three-tier support ticket system (0054)
-└── query_messages    — Realtime chat messages for support tickets (0054)
+├── query_messages    — Realtime chat messages for support tickets (0054)
+├── personal_cats     — Client-side encrypted private cat logs (0003)
+└── user_private_config — Client-side encrypted AI API keys (0003)
 
 Views (Materialized)
 ├── leaderboard_weekly  — Weekly Empire Points rankings
@@ -388,3 +390,25 @@ Fires `BEFORE UPDATE OR DELETE ON public.cats, public.tnr_events, public.colonie
 | `0 * * * *` | `refresh_leaderboard` | Refresh `leaderboard_weekly` materialized view hourly |
 | `0 0 * * 1` | `reset_weekly_points` | Weekly leaderboard reset every Monday 00:00 UTC |
 | `0 3 * * *` | `purge_audio` | Delete audio files older than 30 days from Storage |
+
+---
+
+## Client-Side Encrypted Tables (Zero-Knowledge)
+
+### `public.personal_cats` (migration 0003)
+Used to store personal, client-side encrypted cat profiles and tracking data.
+- **`id`** `UUID` (Primary Key)
+- **`owner_id`** `UUID` (References `auth.users(id)` ON DELETE CASCADE)
+- **`encrypted_data`** `TEXT` (AES-GCM-256 ciphertext of JSON document containing profile, vitals, reminders, and activities)
+- **`created_at` / `updated_at`** `TIMESTAMPTZ`
+
+**Security Constraints:** RLS is enabled. Only the owner (`auth.uid() = owner_id`) has SELECT, INSERT, UPDATE, or DELETE access.
+
+### `public.user_private_config` (migration 0003)
+Used to store user-supplied AI provider keys client-side encrypted.
+- **`user_id`** `UUID` (Primary Key, References `auth.users(id)` ON DELETE CASCADE)
+- **`encrypted_keys`** `TEXT` (AES-GCM-256 ciphertext of user's Gemini, OpenAI, and Anthropic API keys)
+- **`created_at` / `updated_at`** `TIMESTAMPTZ`
+
+**Security Constraints:** RLS is enabled. Only the owner (`auth.uid() = user_id`) has SELECT, INSERT, UPDATE, or DELETE access.
+

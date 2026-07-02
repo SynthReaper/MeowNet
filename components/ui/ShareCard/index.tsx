@@ -58,7 +58,7 @@ export default function ShareCard({ displayName, points, catLogsCount, tnrCount 
     // 4. Header text
     ctx.fillStyle = '#f28c38';
     ctx.font = 'bold 24px Quicksand, system-ui, sans-serif';
-    ctx.fillText('MEOWNET COMMUNITY IMPACT 🐾', 50, 75);
+    ctx.fillText('MEOWNET COMMUNITY IMPACT', 50, 75);
 
     // 5. Divider
     ctx.fillStyle = 'rgba(219, 194, 178, 0.15)';
@@ -88,7 +88,7 @@ export default function ShareCard({ displayName, points, catLogsCount, tnrCount 
     ctx.fillText(points.toLocaleString(), 70, statsY + 55);
     ctx.fillStyle = 'rgba(253, 249, 243, 0.5)';
     ctx.font = 'bold 11px Plus Jakarta Sans, sans-serif';
-    ctx.fillText('EMPIRE POINTS 👑', 70, statsY + 88);
+    ctx.fillText('EMPIRE POINTS', 70, statsY + 88);
 
     // Stat 2: Cats Logged
     ctx.fillStyle = 'rgba(37, 34, 30, 0.6)';
@@ -100,7 +100,7 @@ export default function ShareCard({ displayName, points, catLogsCount, tnrCount 
     ctx.fillText(catLogsCount.toString(), 70 + colWidth + 20, statsY + 55);
     ctx.fillStyle = 'rgba(253, 249, 243, 0.5)';
     ctx.font = 'bold 11px Plus Jakarta Sans, sans-serif';
-    ctx.fillText('CATS SIGHTED 🐈', 70 + colWidth + 20, statsY + 88);
+    ctx.fillText('CATS SIGHTED', 70 + colWidth + 20, statsY + 88);
 
     // Stat 3: TNR Operations
     ctx.fillStyle = 'rgba(37, 34, 30, 0.6)';
@@ -112,7 +112,7 @@ export default function ShareCard({ displayName, points, catLogsCount, tnrCount 
     ctx.fillText(tnrCount.toString(), 70 + (colWidth + 20) * 2, statsY + 55);
     ctx.fillStyle = 'rgba(253, 249, 243, 0.5)';
     ctx.font = 'bold 11px Plus Jakarta Sans, sans-serif';
-    ctx.fillText('TNR CAMPAIGNS ✂️', 70 + (colWidth + 20) * 2, statsY + 88);
+    ctx.fillText('TNR CAMPAIGNS', 70 + (colWidth + 20) * 2, statsY + 88);
 
     // 8. Footer credits
     ctx.fillStyle = 'rgba(253, 249, 243, 0.3)';

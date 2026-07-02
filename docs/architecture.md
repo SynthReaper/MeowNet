@@ -1,6 +1,6 @@
 # MeowNet Architecture
 
-> Last updated: 2026-06-30 · v0.8.0
+> Last updated: 2026-07-02 · v0.8.0
 
 ## System Overview
 
@@ -10,12 +10,13 @@ Browser
   ├── Next.js 16 App Router (Vercel Edge)
   │     ├── Server Components (RSC)   — DB queries, zero hydration cost
   │     ├── Client Components          — Interactive UI, realtime subscriptions
+  │     ├── Client-side Cryptography   — AES-GCM-256 (Web Crypto API) for personal care
   │     ├── Server Actions ('use server') — Secure form mutations
   │     └── API Routes (/api/*)        — External proxy + GDPR
   │
   ├── Supabase (PostgreSQL + PostGIS)
   │     ├── Auth     — email/password + Google/GitHub OAuth + direct credentials
-  │     ├── Database — cats, events, profiles, gamification, guilds (2 migrations)
+  │     ├── Database — cats, events, profiles, personal_cats, user_private_config (3 migrations)
   │     ├── Storage  — Cat photos (EXIF stripped before write)
   │     ├── Realtime — Live cat map, chat, guilds subscriptions
   │     └── system_settings — Dynamic key-value configuration store
@@ -27,6 +28,7 @@ Browser
         ├── Open-Meteo    → /api/weather (single + batch)
         ├── Catfact.ninja → /api/catfact
         ├── Tenor GIF CDN → /api/tenor (community chat GIF search proxy)
+        ├── AI API keys   → /api/ai/personal-helper (Gemini, OpenAI, Anthropic)
         └── Nominatim     → reverse geocoding (display only, client-side)
 ```
 
@@ -85,6 +87,12 @@ Browser
 **Status:** Accepted · **Date:** 2026-06-27  
 **Decision:** Implement a three-tier support query escalation: Volunteer → Moderator → Admin.  
 **Rationale:** Moderators handle most community support queries, keeping admin workload low. If a moderator cannot resolve a query, they document a reason and escalate to admin. This creates an auditable chain of responsibility and prevents queries from being silently dropped.
+
+### ADR-010 — Client-Side Zero-Knowledge Encryption for Private Care
+**Status:** Accepted · **Date:** 2026-07-02  
+**Decision:** Personal cat care logs and user-supplied API keys are fully encrypted client-side using `AES-GCM-256` and stored as ciphertext in Supabase.  
+**Rationale:** Users want absolute privacy for personal pets and security for their private API credentials. By encrypting data in-browser via the Web Crypto API using a locally-stored master password, MeowNet ensures database administrators have zero knowledge of the keys or logs. An API proxy route handles endpoint routing in-memory, avoiding browser CORS issues.  
+**Trade-off:** If the user forgets their master password, the data is permanently lost.
 
 ---
 
