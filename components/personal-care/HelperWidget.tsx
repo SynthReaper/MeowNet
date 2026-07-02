@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getPrivateConfig, listPrivateCats, upsertPrivateCat } from '@/lib/actions/personalCare';
 import { decryptData, encryptData } from '@/lib/security/encryption';
+import { createClient } from '@/lib/supabase/client';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -95,7 +96,15 @@ export default function HelperWidget() {
       setProvider(configObj.preferredProvider);
       setModel(configObj.preferredModel);
       setPassphrase('');
-      localStorage.setItem('meownet_vault_key', phrase);
+      try {
+        const supabase = createClient();
+        const { data: { user: su } } = await supabase.auth.getUser();
+        if (su) {
+          const encKey = await encryptData(phrase, su.id);
+          localStorage.setItem('meownet_vault_token', encKey);
+        }
+      } catch {}
+      localStorage.removeItem('meownet_vault_key');
       setIsUnlocked(true);
 
       // Load cat data in background for context
@@ -147,10 +156,41 @@ export default function HelperWidget() {
 
   // Attempt auto-unlock on mount
   useEffect(() => {
-    const cached = localStorage.getItem('meownet_vault_key');
-    if (cached) {
-      handleUnlockWithPassphrase(cached);
+    async function attemptAutoUnlock() {
+      // 1. Migrate legacy cleartext key if it exists
+      const legacyKey = localStorage.getItem('meownet_vault_key');
+      if (legacyKey) {
+        try {
+          const supabase = createClient();
+          const { data: { user: su } } = await supabase.auth.getUser();
+          if (su) {
+            const encryptedPassphrase = await encryptData(legacyKey, su.id);
+            localStorage.setItem('meownet_vault_token', encryptedPassphrase);
+          }
+          localStorage.removeItem('meownet_vault_key');
+          handleUnlockWithPassphrase(legacyKey);
+          return;
+        } catch {
+          localStorage.removeItem('meownet_vault_key');
+        }
+      }
+
+      // 2. Try auto-unlock using the encrypted session token
+      const cachedToken = localStorage.getItem('meownet_vault_token');
+      if (cachedToken) {
+        try {
+          const supabase = createClient();
+          const { data: { user: su } } = await supabase.auth.getUser();
+          if (su) {
+            const decryptedPassphrase = await decryptData(cachedToken, su.id) as string;
+            handleUnlockWithPassphrase(decryptedPassphrase);
+          }
+        } catch {
+          localStorage.removeItem('meownet_vault_token');
+        }
+      }
     }
+    attemptAutoUnlock();
   }, []);
 
   const handleUnlockSubmit = (e: React.FormEvent) => {
@@ -161,7 +201,19 @@ export default function HelperWidget() {
 
   // Commit dynamic actions suggested by AI
   const handleExecuteAction = async (catId: string, actionType: string, actionPayload: any) => {
-    const cachedPhrase = localStorage.getItem('meownet_vault_key');
+    let cachedPhrase = localStorage.getItem('meownet_vault_key');
+    if (!cachedPhrase) {
+      const cachedToken = localStorage.getItem('meownet_vault_token');
+      if (cachedToken) {
+        try {
+          const supabase = createClient();
+          const { data: { user: su } } = await supabase.auth.getUser();
+          if (su) {
+            cachedPhrase = await decryptData(cachedToken, su.id) as string;
+          }
+        } catch {}
+      }
+    }
     if (!cachedPhrase) return;
 
     const catToUpdate = catsContext.find((c) => c.id === catId);
@@ -332,6 +384,7 @@ Provide helpful, expert, and practical cat care advice based on the data.
   // Lock helper manually
   const handleLockHelper = () => {
     localStorage.removeItem('meownet_vault_key');
+    localStorage.removeItem('meownet_vault_token');
     setIsUnlocked(false);
     setApiKey('');
     setMessages([]);

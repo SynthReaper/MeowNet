@@ -1,6 +1,6 @@
 # MeowNet API Reference
 
-> Last updated: 2026-06-30 · v0.8.0
+> Last updated: 2026-07-02 · v0.8.1
 
 All API routes live under `app/api/`. Server Actions (in `lib/actions/`) are covered separately.
 
@@ -105,12 +105,20 @@ Secure proxy to route chat completions to Google Gemini, OpenAI, or Anthropic Cl
 
 **Auth:** Requires an active authenticated session.
 
+**Security gate:** The `model` field is validated against a strict server-side allowlist before the value is embedded in any outbound API URL. Requests specifying an unlisted model are rejected with `HTTP 400 unsupported_model`. This prevents Server-Side Request Forgery (SSRF) via a crafted model string (CodeQL alert #38).
+
+| Provider | Allowed models |
+|----------|----------------|
+| `gemini` | `gemini-2.5-flash`, `gemini-1.5-flash`, `gemini-1.5-pro` |
+| `openai` | `gpt-4o`, `gpt-4o-mini` |
+| `anthropic` | `claude-3-5-sonnet-latest`, `claude-3-5-haiku-latest` |
+
 **Request Body:**
 ```json
 {
   "apiKey": "your-decrypted-api-key",
   "provider": "gemini | openai | anthropic",
-  "model": "model-name",
+  "model": "gemini-2.5-flash",
   "messages": [
     { "role": "system", "content": "..." },
     { "role": "user", "content": "..." }
@@ -127,7 +135,7 @@ Secure proxy to route chat completions to Google Gemini, OpenAI, or Anthropic Cl
 ```
 
 **Errors:**
-- `400` — Missing parameter, empty key, or unsupported provider.
+- `400` — Missing parameter, empty key, unsupported provider, or model not in allowlist.
 - `401` — Unauthorized session.
 - `500` — Provider connection failed.
 

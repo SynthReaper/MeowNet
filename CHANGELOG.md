@@ -6,6 +6,15 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 
 ## [Unreleased]
 
+### Planned (Future Expansion)
+- **Winter Weather Micro-Shelter Allocator**: Hypothermia warning indicators, location allocation suggestions, and insulative R-value trackings.
+- **AI Feline Facial & Acoustic Translation (On Hold)**: Facial vector embeddings for duplicate merging, and meow acoustics state classifier translation.
+- **Autonomous AI Agent Ecosystem (On Hold)**: Multi-agent council comprising Bastet-Agent, Hermes-Agent, Anubis-Agent, Socrates-Agent, Archimedes-Agent, Freya-Agent, and Odin-Agent.
+
+---
+
+## [0.8.1] — 2026-07-02 · Security Hardening, Care Cockpit Redesign, and Mega Menu Overhaul
+
 ### Added
 - **Navbar Mega Menu Dropdowns**: Upgraded standard single-column navbar dropdowns into spacious, dual-column structured Mega Menus with descriptive captions for all navigation links to reduce visual congestion.
 - **Personal Care Cockpit Redesign**: Transformed Care Center Dashboard, Helper Page, and Helper floating widget into a high-fidelity cyberpunk cockpit with 3D cursor perspective tilts, staggered domino entrance animations, and neon telemetry status rings.
@@ -26,12 +35,9 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 - **Codacy Scanner Workflow**: Deleted the Codacy Security Scan workflow (`.github/workflows/codacy.yml`) to revert the codebase to its state before commit `1dfee60cf819527bbe0b20439c3d2915b907b55e`.
 
 ### Security
-- **DOM XSS Remediation**: Integrated `DOMPurify` into the `getSafeImageSrc` helper to sanitize URLs and resolve CodeQL alerts (#31 through #37) for DOM text reinterpreted as HTML. Configured regex overrides to preserve compatibility with `blob:` and `data:` schemes.
-
-### Planned (Future Expansion)
-- **Winter Weather Micro-Shelter Allocator**: Hypothermia warning indicators, location allocation suggestions, and insulative R-value trackings.
-- **AI Feline Facial & Acoustic Translation (On Hold)**: Facial vector embeddings for duplicate merging, and meow acoustics state classifier translation.
-- **Autonomous AI Agent Ecosystem (On Hold)**: Multi-agent council comprising Bastet-Agent, Hermes-Agent, Anubis-Agent, Socrates-Agent, Archimedes-Agent, Freya-Agent, and Odin-Agent.
+- **SSRF Prevention — AI Proxy Route**: Added a strict server-side model allowlist to `app/api/ai/personal-helper/route.ts`. The `model` request parameter is now validated against a per-provider allowlist (`gemini-2.5-flash`, `gemini-1.5-flash`, `gemini-1.5-pro`, `gpt-4o`, `gpt-4o-mini`, `claude-3-5-sonnet-latest`, `claude-3-5-haiku-latest`) before being embedded in any outbound URL or API call, resolving CodeQL alert #38 (Server-Side Request Forgery — Critical).
+- **Encrypted Vault Session Token**: Replaced plain-text passphrase caching in `localStorage` (`meownet_vault_key`) with an AES-GCM-256 encrypted token (`meownet_vault_token`) keyed to the authenticated Supabase user's UUID. Both `VaultUnlock.tsx` and `HelperWidget.tsx` now encrypt the passphrase using `encryptData(phrase, user.id)` on successful unlock and decrypt it on remount. A zero-downtime migration path automatically upgrades existing plain-text keys to encrypted tokens on first load, then deletes the legacy key. Resolves CodeQL alerts #39 and #40 (Clear-text storage of sensitive information — High).
+- **DOM XSS URL Sanitizer Fallback**: Hardened `getSafeImageSrc` in `lib/security/url.ts` so that the non-DOMPurify fallback path now returns `encodeURI(trimmed)` instead of the raw untreated string, closing the static-analysis taint flow that caused CodeQL alerts #31–#37 (DOM text reinterpreted as HTML — High) to remain open when DOMPurify was not loaded.
 
 ---
 

@@ -10,7 +10,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostGIS-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.8.0-blueviolet)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.8.1-blueviolet)](CHANGELOG.md)
 
 *Built for **#hackthekitty 2026** · by [SynthReaper](https://github.com/SynthReaper)*
 

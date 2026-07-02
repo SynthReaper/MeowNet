@@ -30,6 +30,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'missing_parameters' }, { status: 400 });
     }
 
+    // Strict model allowlist to prevent Server-Side Request Forgery (SSRF) and injection
+    const ALLOWED_MODELS: Record<string, string[]> = {
+      gemini: ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
+      openai: ['gpt-4o', 'gpt-4o-mini'],
+      anthropic: ['claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest']
+    };
+
+    if (!ALLOWED_MODELS[provider] || !ALLOWED_MODELS[provider].includes(model)) {
+      return NextResponse.json({ error: 'unsupported_model' }, { status: 400 });
+    }
+
     if (provider === 'gemini') {
       // Map OpenAI messages format to Gemini format
       // Gemini expects: contents: [{ role: 'user' | 'model', parts: [{ text: '...' }] }]

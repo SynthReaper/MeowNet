@@ -1,6 +1,6 @@
 # MeowNet Security Documentation
 
-> Last updated: 2026-06-30 · v0.8.0
+> Last updated: 2026-07-02 · v0.8.1
 
 ---
 
@@ -87,6 +87,8 @@ Infrastructure  CSP, HSTS, X-Frame-Options headers
 | Private cat vital log leakage | Private logs stored fully client-side encrypted; decrypted locally in-browser only. |
 | User data cross-contamination | RLS `WHERE user_id = auth.uid()` on all user data tables. |
 | HTML tag injection through text fields | `sanitizeText()` applies 3-pass regex strip then HTML-encodes `< > & " ' \`` — nested/malformed tags neutralised. |
+| Crafted `model` param in AI proxy triggers SSRF | Server-side allowlist on `POST /api/ai/personal-helper` rejects any model string not in the approved set before URL construction. |
+| Vault passphrase exposed in plaintext `localStorage` | Passphrase cached as AES-GCM-256 ciphertext (`meownet_vault_token`) keyed to the Supabase `user.id`. Cleartext `meownet_vault_key` is migrated and deleted on first load. |
 
 ### D — Denial of Service
 
@@ -305,6 +307,11 @@ An internal CodeQL & Dependabot vulnerability audit was performed on 2026-06-30 
 - **Support Query Parsing**: Replaced `.replace(']', '')` with a global regex replace `.replace(/]/g, '')` in moderator/admin dashboards to guarantee full sanitization of bracketed metadata.
 - **CI Workflow Security**: Hardened GitHub Actions runners (`ci.yml`, `health.yml`) by declaring strict read-only execution permissions (`permissions: contents: read`) across all jobs.
 
+A second targeted CodeQL audit was performed on 2026-07-02 (v0.8.1). Three additional findings were remediated:
+- **SSRF in AI Proxy Route (Critical — #38)**: The `model` request parameter in `app/api/ai/personal-helper/route.ts` is now validated against a per-provider allowlist. Any unlisted model string is rejected with `HTTP 400` before it can be embedded in an outbound AI provider URL.
+- **Cleartext Sensitive Data in localStorage (High — #39, #40)**: The vault passphrase is no longer written to `localStorage` in plaintext. `VaultUnlock.tsx` and `HelperWidget.tsx` now encrypt the passphrase with AES-GCM-256 (keyed to the Supabase user UUID) before storage, and decrypt it on remount. A zero-downtime migration path promotes existing plain-text keys automatically.
+- **DOM XSS URL Sanitizer Taint Closure (High — #31–#37)**: The `getSafeImageSrc` fallback path in `lib/security/url.ts` previously returned the raw URL string when DOMPurify was not loaded. It now returns `encodeURI(trimmed)`, closing the static-analysis taint flow.
+
 ---
 
 ## Vulnerability Disclosure
@@ -367,8 +374,10 @@ MeowNet provides a fully private Personal Care Center and Personal AI Helper usi
    - The JSON document is serialized, then encrypted client-side using `AES-GCM` with a cryptographically secure random 12-byte Initialization Vector (IV).
    - The salt (16 bytes) and IV (12 bytes) are prepended to the ciphertext and encoded in Base64.
 3. **Encrypted Storage**: The Base64 string is transmitted to the database via authenticated Server Actions. Database administrators and host servers can only see the Base64 ciphertext string, keeping health details completely private.
-4. **API Key Proxy Routing**:
+4. **Encrypted Session Token**: On successful vault unlock, the plaintext passphrase is immediately re-encrypted in the browser using `AES-GCM-256` keyed to the authenticated user's Supabase UUID (`user.id`), and stored in `localStorage` under the key `meownet_vault_token`. On page load, the token is decrypted using the live user UUID to provide seamless auto-unlock without ever persisting the passphrase in plaintext. Any pre-existing cleartext `meownet_vault_key` is migrated to the encrypted token format and deleted on first load.
+5. **API Key Proxy Routing**:
    - To interact with Gemini, OpenAI, or Anthropic, the client decrypts the API key in the browser and sends it over HTTPS in the payload to `/api/ai/personal-helper`.
    - The server processes the request in-memory, forwards it to the provider, returns the output, and discards the key immediately. Keys are never saved or cached on the server.
+   - The `model` parameter is validated against a server-side allowlist before use to prevent SSRF attacks.
 
 

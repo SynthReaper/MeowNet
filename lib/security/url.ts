@@ -34,13 +34,11 @@ export function getSafeImageSrc(src: string | null | undefined): string {
 
   if (!isSafePrefix) return '';
 
-  // Sanitize via DOMPurify to satisfy CodeQL static analysis.
-  // Allow safe schemes like blob and data inside the regex config.
   if (typeof DOMPurify.sanitize === 'function') {
     return DOMPurify.sanitize(trimmed, {
       ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|sms|blob|data):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
     });
   }
 
-  return trimmed;
+  return encodeURI(trimmed);
 }

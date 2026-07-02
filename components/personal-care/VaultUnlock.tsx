@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { getPrivateConfig, savePrivateConfig } from '@/lib/actions/personalCare';
 import { encryptData, decryptData } from '@/lib/security/encryption';
+import { createClient } from '@/lib/supabase/client';
 
 interface VaultUnlockProps {
   onUnlock: (passphrase: string) => void;
@@ -26,15 +27,36 @@ export default function VaultUnlock({ onUnlock }: VaultUnlockProps) {
           setEncryptedConfig(res.data.encrypted_keys);
           setIsFirstTime(false);
 
-          // Try auto-unlock if stored in localStorage
-          const cached = localStorage.getItem('meownet_vault_key');
-          if (cached) {
+          const supabase = createClient();
+          const { data: { user: su } } = await supabase.auth.getUser();
+
+          // 1. Migrate legacy cleartext key if it exists
+          const legacyKey = localStorage.getItem('meownet_vault_key');
+          if (legacyKey) {
             try {
-              await decryptData(res.data.encrypted_keys, cached);
-              onUnlock(cached);
+              await decryptData(res.data.encrypted_keys, legacyKey);
+              if (su) {
+                const encryptedPassphrase = await encryptData(legacyKey, su.id);
+                localStorage.setItem('meownet_vault_token', encryptedPassphrase);
+              }
+              localStorage.removeItem('meownet_vault_key');
+              onUnlock(legacyKey);
               return;
             } catch {
               localStorage.removeItem('meownet_vault_key');
+            }
+          }
+
+          // 2. Try auto-unlock using the encrypted session token
+          const cachedToken = localStorage.getItem('meownet_vault_token');
+          if (cachedToken && su) {
+            try {
+              const decryptedPassphrase = await decryptData(cachedToken, su.id) as string;
+              await decryptData(res.data.encrypted_keys, decryptedPassphrase);
+              onUnlock(decryptedPassphrase);
+              return;
+            } catch {
+              localStorage.removeItem('meownet_vault_token');
             }
           }
         } else {
@@ -89,7 +111,13 @@ export default function VaultUnlock({ onUnlock }: VaultUnlockProps) {
           return;
         }
 
-        localStorage.setItem('meownet_vault_key', passphrase);
+        const supabase = createClient();
+        const { data: { user: su } } = await supabase.auth.getUser();
+        if (su) {
+          const encryptedPassphrase = await encryptData(passphrase, su.id);
+          localStorage.setItem('meownet_vault_token', encryptedPassphrase);
+        }
+        localStorage.removeItem('meownet_vault_key');
         onUnlock(passphrase);
       } else {
         if (!encryptedConfig) {
@@ -101,7 +129,13 @@ export default function VaultUnlock({ onUnlock }: VaultUnlockProps) {
         // Validate password by trying to decrypt
         try {
           await decryptData(encryptedConfig, passphrase);
-          localStorage.setItem('meownet_vault_key', passphrase);
+          const supabase = createClient();
+          const { data: { user: su } } = await supabase.auth.getUser();
+          if (su) {
+            const encryptedPassphrase = await encryptData(passphrase, su.id);
+            localStorage.setItem('meownet_vault_token', encryptedPassphrase);
+          }
+          localStorage.removeItem('meownet_vault_key');
           onUnlock(passphrase);
         } catch {
           setError('Incorrect password. Cryptographic decryption failed.');

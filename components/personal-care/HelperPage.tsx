@@ -375,6 +375,7 @@ Provide helpful, expert, and practical cat care advice based on the data.
 
   const handleLock = () => {
     localStorage.removeItem('meownet_vault_key');
+    localStorage.removeItem('meownet_vault_token');
     setPassphrase(null);
     setApiKey('');
     setMessages([]);
