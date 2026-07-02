@@ -104,8 +104,8 @@ export default async function CatsPage({
             </div>
             {/* Empty boxes (skeletons) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 opacity-60">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-zinc-100/50 border border-zinc-200 rounded-xl p-4 flex flex-col gap-4 h-full min-h-[300px]">
+              {[1, 2, 3, 4].map((item) => (
+                <div key={item} className="bg-zinc-100/50 border border-zinc-200 rounded-xl p-4 flex flex-col gap-4 h-full min-h-[300px]">
                   <div className="w-full h-48 bg-zinc-200/50 rounded-lg"></div>
                   <div className="h-6 bg-zinc-200/50 w-2/3 rounded-md"></div>
                   <div className="h-5 bg-zinc-200/50 w-16 rounded-full"></div>

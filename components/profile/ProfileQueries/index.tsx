@@ -162,10 +162,11 @@ export default function ProfileQueries({ initialQueries }: Props) {
         ) : (
           <div className="max-h-[300px] overflow-y-auto pr-1 flex flex-col gap-3">
             {filteredQueries.map((q) => (
-              <div
+              <button
                 key={q.id}
+                type="button"
                 onClick={() => router.push(`/support/${q.id}`)}
-                className="p-3 bg-[var(--bg-elevated)] rounded-xl border border-[var(--bg-border)]/15 flex flex-col gap-2 cursor-pointer hover:bg-[var(--bg-border)]/20 transition-colors group"
+                className="w-full text-left p-3 bg-[var(--bg-elevated)] rounded-xl border border-[var(--bg-border)]/15 flex flex-col gap-2 cursor-pointer hover:bg-[var(--bg-border)]/20 transition-colors group"
               >
                 <div className="flex justify-between items-start gap-2">
                   <span className="font-body text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
@@ -195,7 +196,7 @@ export default function ProfileQueries({ initialQueries }: Props) {
                     {new Date(q.created_at).toLocaleDateString()}
                   </span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}

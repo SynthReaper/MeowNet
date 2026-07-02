@@ -124,7 +124,7 @@ export default function Navbar() {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
 
   const [supabaseUser, setSupabaseUser] = useState<any>(null);
-  const [, setIsSupabaseLoaded] = useState(false);
+  const [isSupabaseLoaded, setIsSupabaseLoaded] = useState(false);
   const [userDisplayName, setUserDisplayName] = useState<string>('Volunteer');
 
   const isUserLoggedIn = isSignedIn || !!supabaseUser;
@@ -955,6 +955,7 @@ export default function Navbar() {
           role="dialog"
           aria-modal="true"
           onClick={() => setIsSearchOpen(false)}
+          onKeyDown={(e) => { if (e.key === 'Escape') setIsSearchOpen(false); }}
         >
           <div
             className="relative w-full max-w-lg rounded-2xl flex flex-col overflow-hidden max-h-[70vh]"

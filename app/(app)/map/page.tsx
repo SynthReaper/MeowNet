@@ -32,7 +32,6 @@ export default function MapPage() {
   const { isSignedIn } = useUser();
   const [supabaseUser, setSupabaseUser] = useState<any>(null);
   const [cats, setCats] = useState<CatMarkerData[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,7 +76,7 @@ export default function MapPage() {
           lat = geojson.coordinates[1];
         }
       } else if (typeof loc === 'string') {
-        const match = loc.match(/POINT\(([^ ]+) ([^ )]+)\)/);
+        const match = /POINT\(([^ ]+) ([^ )]+)\)/.exec(loc);
         if (match) {
           lng = parseFloat(match[1]);
           lat = parseFloat(match[2]);
@@ -104,7 +103,6 @@ export default function MapPage() {
     }).filter((c) => c.lat !== 0 || c.lng !== 0);
 
     setCats(parsed);
-    setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
@@ -247,12 +245,13 @@ export default function MapPage() {
           {/* Sidebar Sighting List */}
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
             {searchedCats.map((cat) => (
-              <div 
-                key={cat.id} 
+              <button
+                key={cat.id}
+                type="button"
                 onClick={() => setSelectedCatId(cat.id)}
-                className={`cursor-pointer bg-[var(--bg-elevated)] border rounded-xl p-3 shadow-sm hover:shadow transition-all flex items-start gap-3 ${
-                  selectedCatId === cat.id 
-                    ? 'border-[var(--empire-gold)] shadow-[0_0_12px_rgba(242,140,56,0.15)] bg-[var(--bg-border)]/10' 
+                className={`w-full text-left cursor-pointer bg-[var(--bg-elevated)] border rounded-xl p-3 shadow-sm hover:shadow transition-all flex items-start gap-3 ${
+                  selectedCatId === cat.id
+                    ? 'border-[var(--empire-gold)] shadow-[0_0_12px_rgba(242,140,56,0.15)] bg-[var(--bg-border)]/10'
                     : 'border-[var(--bg-border)]/20 hover:bg-[var(--bg-border)]/15'
                 }`}
               >
@@ -294,7 +293,7 @@ export default function MapPage() {
                     </Link>
                   </div>
                 </div>
-              </div>
+              </button>
             ))}
 
             {searchedCats.length === 0 && (

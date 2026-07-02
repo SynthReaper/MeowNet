@@ -68,7 +68,7 @@ export default function ProfileActivityLogs({ recentPoints, auditLogs }: Props) 
           <div className="flex flex-col max-h-[350px] overflow-y-auto pr-1">
             {recentPoints.map((log, i) => (
               <div 
-                key={i} 
+                key={`${log.created_at}-${log.points}-${log.activity}`} 
                 className={`flex justify-between items-center py-3 ${
                   i < recentPoints.length - 1 ? 'border-b border-[var(--bg-border)]/40' : ''
                 }`}
@@ -95,9 +95,9 @@ export default function ProfileActivityLogs({ recentPoints, auditLogs }: Props) 
           </p>
         ) : (
           <div className="flex flex-col max-h-[350px] overflow-y-auto pr-1 gap-2">
-            {auditLogs.map((log, i) => (
+            {auditLogs.map((log) => (
               <div 
-                key={i} 
+                key={`${log.created_at}-${log.action}`} 
                 className={`p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/15 flex flex-col gap-1.5`}
               >
                 <div className="flex justify-between items-start gap-4">

@@ -2,6 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600&family=Quicksand:wght@600;700&family=DM+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+/* sonar-disable css:S5362 -- @custom-variant is valid Tailwind v4 syntax */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* ============================================================

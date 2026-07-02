@@ -150,7 +150,7 @@ interface PollProps {
 }
 
 function PollCard({ messageId, messageText }: Readonly<PollProps>) {
-  const match = messageText.match(/\[📊 Poll\]\s*([^|]+)\s*\|\s*(.*)/);
+  const match = /\[📊 Poll\]\s*([^|]+)\s*\|\s*(.*)/.exec(messageText);
   const question = match ? match[1].trim() : '';
   const options = match ? match[2].split('|').map(o => o.trim()).filter(Boolean) : [];
 
@@ -273,7 +273,7 @@ const renderMessageContent = (messageText: string, messageId?: string) => {
 
   // 3. Check for Map Pin Card
   if (messageText.includes('[📍 Map Pin]')) {
-    const match = messageText.match(/\[📍 Map Pin\] ([^(]+)\(([^,]+),([^)]+)\)/);
+    const match = /\[📍 Map Pin\] ([^(]+)\(([^,]+),([^)]+)\)/.exec(messageText);
     const label = match ? match[1].trim() : 'Location';
     
     return (
@@ -303,7 +303,7 @@ const renderMessageContent = (messageText: string, messageId?: string) => {
 
   // 4. Check for PDF Document File Attachment Card
   if (messageText.includes('[📎 File Attachment:')) {
-    const match = messageText.match(/\[📎 File Attachment: ([^\]]+)\]\(([^)]+)\)/);
+    const match = /\[📎 File Attachment: ([^\]]+)\]\(([^)]+)\)/.exec(messageText);
     if (match) {
       const filename = match[1];
       const url = match[2];
@@ -334,7 +334,7 @@ const renderMessageContent = (messageText: string, messageId?: string) => {
 
   // 6. Check for standard image markdown MOCK rendering
   if (messageText.startsWith('![GIF]') || messageText.startsWith('![Image]')) {
-    const match = messageText.match(/\((.*?)\)/);
+    const match = /\((.*?)\)/.exec(messageText);
     if (match) {
       const rawUrl = match[1];
       // Only render images from known safe CDN domains to prevent injection
@@ -738,7 +738,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
     const supabase = createClient();
     // Use a stable, sorted pair as the channel name so this subscription
     // only fires for the exact conversation between the two users.
-    const pairKey = [currentUser?.id, activeDMUser.id].sort().join('-');
+    const pairKey = [currentUser?.id, activeDMUser.id].sort((a, b) => (a ?? '').localeCompare(b ?? '')).join('-');
     const sub = supabase
       .channel(`dm-pair-${pairKey}`)
       .on('postgres_changes', {
@@ -1378,45 +1378,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
     }
   };
 
-  const handleStartDMByUserId = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const targetId = searchUserId.trim();
-    if (!targetId) return;
-    
-    // Basic UUID validation
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(targetId)) {
-      showToast('error', 'Invalid User ID format. Must be a UUID.');
-      return;
-    }
-    
-    if (targetId === currentUser?.id) {
-      showToast('error', 'You cannot direct message yourself.');
-      return;
-    }
-    
-    setIsSearchingDMUser(true);
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('profiles' as never)
-        .select('id, display_name, avatar_url, role')
-        .eq('id', targetId)
-        .single() as unknown as { data: Profile | null; error: { message: string } | null };
-        
-      if (error || !data) {
-        showToast('error', 'User not found. Check the ID and try again.');
-      } else {
-        setActiveDMUser(data);
-        setSearchUserId('');
-        setServerContext('dms');
-        showToast('success', `Conversation started with ${data.display_name}`);
-      }
-    } catch {
-      showToast('error', 'Error querying user profile.');
-    } finally {
-      setIsSearchingDMUser(false);
-    }
-  };
+
 
   const filteredEmojis = useMemo(() => {
     const list: string[] = [];
@@ -1445,7 +1407,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
 
       {/* Backdrop for mobile drawer */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div role="presentation" aria-hidden="true" className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} onKeyDown={() => setSidebarOpen(false)} />
       )}
 
       {/* ── REDESIGNED UNIFIED SIDEBAR (Mockup 1 & 2) ─────────────────────── */}
@@ -2970,8 +2932,9 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
             </h3>
             
             <div>
-              <label className="block font-body text-[10px] font-bold text-[#6b5a4d]/50 uppercase tracking-wider mb-1">Question</label>
+              <label htmlFor="comm-poll-question" className="block font-body text-[10px] font-bold text-[#6b5a4d]/50 uppercase tracking-wider mb-1">Question</label>
               <input
+                id="comm-poll-question"
                 type="text"
                 value={pollQuestion}
                 onChange={(e) => setPollQuestion(e.target.value)}
@@ -2982,7 +2945,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
             </div>
 
             <div>
-              <label className="block font-body text-[10px] font-bold text-[#6b5a4d]/50 uppercase tracking-wider mb-1 flex justify-between items-center select-none">
+              <div className="block font-body text-[10px] font-bold text-[#6b5a4d]/50 uppercase tracking-wider mb-1 flex justify-between items-center select-none">
                 <span>Options</span>
                 <button
                   type="button"
@@ -2991,7 +2954,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
                 >
                   <span className="material-symbols-outlined text-xs">add</span> Add Option
                 </button>
-              </label>
+              </div>
               
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                 {pollOptions.map((opt, idx) => (
@@ -3056,8 +3019,9 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
               Create {isNewChannelPrivate ? 'Private Group' : 'Public Channel'}
             </h3>
             <div>
-              <label className="block font-body text-[10px] font-bold text-[#6b5a4d]/50 uppercase tracking-wider mb-1">Name</label>
+              <label htmlFor="comm-channel-name" className="block font-body text-[10px] font-bold text-[#6b5a4d]/50 uppercase tracking-wider mb-1">Name</label>
               <input
+                id="comm-channel-name"
                 type="text"
                 value={newChannelName}
                 onChange={(e) => setNewChannelName(e.target.value)}
@@ -3067,8 +3031,9 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
               />
             </div>
             <div>
-              <label className="block font-body text-[10px] font-bold text-[#6b5a4d]/50 uppercase tracking-wider mb-1">Description</label>
+              <label htmlFor="comm-channel-desc" className="block font-body text-[10px] font-bold text-[#6b5a4d]/50 uppercase tracking-wider mb-1">Description</label>
               <textarea
+                id="comm-channel-desc"
                 value={newChannelDesc}
                 onChange={(e) => setNewChannelDesc(e.target.value)}
                 placeholder="What is this channel about?"
@@ -3129,8 +3094,9 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
               Enter the 8-character invite code shared by a group member to join their private channel.
             </p>
             <div>
-              <label className="block font-body text-[10px] font-bold text-[#6b5a4d]/50 uppercase tracking-wider mb-1">Invite Code</label>
+              <label htmlFor="comm-invite-code" className="block font-body text-[10px] font-bold text-[#6b5a4d]/50 uppercase tracking-wider mb-1">Invite Code</label>
               <input
+                id="comm-invite-code"
                 type="text"
                 value={inviteCodeText}
                 onChange={(e) => setInviteCodeText(e.target.value)}
@@ -3186,8 +3152,9 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
               Select which community rule or regulation this message violates. Flagged messages will be reviewed by colony moderators.
             </p>
             <div>
-              <label className="block font-body text-[10px] font-bold text-[#6b5a4d]/50 uppercase tracking-wider mb-1">Violation Category</label>
+              <label htmlFor="comm-report-reason" className="block font-body text-[10px] font-bold text-[#6b5a4d]/50 uppercase tracking-wider mb-1">Violation Category</label>
               <select
+                id="comm-report-reason"
                 value={reportReasonRule}
                 onChange={(e) => setReportReasonRule(e.target.value)}
                 className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2.5 text-xs text-[var(--empire-cream)] focus:border-[#eb8424] outline-none transition-all"
@@ -3343,7 +3310,7 @@ function ProfileDetailModal({ userId, onClose, onStartDM, currentUser }: {
   const isSelf = currentUser?.id === profile.id;
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4" onClick={onClose}>
+    <div role="presentation" aria-hidden="true" className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4" onClick={onClose} onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}>
       <div 
         className="bg-[var(--bg-surface)] border border-[var(--bg-border)] rounded-3xl p-6 w-full max-w-md flex flex-col gap-5 shadow-2xl relative"
         onClick={(e) => e.stopPropagation()}

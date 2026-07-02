@@ -212,8 +212,8 @@ export default function ReportsPage() {
               <p className="font-body text-xs text-[var(--empire-cream)]/50 py-2">No active climate reports logged.</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {weatherReports.map((rep, idx) => (
-                  <div key={idx} className="p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/20 flex flex-col gap-2">
+                {weatherReports.map((rep) => (
+                  <div key={`${rep.neighborhood}-${rep.condition}`} className="p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/20 flex flex-col gap-2">
                     <div className="flex justify-between items-center">
                       <span className="font-body text-xs font-bold text-[var(--empire-cream)]">{rep.neighborhood}</span>
                       <span className="px-2 py-0.5 bg-red-500/10 text-[#ba1a1a] text-[9px] font-bold rounded-md uppercase tracking-wider border border-red-500/20">
@@ -249,15 +249,15 @@ export default function ReportsPage() {
 
             {loadingFacts ? (
               <div className="space-y-3">
-                {[0,1,2,3,4].map(i => (
-                  <div key={i} className="h-10 bg-[var(--bg-elevated)] rounded-lg animate-pulse" />
+                {['fact-sk-1', 'fact-sk-2', 'fact-sk-3', 'fact-sk-4', 'fact-sk-5'].map(k => (
+                  <div key={k} className="h-10 bg-[var(--bg-elevated)] rounded-lg animate-pulse" />
                 ))}
               </div>
             ) : (
               <div className="flex flex-col gap-3">
                 {catFacts.map((f, idx) => (
                   <button
-                    key={idx}
+                    key={f.fact}
                     onClick={() => setActiveFactIdx(idx)}
                     className={`text-left w-full p-3 rounded-xl border transition-all duration-300 ${
                       idx === activeFactIdx
@@ -286,9 +286,9 @@ export default function ReportsPage() {
             {/* Dot indicator */}
             {catFacts.length > 1 && (
               <div className="flex gap-1.5 justify-center mt-4">
-                {catFacts.map((_, i) => (
+                {catFacts.map((f, i) => (
                   <button
-                    key={i}
+                    key={`dot-${f.fact}`}
                     onClick={() => setActiveFactIdx(i)}
                     className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                       i === activeFactIdx ? 'w-6 bg-[var(--empire-gold)]' : 'w-1.5 bg-[var(--empire-cream)]/20'
@@ -414,14 +414,14 @@ export default function ReportsPage() {
 
             {loadingBreeds ? (
               <div className="space-y-2">
-                {[0,1,2,3,4,5,6,7].map(i => (
-                  <div key={i} className="h-8 bg-[var(--bg-elevated)] rounded-lg animate-pulse" />
+                {['breed-sk-1', 'breed-sk-2', 'breed-sk-3', 'breed-sk-4', 'breed-sk-5', 'breed-sk-6', 'breed-sk-7', 'breed-sk-8'].map(k => (
+                  <div key={k} className="h-8 bg-[var(--bg-elevated)] rounded-lg animate-pulse" />
                 ))}
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {breeds.map((b, i) => (
-                  <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--bg-border)]/10 hover:border-[var(--life-teal)]/20 transition-colors">
+                {breeds.map((b) => (
+                  <div key={b.breed} className="flex items-center gap-2 p-2 rounded-lg bg-[var(--bg-elevated)] border border-[var(--bg-border)]/10 hover:border-[var(--life-teal)]/20 transition-colors">
                     {/* Coat badge */}
                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded font-body flex-shrink-0 ${COAT_COLORS[b.coat] ?? 'bg-zinc-400/15 text-zinc-500'}`}>
                       {b.coat}

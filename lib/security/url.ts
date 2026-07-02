@@ -36,7 +36,7 @@ export function getSafeImageSrc(src: string | null | undefined): string {
 
   if (typeof DOMPurify.sanitize === 'function') {
     return DOMPurify.sanitize(trimmed, {
-      ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|sms|blob|data):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+      ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|sms|blob|data):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i,
     });
   }
 

@@ -23,11 +23,11 @@ export default async function SpecialistsPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   // 1. Fetch all specialists
-  const { data: profiles, error } = await supabase
+  const { data: profiles } = await supabase
     .from('profiles' as never)
     .select('id, display_name, avatar_url, role, bio, preferred_role, location_neighborhood, contact_phone, empire_points')
     .not('preferred_role', 'is', null)
-    .order('empire_points', { ascending: false }) as unknown as { data: SpecialistProfile[] | null; error: any };
+    .order('empire_points', { ascending: false }) as unknown as { data: SpecialistProfile[] | null };
 
   const specialists = profiles ?? [];
 
@@ -142,8 +142,9 @@ export default async function SpecialistsPage() {
                 <input type="hidden" name="displayName" value={myProfile?.display_name || ''} />
                 
                 <div>
-                  <label className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Rescue Specialty Role</label>
+                  <label htmlFor="specialists-role" className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Rescue Specialty Role</label>
                   <select
+                    id="specialists-role"
                     name="preferredRole"
                     defaultValue={myProfile?.preferred_role || ''}
                     className="w-full bg-[var(--bg-void)] text-[var(--empire-cream)] font-body text-xs p-2 rounded-lg border border-[var(--bg-border)]/40 outline-none"
@@ -160,8 +161,9 @@ export default async function SpecialistsPage() {
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Primary Neighborhood</label>
+                  <label htmlFor="specialists-neighborhood" className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Primary Neighborhood</label>
                   <input
+                    id="specialists-neighborhood"
                     type="text"
                     name="locationNeighborhood"
                     defaultValue={myProfile?.location_neighborhood || ''}
@@ -172,8 +174,9 @@ export default async function SpecialistsPage() {
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Contact Phone (Optional)</label>
+                  <label htmlFor="specialists-phone" className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Contact Phone (Optional)</label>
                   <input
+                    id="specialists-phone"
                     type="tel"
                     name="contactPhone"
                     defaultValue={myProfile?.contact_phone || ''}
@@ -183,8 +186,9 @@ export default async function SpecialistsPage() {
                 </div>
 
                 <div>
-                  <label className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Volunteer Bio / Availability</label>
+                  <label htmlFor="specialists-bio" className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Volunteer Bio / Availability</label>
                   <textarea
+                    id="specialists-bio"
                     name="bio"
                     defaultValue={myProfile?.bio || ''}
                     placeholder="Share details about your trapping traps collection, medical expertise, or availability..."

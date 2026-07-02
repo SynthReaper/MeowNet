@@ -162,9 +162,9 @@ export default function EmpireCodex() {
                 <span>Ecosystem Roles</span>
               </h3>
               <div className="flex flex-col gap-4">
-                {ROLES_LIST.map((role, idx) => (
+                {ROLES_LIST.map((role) => (
                   <div 
-                    key={idx} 
+                    key={role.title} 
                     className="p-5 rounded-2xl border border-[var(--bg-border)]/30 bg-[var(--bg-elevated)] flex flex-col md:flex-row md:items-start gap-4 hover:shadow-ambient transition-all duration-300"
                   >
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border ${role.color}`}>
@@ -200,9 +200,9 @@ export default function EmpireCodex() {
                 <span>Karma Rank Progression</span>
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {RANKS_LIST.map((rank, idx) => (
+                {RANKS_LIST.map((rank) => (
                   <div 
-                    key={idx} 
+                    key={rank.title} 
                     className="p-4 rounded-xl border border-[var(--bg-border)]/20 bg-[var(--bg-elevated)] flex items-start gap-3 hover:bg-[var(--bg-border)]/5 transition-all"
                   >
                     <span className="w-9 h-9 rounded-lg bg-[#ffdcc5]/40 border border-[var(--empire-gold)]/20 flex items-center justify-center shrink-0 text-[var(--empire-gold)]">
@@ -266,9 +266,9 @@ export default function EmpireCodex() {
         {/* RULES TAB */}
         {activeTab === 'rules' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {RULES_LIST.map((rule, idx) => (
+            {RULES_LIST.map((rule) => (
               <div 
-                key={idx} 
+                key={rule.title} 
                 className="p-5 rounded-2xl border border-[var(--bg-border)]/30 bg-[var(--bg-elevated)] flex gap-3.5 hover:shadow-ambient transition-all duration-300"
               >
                 <span className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0 text-[var(--empire-gold)]">

@@ -4,8 +4,7 @@ import type { Metadata } from 'next';
 import { SignUp, ClerkLoaded, ClerkLoading } from "@clerk/nextjs";
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import AuthForm from '@/components/auth/AuthForm';
+
 
 export const metadata: Metadata = {
   title: 'Join the Empire | MeowNet',

@@ -144,7 +144,7 @@ export default function CatMap({ cats: propCats, onNewCat, selectedCatId, onSele
           lat = geojson.coordinates[1];
         }
       } else if (typeof loc === 'string') {
-        const match = loc.match(/POINT\(([^ ]+) ([^ )]+)\)/);
+        const match = /POINT\(([^ ]+) ([^ )]+)\)/.exec(loc);
         if (match) {
           lng = parseFloat(match[1]);
           lat = parseFloat(match[2]);
@@ -241,7 +241,7 @@ export default function CatMap({ cats: propCats, onNewCat, selectedCatId, onSele
             const radius = 250 + cell.count * 150;
             return (
               <Circle
-                key={idx}
+                key={`${cell.lat},${cell.lng}`}
                 center={[cell.lat, cell.lng]}
                 radius={radius}
                 pathOptions={{

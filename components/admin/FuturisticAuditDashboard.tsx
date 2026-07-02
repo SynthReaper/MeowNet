@@ -304,10 +304,11 @@ export default function FuturisticAuditDashboard({ initialAuditLogs, currentUser
             paginatedLogs.map(log => {
               const theme = getActionTheme(log.action);
               return (
-                <div
+                <button
                   key={log.id}
+                  type="button"
                   onClick={() => setSelectedLog(log)}
-                  className="grid grid-cols-12 gap-4 px-5 py-3.5 hover:bg-[var(--bg-elevated)]/50 transition-all cursor-pointer items-center text-xs select-none group"
+                  className="w-full text-left grid grid-cols-12 gap-4 px-5 py-3.5 hover:bg-[var(--bg-elevated)]/50 transition-all cursor-pointer items-center text-xs select-none group"
                 >
                   {/* Timestamp */}
                   <div className="col-span-3 flex flex-col gap-0.5 select-none">
@@ -346,7 +347,7 @@ export default function FuturisticAuditDashboard({ initialAuditLogs, currentUser
                   <div className="col-span-4 text-[11px] text-[var(--text-secondary)] truncate pr-4 font-body transition-colors">
                     {log.details || 'None'}
                   </div>
-                </div>
+                </button>
               );
             })
           )}

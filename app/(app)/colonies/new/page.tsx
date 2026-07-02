@@ -91,8 +91,9 @@ export default function NewColonyPage() {
       <form onSubmit={handleSubmit} className="bg-white border border-[var(--bg-border)] rounded-2xl shadow-ambient p-6 flex flex-col gap-5">
         {/* Colony Name */}
         <div>
-          <label className="text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider block mb-1.5">Colony Name</label>
+          <label htmlFor="colony-new-name" className="text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider block mb-1.5">Colony Name</label>
           <input
+            id="colony-new-name"
             type="text"
             required
             placeholder="e.g. Alleyway Tabby Clan"
@@ -104,8 +105,9 @@ export default function NewColonyPage() {
 
         {/* Description */}
         <div>
-          <label className="text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider block mb-1.5">Colony Description</label>
+          <label htmlFor="colony-new-desc" className="text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider block mb-1.5">Colony Description</label>
           <textarea
+            id="colony-new-desc"
             rows={3}
             placeholder="Details about feeding schedules, shelter setups, or general colony behavior..."
             value={description}
@@ -116,8 +118,9 @@ export default function NewColonyPage() {
 
         {/* Population Estimate */}
         <div>
-          <label className="text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider block mb-1.5">Estimated Population (Total Cats)</label>
+          <label htmlFor="colony-new-population" className="text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider block mb-1.5">Estimated Population (Total Cats)</label>
           <input
+            id="colony-new-population"
             type="number"
             min="1"
             required
@@ -130,7 +133,7 @@ export default function NewColonyPage() {
         {/* Coordinates */}
         <div className="border-t border-[var(--bg-border)]/20 pt-4 mt-2">
           <div className="flex justify-between items-center mb-3">
-            <label className="text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider">Colony Coordinates</label>
+            <span className="text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider">Colony Coordinates</span>
             <button
               type="button"
               onClick={handleGetCurrentLocation}

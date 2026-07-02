@@ -220,8 +220,9 @@ export default function AdminGamificationClient({
           {activeTab === 'trivia' && (
             <form onSubmit={handleTriviaSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Question Text</label>
+                <label htmlFor="trivia-question" className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Question Text</label>
                 <textarea
+                  id="trivia-question"
                   required
                   value={triviaForm.question}
                   onChange={e => setTriviaForm(prev => ({ ...prev, question: e.target.value }))}
@@ -231,9 +232,10 @@ export default function AdminGamificationClient({
               </div>
 
               {triviaForm.options.map((option, idx) => (
-                <div key={idx} className="flex flex-col gap-1.5">
+                <div key={`trivia-choice-field-${idx}`} className="flex flex-col gap-1.5">
                   <label className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60">Option {idx + 1}</label>
                   <input
+                    aria-label={`Option ${idx + 1}`}
                     required
                     type="text"
                     value={option}
@@ -249,8 +251,9 @@ export default function AdminGamificationClient({
               ))}
 
               <div className="flex flex-col gap-1.5">
-                <label className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Correct Option Index</label>
+                <label htmlFor="trivia-correct-index" className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Correct Option Index</label>
                 <select
+                  id="trivia-correct-index"
                   value={triviaForm.correctIndex}
                   onChange={e => setTriviaForm(prev => ({ ...prev, correctIndex: Number(e.target.value) }))}
                   className="p-2.5 border border-[var(--bg-border)] rounded-xl font-body text-xs text-[var(--empire-cream)] bg-[var(--bg-elevated)] cursor-pointer"
@@ -263,8 +266,9 @@ export default function AdminGamificationClient({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Educational Explanation</label>
+                <label htmlFor="trivia-explanation" className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Educational Explanation</label>
                 <textarea
+                  id="trivia-explanation"
                   required
                   value={triviaForm.explanation}
                   onChange={e => setTriviaForm(prev => ({ ...prev, explanation: e.target.value }))}
@@ -286,8 +290,9 @@ export default function AdminGamificationClient({
           {activeTab === 'bingo' && (
             <form onSubmit={handleBingoSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Square Label</label>
+                <label htmlFor="bingo-square-label" className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Square Label</label>
                 <input
+                  id="bingo-square-label"
                   required
                   type="text"
                   value={bingoForm.label}
@@ -298,8 +303,9 @@ export default function AdminGamificationClient({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Task Type Key</label>
+                <label htmlFor="bingo-task-type" className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Task Type Key</label>
                 <select
+                  id="bingo-task-type"
                   value={bingoForm.type}
                   onChange={e => setBingoForm(prev => ({ ...prev, type: e.target.value }))}
                   className="p-2.5 border border-[var(--bg-border)] rounded-xl font-body text-xs text-[var(--empire-cream)] bg-[var(--bg-elevated)] cursor-pointer"
@@ -315,8 +321,9 @@ export default function AdminGamificationClient({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Task Description</label>
+                <label htmlFor="bingo-task-desc" className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Task Description</label>
                 <textarea
+                  id="bingo-task-desc"
                   required
                   value={bingoForm.description}
                   onChange={e => setBingoForm(prev => ({ ...prev, description: e.target.value }))}
@@ -338,8 +345,9 @@ export default function AdminGamificationClient({
           {activeTab === 'guilds' && (
             <form onSubmit={handleGuildSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Guild Name</label>
+                <label htmlFor="guild-name" className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Guild Name</label>
                 <input
+                  id="guild-name"
                   required
                   type="text"
                   value={guildForm.name}
@@ -350,8 +358,9 @@ export default function AdminGamificationClient({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Description</label>
+                <label htmlFor="guild-desc" className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Description</label>
                 <textarea
+                  id="guild-desc"
                   required
                   value={guildForm.description}
                   onChange={e => setGuildForm(prev => ({ ...prev, description: e.target.value }))}
@@ -361,8 +370,9 @@ export default function AdminGamificationClient({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Logo URL (Optional)</label>
+                <label htmlFor="guild-logo-url" className="font-body text-xs font-bold text-[var(--empire-cream)]/60">Logo URL (Optional)</label>
                 <input
+                  id="guild-logo-url"
                   type="text"
                   value={guildForm.logoUrl}
                   onChange={e => setGuildForm(prev => ({ ...prev, logoUrl: e.target.value }))}
@@ -399,7 +409,7 @@ export default function AdminGamificationClient({
                 <div className="grid grid-cols-2 gap-2 mt-1">
                   {q.options.map((opt, oIdx) => (
                     <span
-                      key={oIdx}
+                      key={`trivia-opt-${oIdx}`}
                       className={`px-2 py-1 rounded text-[10px] font-semibold border ${
                         oIdx === q.correct_index
                           ? 'bg-[#e9faf4] border-[#8bf1e6] text-[#0d594b]'

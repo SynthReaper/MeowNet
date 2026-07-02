@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       anthropic: ['claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest']
     };
 
-    if (!ALLOWED_MODELS[provider] || !ALLOWED_MODELS[provider].includes(model)) {
+    if (!ALLOWED_MODELS[provider]?.includes(model)) {
       return NextResponse.json({ error: 'unsupported_model' }, { status: 400 });
     }
 

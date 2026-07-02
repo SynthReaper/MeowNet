@@ -288,8 +288,9 @@ export default function CatActions({ catId, isOwner, shelterUrl, hasPledged: ini
                   ) : (
                     <div className="flex flex-col gap-3">
                       <div>
-                        <label className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase">Mock Card Number</label>
+                        <label htmlFor="catactions-card-number" className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase">Mock Card Number</label>
                         <input 
+                          id="catactions-card-number"
                           type="text" 
                           value={cardNumber} 
                           onChange={(e) => setCardNumber(e.target.value)} 
@@ -298,8 +299,9 @@ export default function CatActions({ catId, isOwner, shelterUrl, hasPledged: ini
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase">Expiry Date</label>
+                          <label htmlFor="catactions-expiry" className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase">Expiry Date</label>
                           <input 
+                            id="catactions-expiry"
                             type="text" 
                             value={cardExpiry} 
                             onChange={(e) => setCardExpiry(e.target.value)} 
@@ -307,8 +309,9 @@ export default function CatActions({ catId, isOwner, shelterUrl, hasPledged: ini
                           />
                         </div>
                         <div>
-                          <label className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase">CVV</label>
+                          <label htmlFor="catactions-cvv" className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase">CVV</label>
                           <input 
+                            id="catactions-cvv"
                             type="text" 
                             value={cardCvv} 
                             onChange={(e) => setCardCvv(e.target.value)} 

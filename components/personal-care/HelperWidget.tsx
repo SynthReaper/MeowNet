@@ -394,7 +394,7 @@ Provide helpful, expert, and practical cat care advice based on the data.
   // Extract JSON actions out of message strings
   const parseActionFromMessage = (content: string) => {
     const actionRegex = /\[Action:\s*(\{.*\})\s*\]/;
-    const match = content.match(actionRegex);
+    const match = actionRegex.exec(content);
     if (match) {
       try {
         const payload = JSON.parse(match[1]);
@@ -532,7 +532,7 @@ Provide helpful, expert, and practical cat care advice based on the data.
 
                   return (
                     <div
-                      key={idx}
+                      key={`widget-msg-${idx}`}
                       className={`flex flex-col max-w-[85%] ${isUser ? 'self-end items-end' : 'self-start items-start'}`}
                     >
                       <div

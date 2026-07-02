@@ -48,7 +48,7 @@ export default function NeuterBadge({ catId, isSterilized, canRequest }: Props) 
     };
   }, [catId]);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
     const card = e.currentTarget;
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -109,11 +109,12 @@ export default function NeuterBadge({ catId, isSterilized, canRequest }: Props) 
   // Case A: Verified spay/neuter display holographic certificate badge
   if (isSterilized && proof && proof.status === 'verified') {
     return (
-      <div 
+      <button
+        type="button"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         style={tiltStyle}
-        className="bg-white p-6 rounded-3xl border-2 border-[var(--empire-gold)] shadow-ambient cursor-pointer relative overflow-hidden group select-none transition-all duration-300 flex flex-col gap-4 text-[#5c4a3c]"
+        className="bg-white p-6 rounded-3xl border-2 border-[var(--empire-gold)] shadow-ambient cursor-pointer relative overflow-hidden group select-none transition-all duration-300 flex flex-col gap-4 text-[#5c4a3c] w-full text-left bg-transparent"
         onClick={() => router.push(`/verify/${proof.id}`)}
       >
         {/* Holographic light overlay */}
@@ -148,7 +149,7 @@ export default function NeuterBadge({ catId, isSterilized, canRequest }: Props) 
         <div className="text-[8px] font-data text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-lg p-2 mt-1 break-all truncate max-w-full">
           Signature: {proof.signature.substring(0, 18)}...
         </div>
-      </div>
+      </button>
     );
   }
 
@@ -215,8 +216,9 @@ export default function NeuterBadge({ catId, isSterilized, canRequest }: Props) 
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
-                <label className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Attending Vet Clinic / Rescue Organization</label>
+                <label htmlFor="neuter-clinic-name" className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Attending Vet Clinic / Rescue Organization</label>
                 <input
+                  id="neuter-clinic-name"
                   type="text"
                   placeholder="e.g. Community Pet Clinic, TNR Mobile Vet"
                   value={clinicName}
@@ -227,8 +229,9 @@ export default function NeuterBadge({ catId, isSterilized, canRequest }: Props) 
               </div>
 
               <div>
-                <label className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Date of Surgery</label>
+                <label htmlFor="neuter-surgery-date" className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Date of Surgery</label>
                 <input
+                  id="neuter-surgery-date"
                   type="date"
                   value={neuterDate}
                   onChange={(e) => setNeuterDate(e.target.value)}

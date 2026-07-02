@@ -272,8 +272,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
               <p className="font-body text-xs text-[var(--empire-cream)]/50">No recent activity logged.</p>
             ) : (
               <div className="flex flex-col gap-3">
-                {recentPoints.map((log, i) => (
-                  <div key={i} className="flex justify-between items-center text-xs">
+                {recentPoints.map((log) => (
+                  <div key={log.id} className="flex justify-between items-center text-xs">
                     <div>
                       <div className="font-body font-bold text-[var(--empire-cream)] capitalize">{log.activity.replace(/_/g, ' ').toLowerCase()}</div>
                       <div className="text-[9px] text-[var(--empire-cream)]/40 mt-0.5">{new Date(log.created_at).toLocaleDateString()}</div>

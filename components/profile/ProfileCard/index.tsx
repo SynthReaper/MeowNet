@@ -79,8 +79,9 @@ export default function ProfileCard({ profile, email, badgeCount }: ProfileCardP
         {isEditing ? (
           <form onSubmit={handleSave} className="flex flex-col gap-3">
             <div>
-              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Display Name</label>
+              <label htmlFor="profile-display-name" className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Display Name</label>
               <input
+                id="profile-display-name"
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
@@ -90,8 +91,9 @@ export default function ProfileCard({ profile, email, badgeCount }: ProfileCardP
               />
             </div>
             <div>
-              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Upload Profile Photo</label>
+              <label htmlFor="profile-photo-upload" className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Upload Profile Photo</label>
               <input
+                id="profile-photo-upload"
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 onChange={(e) => setAvatarFile(e.target.files?.[0] || null)}
@@ -100,8 +102,9 @@ export default function ProfileCard({ profile, email, badgeCount }: ProfileCardP
             </div>
             <div className="text-center font-body text-[9px] font-bold text-[var(--empire-cream)]/30 uppercase py-1">OR</div>
             <div>
-              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Avatar Image URL</label>
+              <label htmlFor="profile-avatar-url" className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Avatar Image URL</label>
               <input
+                id="profile-avatar-url"
                 type="url"
                 value={avatarUrl}
                 onChange={(e) => setAvatarUrl(e.target.value)}
@@ -110,8 +113,9 @@ export default function ProfileCard({ profile, email, badgeCount }: ProfileCardP
               />
             </div>
             <div>
-              <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Rescue Bio (Max 500 chars)</label>
+              <label htmlFor="profile-bio" className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Rescue Bio (Max 500 chars)</label>
               <textarea
+                id="profile-bio"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Share a bit about your cat rescue background or colony care..."
@@ -121,8 +125,9 @@ export default function ProfileCard({ profile, email, badgeCount }: ProfileCardP
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Rescue Focus</label>
+                <label htmlFor="profile-rescue-focus" className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Rescue Focus</label>
                 <select
+                  id="profile-rescue-focus"
                   value={preferredRole}
                   onChange={(e) => setPreferredRole(e.target.value)}
                   className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2 text-sm text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all"
@@ -137,8 +142,9 @@ export default function ProfileCard({ profile, email, badgeCount }: ProfileCardP
                 </select>
               </div>
               <div>
-                <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Neighborhood</label>
+                <label htmlFor="profile-neighborhood" className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Neighborhood</label>
                 <input
+                  id="profile-neighborhood"
                   type="text"
                   value={locationNeighborhood}
                   onChange={(e) => setLocationNeighborhood(e.target.value)}
@@ -148,8 +154,9 @@ export default function ProfileCard({ profile, email, badgeCount }: ProfileCardP
                 />
               </div>
               <div>
-                <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Contact Phone</label>
+                <label htmlFor="profile-contact-phone" className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Contact Phone</label>
                 <input
+                  id="profile-contact-phone"
                   type="tel"
                   value={contactPhone}
                   onChange={(e) => setContactPhone(e.target.value)}

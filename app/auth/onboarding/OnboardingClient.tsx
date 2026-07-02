@@ -108,15 +108,13 @@ export default function OnboardingClient() {
           } else {
             setDisplayName(clerkUser?.fullName || clerkUser?.username || '');
           }
+        } else if (retryCount < maxRetries) {
+          retryCount++;
+          setTimeout(checkSupabaseSession, 800);
         } else {
-          if (retryCount < maxRetries) {
-            retryCount++;
-            setTimeout(checkSupabaseSession, 800);
-          } else {
-            // Proceed anyway, let it fail gracefully during submit or fall back
-            setSyncingSupabase(false);
-            setDisplayName(clerkUser?.fullName || clerkUser?.username || '');
-          }
+          // Proceed anyway, let it fail gracefully during submit or fall back
+          setSyncingSupabase(false);
+          setDisplayName(clerkUser?.fullName || clerkUser?.username || '');
         }
       } catch (err) {
         console.error('Error fetching Supabase user in onboarding:', err);
@@ -359,11 +357,12 @@ export default function OnboardingClient() {
               {/* Bio */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between items-center">
-                  <label className="font-display text-xs font-bold text-[var(--empire-cream)]">Volunteer Bio</label>
+                  <label htmlFor="onboarding-bio" className="font-display text-xs font-bold text-[var(--empire-cream)]">Volunteer Bio</label>
                   <span className="font-body text-[9px] text-[var(--text-secondary)]">{bio.length}/500</span>
                 </div>
                 <div className="relative">
                   <textarea
+                    id="onboarding-bio"
                     maxLength={500}
                     rows={3}
                     placeholder="Tell us about your experience with stray/feral cats, colony feeding, or TNR..."
@@ -378,10 +377,11 @@ export default function OnboardingClient() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Neighborhood */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-display text-xs font-bold text-[var(--empire-cream)]">Neighborhood / Area</label>
+                  <label htmlFor="onboarding-neighborhood" className="font-display text-xs font-bold text-[var(--empire-cream)]">Neighborhood / Area</label>
                   <div className="relative">
                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-[18px] pointer-events-none">home_pin</span>
                     <input
+                      id="onboarding-neighborhood"
                       type="text"
                       placeholder="e.g. Brooklyn Heights"
                       value={neighborhood}
@@ -393,10 +393,11 @@ export default function OnboardingClient() {
 
                 {/* Contact Phone */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-display text-xs font-bold text-[var(--empire-cream)]">Contact Phone (Optional)</label>
+                  <label htmlFor="onboarding-phone" className="font-display text-xs font-bold text-[var(--empire-cream)]">Contact Phone (Optional)</label>
                   <div className="relative">
                     <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-[18px] pointer-events-none">call</span>
                     <input
+                      id="onboarding-phone"
                       type="tel"
                       placeholder="e.g. 555-0199"
                       value={phone}

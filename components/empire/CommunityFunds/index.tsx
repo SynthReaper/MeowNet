@@ -240,8 +240,9 @@ export default function CommunityFunds({ funds, userPoints }: CommunityFundsProp
 
             <div className="flex flex-col gap-4 mb-6">
               <div>
-                <label className="font-body text-xs font-bold text-[var(--empire-cream)]/70">Fund Name</label>
+                <label htmlFor="fund-name" className="font-body text-xs font-bold text-[var(--empire-cream)]/70">Fund Name</label>
                 <input 
+                  id="fund-name"
                   type="text"
                   placeholder="e.g. Winter Shelter Building Fund"
                   value={fundName}
@@ -252,8 +253,9 @@ export default function CommunityFunds({ funds, userPoints }: CommunityFundsProp
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="font-body text-xs font-bold text-[var(--empire-cream)]/70">Category</label>
+                  <label htmlFor="fund-category" className="font-body text-xs font-bold text-[var(--empire-cream)]/70">Category</label>
                   <select 
+                    id="fund-category"
                     value={fundCategory}
                     onChange={(e) => setFundCategory(e.target.value)}
                     className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)]/50 rounded-lg p-2.5 font-body text-xs mt-1 text-[var(--empire-cream)]"
@@ -266,8 +268,9 @@ export default function CommunityFunds({ funds, userPoints }: CommunityFundsProp
                 </div>
 
                 <div>
-                  <label className="font-body text-xs font-bold text-[var(--empire-cream)]/70">Target Points</label>
+                  <label htmlFor="fund-target" className="font-body text-xs font-bold text-[var(--empire-cream)]/70">Target Points</label>
                   <input 
+                    id="fund-target"
                     type="number"
                     value={fundTarget}
                     onChange={(e) => setFundTarget(Number(e.target.value))}
@@ -277,8 +280,9 @@ export default function CommunityFunds({ funds, userPoints }: CommunityFundsProp
               </div>
 
               <div>
-                <label className="font-body text-xs font-bold text-[var(--empire-cream)]/70">Description</label>
+                <label htmlFor="fund-desc" className="font-body text-xs font-bold text-[var(--empire-cream)]/70">Description</label>
                 <textarea 
+                  id="fund-desc"
                   placeholder="Describe what the pooled points will be used for..."
                   value={fundDesc}
                   onChange={(e) => setFundDesc(e.target.value)}
@@ -349,8 +353,9 @@ export default function CommunityFunds({ funds, userPoints }: CommunityFundsProp
 
                 <div className="flex flex-col gap-4 mb-6">
                   <div>
-                    <label className="font-body text-xs font-bold text-[var(--empire-cream)]/70">Point Donation Amount</label>
+                    <label htmlFor="donate-amount" className="font-body text-xs font-bold text-[var(--empire-cream)]/70">Point Donation Amount</label>
                     <input 
+                      id="donate-amount"
                       type="number"
                       value={donateAmount}
                       onChange={(e) => setDonateAmount(Number(e.target.value))}
@@ -407,8 +412,9 @@ export default function CommunityFunds({ funds, userPoints }: CommunityFundsProp
 
                 <div className="bg-[var(--bg-elevated)] p-4 rounded-2xl border border-[var(--bg-border)]/30 mb-6 flex flex-col gap-4 text-[var(--empire-cream)]">
                   <div>
-                    <label className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase">Sandbox Card Number</label>
+                    <label htmlFor="sandbox-card-number" className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase">Sandbox Card Number</label>
                     <input 
+                      id="sandbox-card-number"
                       type="text" 
                       value={cardNumber} 
                       onChange={(e) => setCardNumber(e.target.value)} 
@@ -417,8 +423,9 @@ export default function CommunityFunds({ funds, userPoints }: CommunityFundsProp
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase">Expiry Date</label>
+                      <label htmlFor="sandbox-expiry" className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase">Expiry Date</label>
                       <input 
+                        id="sandbox-expiry"
                         type="text" 
                         defaultValue="12/28"
                         disabled
@@ -426,8 +433,9 @@ export default function CommunityFunds({ funds, userPoints }: CommunityFundsProp
                       />
                     </div>
                     <div>
-                      <label className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase">CVV</label>
+                      <label htmlFor="sandbox-cvv" className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase">CVV</label>
                       <input 
+                        id="sandbox-cvv"
                         type="text" 
                         defaultValue="123"
                         disabled

@@ -16,7 +16,6 @@ export default function MeowTranslatorPage() {
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TranslationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -124,10 +123,9 @@ export default function MeowTranslatorPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const selectedFile = e.target.files[0];
-      setFile(selectedFile);
-      setAudioBlob(selectedFile);
-      setAudioUrl(URL.createObjectURL(selectedFile));
+      const fileObj = e.target.files[0];
+      setAudioBlob(fileObj);
+      setAudioUrl(URL.createObjectURL(fileObj));
       setError(null);
       setResult(null);
     }
@@ -304,8 +302,9 @@ export default function MeowTranslatorPage() {
 
           {/* File Upload Fallback */}
           <div>
-            <label className="text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider block mb-2">Upload Audio File</label>
+            <label htmlFor="meow-audio-upload" className="text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider block mb-2">Upload Audio File</label>
             <input
+              id="meow-audio-upload"
               type="file"
               accept="audio/*"
               onChange={handleFileChange}

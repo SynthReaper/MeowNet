@@ -283,20 +283,20 @@ export default function ForgotPasswordPage() {
 
               {/* 6-digit OTP code */}
               <div className="flex gap-2 justify-center my-1">
-                {code.map((digit, idx) => (
+                {[0, 1, 2, 3, 4, 5].map((slot) => (
                   <input
-                    key={idx}
-                    ref={(el) => { inputRefs.current[idx] = el; }}
+                    key={slot}
+                    ref={(el) => { inputRefs.current[slot] = el; }}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleDigitChange(idx, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(idx, e)}
+                    value={code[slot]}
+                    onChange={(e) => handleDigitChange(slot, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(slot, e)}
                     onFocus={(e) => e.target.select()}
                     disabled={loading}
                     className={`w-11 h-12 text-center font-display text-lg font-bold rounded-xl border-2 transition-all outline-none
-                      ${digit
+                      ${code[slot]
                         ? 'border-[var(--empire-gold)] bg-[var(--empire-gold)]/10 text-[var(--empire-gold)]'
                         : 'border-[var(--bg-border)] bg-[var(--bg-elevated)] text-[var(--empire-cream)]'}
                       focus:border-[var(--life-teal)] focus:bg-[var(--life-teal)]/5

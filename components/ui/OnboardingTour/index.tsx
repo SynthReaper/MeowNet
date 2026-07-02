@@ -152,7 +152,7 @@ export default function OnboardingTour() {
 
   return (
     <>
-      <div className="tour-backdrop" onClick={handleSkip} />
+      <div role="presentation" aria-hidden="true" className="tour-backdrop" onClick={handleSkip} onKeyDown={handleSkip} />
       <div
         ref={tooltipRef}
         className="tour-tooltip"
@@ -184,9 +184,9 @@ export default function OnboardingTour() {
 
           <div className="flex justify-between items-center mt-2 border-t border-[var(--bg-border)]/40 pt-3">
             <div className="flex gap-1.5">
-              {TOUR_STEPS.map((_, idx) => (
+              {TOUR_STEPS.map((s, idx) => (
                 <div
-                  key={idx}
+                  key={s.title}
                   className={`w-1.5 h-1.5 rounded-full transition-all ${
                     idx === currentStep ? 'bg-[var(--empire-gold)] w-3' : 'bg-[var(--bg-border)]'
                   }`}

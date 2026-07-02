@@ -18,8 +18,8 @@ export default function CommunityLoading() {
         {/* Channels list skeleton */}
         <div className="flex-1 py-4 px-3 flex flex-col gap-3">
           <div className="h-3 bg-zinc-200/50 dark:bg-zinc-800/50 w-12 rounded px-2 mb-2"></div>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg">
+          {[1, 2, 3, 4, 5, 6].map((item) => (
+            <div key={item} className="flex items-center gap-3 px-3 py-2 rounded-lg">
               <div className="w-4 h-4 bg-zinc-200 dark:bg-zinc-800 rounded"></div>
               <div className="h-4 bg-zinc-200/80 dark:bg-zinc-800/80 w-32 rounded"></div>
             </div>
@@ -52,8 +52,8 @@ export default function CommunityLoading() {
 
         {/* Message feed skeleton */}
         <div className="flex-1 p-6 flex flex-col gap-5 overflow-y-auto">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex gap-4">
+          {[1, 2, 3, 4].map((item) => (
+            <div key={item} className="flex gap-4">
               <div className="w-9 h-9 rounded-full bg-zinc-200 dark:bg-zinc-800 shrink-0 mt-0.5"></div>
               <div className="flex-1 flex flex-col gap-2">
                 <div className="flex items-center gap-2">

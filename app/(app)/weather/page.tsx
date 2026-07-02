@@ -232,8 +232,8 @@ export default function WeatherPage() {
     return colonies.map(colony => {
       let lat = 40.75, lng = -73.99;
       if (colony.location && typeof colony.location === 'string') {
-        const matches = colony.location.match(/POINT\(([^ ]+)\s+([^)]+)\)/);
-        if (matches && matches[1] && matches[2]) {
+        const matches = /POINT\(([^ ]+)\s+([^)]+)\)/.exec(colony.location);
+        if (matches?.[1] && matches?.[2]) {
           lng = parseFloat(matches[1]);
           lat = parseFloat(matches[2]);
         }
@@ -423,8 +423,8 @@ export default function WeatherPage() {
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {districts.map((dist, idx) => (
-                <div key={idx} className={`p-4 rounded-xl border flex flex-col gap-2 transition-shadow hover:shadow-md ${dist.bg}`}>
+              {districts.map((dist) => (
+                <div key={dist.neighborhood} className={`p-4 rounded-xl border flex flex-col gap-2 transition-shadow hover:shadow-md ${dist.bg}`}>
                   {/* Header row */}
                   <div className="flex justify-between items-start">
                     <span className="font-body text-xs font-bold text-[var(--empire-cream)] truncate max-w-[130px]">{dist.neighborhood}</span>
@@ -483,8 +483,8 @@ export default function WeatherPage() {
               <span>Recent Field Conditions Reports</span>
             </h2>
             <div className="flex flex-col gap-3">
-              {reports.map((rep, idx) => (
-                <div key={idx} className="p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/20 flex flex-col gap-1.5">
+              {reports.map((rep) => (
+                <div key={`${rep.neighborhood}-${rep.condition}-${rep.notes.substring(0, 15)}`} className="p-4 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/20 flex flex-col gap-1.5">
                   <div className="flex justify-between items-center">
                     <span className="font-body text-xs font-bold text-[var(--empire-gold)]">{rep.neighborhood}</span>
                     <span className="px-2 py-0.5 bg-white/60 dark:bg-black/25 text-[var(--empire-cream)]/60 text-[9px] font-bold rounded-md uppercase tracking-wider border border-[var(--bg-border)]/10">
@@ -572,8 +572,9 @@ export default function WeatherPage() {
             </h3>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
-                <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Select Neighborhood</label>
+                <label htmlFor="weather-neighborhood" className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Select Neighborhood</label>
                 <select
+                  id="weather-neighborhood"
                   value={form.neighborhood}
                   onChange={e => setForm({ ...form, neighborhood: e.target.value })}
                   className="w-full bg-[var(--bg-elevated)] border border-[var(--bg-border)] rounded-xl px-3 py-2 text-sm text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none transition-all"
@@ -585,8 +586,9 @@ export default function WeatherPage() {
               </div>
 
               <div>
-                <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Observed Condition</label>
+                <label htmlFor="weather-condition" className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Observed Condition</label>
                 <input
+                  id="weather-condition"
                   type="text" value={form.condition}
                   onChange={e => setForm({ ...form, condition: e.target.value })}
                   placeholder="e.g. Freezing gusts, heavy wind"
@@ -596,8 +598,9 @@ export default function WeatherPage() {
               </div>
 
               <div>
-                <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Field Observations</label>
+                <label htmlFor="weather-notes" className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider mb-1">Field Observations</label>
                 <textarea
+                  id="weather-notes"
                   value={form.notes}
                   onChange={e => setForm({ ...form, notes: e.target.value })}
                   placeholder="e.g. Water bowl frozen over, 3 stray cats huddled under the deck…"

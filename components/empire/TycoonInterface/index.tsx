@@ -43,7 +43,6 @@ export default function TycoonInterface({ initialSanctuary, initialUpgrades, ini
   const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
   const [isNight, setIsNight] = useState(false);
   const [particles, setParticles] = useState<Particle[]>([]);
-  const [smokeOff, setSmokeOff] = useState(0);
   const [tick, setTick] = useState(0);
 
   const getLevel = (t: string) => upgrades.filter(u => u.upgrade_type === t).length;
@@ -163,10 +162,6 @@ export default function TycoonInterface({ initialSanctuary, initialUpgrades, ini
     return () => clearInterval(t);
   }, [sanctuary.idle_points_rate, sanctuary.point_multiplier, hasShelter, hasFirstAid, sA.x, sA.y, csX, csY, faA.x, faA.y]);
 
-  useEffect(() => {
-    const t = setInterval(() => setSmokeOff(p => (p + 0.5) % 20), 50);
-    return () => clearInterval(t);
-  }, []);
 
   useEffect(() => {
     if (!particles.length) return;
@@ -491,9 +486,8 @@ export default function TycoonInterface({ initialSanctuary, initialUpgrades, ini
               <filter id="gGlow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
             </defs>
 
-            {/* Stars */}
             {isNight&&[[50,20],[120,10],[250,15],[320,25],[380,8],[80,40],[200,5],[340,45],[160,30],[300,12]].map(([x,y],i)=>(
-              <circle key={i} cx={x} cy={y} r={i%3===0?1.5:1} fill="white" opacity={0.6+(i%4)*0.1}/>
+              <circle key={`star-${x}-${y}`} cx={x} cy={y} r={i%3===0?1.5:1} fill="white" opacity={0.6+(i%4)*0.1}/>
             ))}
             {/* Sun/Moon */}
             {isNight?<circle cx={340} cy={30} r={18} fill="#fef3c7" filter="url(#gGlow)" opacity={0.9}/>:<circle cx={340} cy={28} r={20} fill="#fde68a" filter="url(#gGlow)" opacity={0.95}/>}
@@ -593,9 +587,9 @@ export default function TycoonInterface({ initialSanctuary, initialUpgrades, ini
         <div className="p-4 sm:p-6 flex flex-col gap-4 bg-[var(--bg-surface)] border-t border-[var(--bg-border)]/30">
           <div className="grid grid-cols-3 gap-3">
             {[['Multiplier',`x${sanctuary.point_multiplier}`,'var(--life-teal)'],['XP/hr',`+${sanctuary.idle_points_rate}`,'var(--empire-gold)'],['Built',`${built}/4`,'#a855f7']].map(([l,v,c])=>(
-              <div key={l as string} className="bg-[var(--bg-elevated)] rounded-xl p-3 flex flex-col items-center gap-0.5 border border-[var(--bg-border)]/20">
+              <div key={l} className="bg-[var(--bg-elevated)] rounded-xl p-3 flex flex-col items-center gap-0.5 border border-[var(--bg-border)]/20">
                 <span className="text-[9px] font-bold uppercase tracking-wider opacity-40" style={{color:'var(--empire-cream)'}}>{l}</span>
-                <span className="font-display text-base font-black" style={{color:c as string}}>{v}</span>
+                <span className="font-display text-base font-black" style={{color:c}}>{v}</span>
               </div>
             ))}
           </div>

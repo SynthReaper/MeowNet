@@ -212,8 +212,9 @@ export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
           </div>
 
           <div className="bg-[var(--bg-elevated)] p-4 rounded-xl border border-[var(--bg-border)]/40">
-            <label className="flex items-start gap-3 cursor-pointer">
+            <label htmlFor="location_privacy" className="flex items-start gap-3 cursor-pointer">
               <input 
+                id="location_privacy"
                 type="checkbox" 
                 name="location_privacy" 
                 value="area" 

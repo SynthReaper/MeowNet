@@ -8,8 +8,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import {
-  AreaChart,
-  Area,
   BarChart as RechartsBarChart,
   Bar,
   PieChart as RechartsPieChart,
@@ -255,12 +253,12 @@ export default function ModeratorDashboardClient({
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
+    if (active && payload?.length) {
       return (
         <div className="bg-[var(--bg-surface)] border border-[var(--bg-border)] p-3 rounded-xl shadow-ambient text-xs font-body text-[var(--empire-cream)]">
           <p className="font-bold mb-1">{label}</p>
-          {payload.map((pld: any, index: number) => (
-            <p key={index} style={{ color: pld.color || pld.fill }}>
+          {payload.map((pld: any) => (
+            <p key={pld.name} style={{ color: pld.color || pld.fill }}>
               <span className="font-semibold">{pld.name}:</span> {pld.value.toLocaleString()}
             </p>
           ))}
@@ -443,11 +441,10 @@ export default function ModeratorDashboardClient({
   const [eventStatusFilter, setEventStatusFilter] = useState<string>('all');
 
   const [querySearch, setQuerySearch] = useState('');
+  const [profileSearch, setProfileSearch] = useState('');
   const [queryStatusFilter, setQueryStatusFilter] = useState<string>('active');
 
-  const [profileSearch, setProfileSearch] = useState('');
 
-  const [auditSearch, setAuditSearch] = useState('');
 
   // Modals & Action States
   const [selectedCat, setSelectedCat] = useState<Cat | null>(null);
@@ -487,8 +484,7 @@ export default function ModeratorDashboardClient({
   const [adminQueryMessage, setAdminQueryMessage] = useState('');
 
   // Loading / Transitions
-  const [isPending, startTransition] = useTransition();
-  const [loadingAudits, setLoadingAudits] = useState(false);
+  const [, startTransition] = useTransition();
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -516,7 +512,6 @@ export default function ModeratorDashboardClient({
   useEffect(() => {
     let active = true;
     if (activeTab === 'audits') {
-      setLoadingAudits(true);
       getAuditLogs()
         .then((logs) => {
           if (active) {
@@ -526,11 +521,6 @@ export default function ModeratorDashboardClient({
         .catch(() => {
           if (active) {
             showNotification('error', 'Failed to fetch audit logs.');
-          }
-        })
-        .finally(() => {
-          if (active) {
-            setLoadingAudits(false);
           }
         });
     }
@@ -901,15 +891,6 @@ export default function ModeratorDashboardClient({
     );
   });
 
-  const filteredAudits = auditLogs.filter((log) => {
-    const term = auditSearch.toLowerCase();
-    return (
-      log.action.toLowerCase().includes(term) ||
-      (log.details?.toLowerCase().includes(term) ?? false) ||
-      log.actor_name.toLowerCase().includes(term) ||
-      log.actor_id.toLowerCase().includes(term)
-    );
-  });
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-12 py-8 flex flex-col lg:flex-row gap-8 items-start animate-dashboard-fade">
@@ -2246,8 +2227,9 @@ export default function ModeratorDashboardClient({
             {editEventOpen ? (
               <form onSubmit={handleUpdateEvent} className="flex flex-col gap-4 text-xs font-body text-[var(--empire-cream)]">
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Campaign Title</label>
+                  <label htmlFor="mod-event-title" className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Campaign Title</label>
                   <input
+                    id="mod-event-title"
                     type="text"
                     required
                     value={editEventTitle}
@@ -2257,8 +2239,9 @@ export default function ModeratorDashboardClient({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Description</label>
+                  <label htmlFor="mod-event-desc" className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Description</label>
                   <textarea
+                    id="mod-event-desc"
                     rows={4}
                     value={editEventDescription}
                     onChange={(e) => setEditEventDescription(e.target.value)}
@@ -2412,8 +2395,9 @@ export default function ModeratorDashboardClient({
               <form onSubmit={handleSaveProfile} className="flex flex-col gap-4 text-xs font-body text-[var(--empire-cream)]">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Display Name</label>
+                    <label htmlFor="mod-edit-name" className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Display Name</label>
                     <input
+                      id="mod-edit-name"
                       type="text"
                       required
                       value={editDisplayName}
@@ -2423,10 +2407,11 @@ export default function ModeratorDashboardClient({
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">
+                    <label htmlFor="mod-edit-neighborhood" className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">
                       Neighborhood Sighting Area
                     </label>
                     <input
+                      id="mod-edit-neighborhood"
                       type="text"
                       value={editNeighborhood}
                       onChange={(e) => setEditNeighborhood(e.target.value)}
@@ -2437,8 +2422,9 @@ export default function ModeratorDashboardClient({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Contact Phone</label>
+                    <label htmlFor="mod-edit-phone" className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Contact Phone</label>
                     <input
+                      id="mod-edit-phone"
                       type="text"
                       value={editContactPhone}
                       onChange={(e) => setEditContactPhone(e.target.value)}
@@ -2447,8 +2433,9 @@ export default function ModeratorDashboardClient({
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Preferred Role</label>
+                    <label htmlFor="mod-edit-role" className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Preferred Role</label>
                     <input
+                      id="mod-edit-role"
                       type="text"
                       value={editPreferredRole}
                       onChange={(e) => setEditPreferredRole(e.target.value)}
@@ -2458,8 +2445,9 @@ export default function ModeratorDashboardClient({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Rescue Bio / Statement</label>
+                  <label htmlFor="mod-edit-bio" className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Rescue Bio / Statement</label>
                   <textarea
+                    id="mod-edit-bio"
                     rows={3}
                     value={editBio}
                     onChange={(e) => setEditBio(e.target.value)}

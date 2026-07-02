@@ -60,7 +60,7 @@ function parseGeoPoint(loc: any) {
       lat = geojson.coordinates[1];
     }
   } else if (typeof loc === 'string') {
-    const match = loc.match(/POINT\(([^ ]+) ([^ )]+)\)/);
+    const match = /POINT\(([^ ]+) ([^ )]+)\)/.exec(loc);
     if (match) {
       lng = parseFloat(match[1]);
       lat = parseFloat(match[2]);

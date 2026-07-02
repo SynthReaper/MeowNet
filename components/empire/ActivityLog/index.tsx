@@ -150,7 +150,7 @@ export default function ActivityLog({ entries }: ActivityLogProps) {
 
             return (
               <div
-                key={index}
+                key={`${log.created_at}-${log.activity}-${log.points}`}
                 className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/20 hover:bg-[var(--bg-border)]/10 transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0">

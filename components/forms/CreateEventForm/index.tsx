@@ -55,10 +55,11 @@ export default function CreateEventForm() {
         
         <div className="flex flex-col gap-4">
           <div>
-            <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
+            <label htmlFor="event-title" className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
               Event Title <span className="text-[#ba1a1a]">*</span>
             </label>
             <input 
+              id="event-title"
               type="text" 
               name="title" 
               required 
@@ -68,10 +69,11 @@ export default function CreateEventForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
+            <label htmlFor="event-desc" className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
               Description (Optional)
             </label>
             <textarea 
+              id="event-desc"
               name="description" 
               maxLength={1000} 
               rows={4} 
@@ -117,8 +119,9 @@ export default function CreateEventForm() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Latitude</label>
+            <label htmlFor="event-lat" className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Latitude</label>
             <input 
+              id="event-lat"
               type="number" 
               step="any" 
               value={lat} 
@@ -129,8 +132,9 @@ export default function CreateEventForm() {
             />
           </div>
           <div>
-            <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Longitude</label>
+            <label htmlFor="event-lng" className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">Longitude</label>
             <input 
+              id="event-lng"
               type="number" 
               step="any" 
               value={lng} 

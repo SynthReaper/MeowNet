@@ -19,7 +19,7 @@ async function handleVerification(formData: FormData) {
 
   // Case 2: Cryptographic Volunteer Impact Token
   const tokenRegex = /^VCRT-([0-9A-F]{8})-([0-9A-F]{12})$/i;
-  const match = token.match(tokenRegex);
+  const match = tokenRegex.exec(token);
   if (match) {
     const truncatedUserId = match[1].toLowerCase();
     const truncatedSig = match[2].toUpperCase();
@@ -83,10 +83,11 @@ export default async function VerifyPortalPage({ searchParams }: { searchParams:
 
         <form action={handleVerification} className="w-full flex flex-col gap-4">
           <div className="flex flex-col gap-1 text-left">
-            <label className="text-[10px] font-black uppercase text-[#5c4a3c]/60 tracking-wider">
+            <label htmlFor="verify-token" className="text-[10px] font-black uppercase text-[#5c4a3c]/60 tracking-wider">
               Certificate Token ID
             </label>
             <input
+              id="verify-token"
               type="text"
               name="token"
               placeholder="e.g. VCRT-85AA58B6-D4E1CB95A012 or UUID"

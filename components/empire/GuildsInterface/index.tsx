@@ -553,8 +553,9 @@ export default function GuildsInterface({
 
           <form onSubmit={handleCreateGuild} className="flex flex-col gap-3">
             <div className="flex flex-col gap-1">
-              <label className="font-body text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Guild Name</label>
+              <label htmlFor="guilds-name" className="font-body text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Guild Name</label>
               <input
+                id="guilds-name"
                 required
                 type="text"
                 value={newGuildName}
@@ -565,8 +566,9 @@ export default function GuildsInterface({
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="font-body text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Description</label>
+              <label htmlFor="guilds-desc" className="font-body text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Description</label>
               <textarea
+                id="guilds-desc"
                 required
                 value={newGuildDesc}
                 onChange={e => setNewGuildDesc(e.target.value)}
@@ -577,8 +579,9 @@ export default function GuildsInterface({
 
             {/* Minimum points to join */}
             <div className="flex flex-col gap-1">
-              <label className="font-body text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Min Points Required to Join</label>
+              <label htmlFor="guilds-min-points" className="font-body text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Min Points Required to Join</label>
               <input
+                id="guilds-min-points"
                 type="number"
                 min="0"
                 value={newGuildMinPoints}
@@ -590,8 +593,9 @@ export default function GuildsInterface({
 
             {/* Category selection */}
             <div className="flex flex-col gap-1">
-              <label className="font-body text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Category</label>
+              <label htmlFor="guilds-category" className="font-body text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Category</label>
               <select
+                id="guilds-category"
                 value={newGuildCategory}
                 onChange={e => setNewGuildCategory(e.target.value)}
                 className="p-2.5 border border-[var(--bg-border)] rounded-xl font-body text-xs text-[var(--text-primary)] bg-[var(--bg-elevated)]/60 focus:outline-none focus:border-[var(--empire-gold)]"
@@ -605,8 +609,9 @@ export default function GuildsInterface({
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="font-body text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Logo Image URL (Optional)</label>
+              <label htmlFor="guilds-logo" className="font-body text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Logo Image URL (Optional)</label>
               <input
+                id="guilds-logo"
                 type="text"
                 value={newGuildLogo}
                 onChange={e => setNewGuildLogo(e.target.value)}

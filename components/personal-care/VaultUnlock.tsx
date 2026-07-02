@@ -186,10 +186,11 @@ export default function VaultUnlock({ onUnlock }: VaultUnlockProps) {
 
       <form onSubmit={handleUnlock} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1 text-left">
-          <label className="font-display text-[10px] font-bold text-[var(--text-primary)] opacity-50 uppercase tracking-wider pl-2">
+          <label htmlFor="vault-passphrase" className="font-display text-[10px] font-bold text-[var(--text-primary)] opacity-50 uppercase tracking-wider pl-2">
             Password
           </label>
           <input
+            id="vault-passphrase"
             type="password"
             value={passphrase}
             onChange={(e) => setPassphrase(e.target.value)}
@@ -206,10 +207,11 @@ export default function VaultUnlock({ onUnlock }: VaultUnlockProps) {
 
         {isFirstTime && (
           <div className="flex flex-col gap-1 text-left">
-            <label className="font-display text-[10px] font-bold text-[var(--text-primary)] opacity-50 uppercase tracking-wider pl-2">
+            <label htmlFor="vault-confirm-passphrase" className="font-display text-[10px] font-bold text-[var(--text-primary)] opacity-50 uppercase tracking-wider pl-2">
               Confirm Password
             </label>
             <input
+              id="vault-confirm-passphrase"
               type="password"
               value={confirmPassphrase}
               onChange={(e) => setConfirmPassphrase(e.target.value)}

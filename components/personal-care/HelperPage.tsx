@@ -405,7 +405,7 @@ Provide helpful, expert, and practical cat care advice based on the data.
   // Helper function to extract and parse log actions from AI assistant
   const parseActionFromMessage = (content: string) => {
     const actionRegex = /\[Action:\s*(\{.*\})\s*\]/;
-    const match = content.match(actionRegex);
+    const match = actionRegex.exec(content);
     if (match) {
       try {
         const payload = JSON.parse(match[1]);
@@ -605,7 +605,7 @@ Provide helpful, expert, and practical cat care advice based on the data.
 
               return (
                 <div
-                  key={idx}
+                  key={`helper-msg-${idx}`}
                   className={`flex flex-col max-w-[80%] ${isUser ? 'self-end items-end' : 'self-start items-start'} domino-fade-item`}
                   style={{ animationDelay: `${idx * 40}ms` }}
                 >

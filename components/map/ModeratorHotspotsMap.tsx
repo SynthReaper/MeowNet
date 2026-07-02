@@ -1,7 +1,7 @@
 'use client';
 
 // components/map/ModeratorHotspotsMap.tsx — Interactive Moderator Hotspots Map
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Popup, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -62,7 +62,7 @@ const parseLocation = (loc: any) => {
       lat = geojson.coordinates[1];
     }
   } else if (typeof loc === 'string') {
-    const match = loc.match(/POINT\(([^ ]+) ([^ )]+)\)/);
+    const match = /POINT\(([^ ]+) ([^ )]+)\)/.exec(loc);
     if (match) {
       lng = parseFloat(match[1]);
       lat = parseFloat(match[2]);

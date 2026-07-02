@@ -23,12 +23,15 @@ export default function EventSignupButton({ eventId, isSignedUp: initialSignedUp
       if (result.success) {
         setSignedUp(true);
       } else {
-        setError(
-          result.error === 'already_signed_up'   ? 'You\'re already signed up!'
-          : result.error === 'at_capacity'       ? 'Sorry — this event just filled up.'
-          : result.error === 'unauthorized'      ? 'Please sign in first.'
-          : 'Something went wrong. Please try again.'
-        );
+        let errorMessage = 'Something went wrong. Please try again.';
+        if (result.error === 'already_signed_up') {
+          errorMessage = "You're already signed up!";
+        } else if (result.error === 'at_capacity') {
+          errorMessage = 'Sorry — this event just filled up.';
+        } else if (result.error === 'unauthorized') {
+          errorMessage = 'Please sign in first.';
+        }
+        setError(errorMessage);
       }
     });
   };

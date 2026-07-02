@@ -1,5 +1,5 @@
 // app/api/events/[id]/ics/route.ts — ICS Calendar Invite generator for TNR Events
-import { type NextRequest, NextResponse } from 'next/server';
+import { type NextRequest } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 
 function formatICSDate(date: Date): string {

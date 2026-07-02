@@ -69,8 +69,8 @@ export default async function EventsPage() {
           </div>
           {/* Empty boxes (skeletons) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 opacity-60">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-xl border border-[var(--bg-border)] shadow-ambient p-6 flex flex-col gap-4 h-[250px]">
+            {[1, 2, 3, 4].map((item) => (
+              <div key={item} className="bg-white rounded-xl border border-[var(--bg-border)] shadow-ambient p-6 flex flex-col gap-4 h-[250px]">
                 <div className="h-6 bg-zinc-200/50 w-3/4 rounded-md"></div>
                 <div className="h-4 bg-zinc-200/50 w-full rounded-md"></div>
                 <div className="h-4 bg-zinc-200/50 w-5/6 rounded-md"></div>

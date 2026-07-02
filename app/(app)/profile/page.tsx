@@ -315,7 +315,7 @@ export default async function ProfilePage() {
                     const pledgeInfo = PLEDGE_CONFIG[pledge.pledge] ?? { label: pledge.pledge, icon: 'favorite', bg: 'rgba(0,0,0,0.05)', color: 'inherit' };
                     return (
                       <Link 
-                        key={idx} 
+                        key={`${pledge.pledge}-${pledge.created_at}-${pledge.cats?.id ?? ''}`} 
                         href={cat ? `/cats/${cat.id}` : '#'} 
                         className="flex items-center gap-3 p-2.5 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-border)]/10 transition-colors border border-[var(--bg-border)]/10 no-underline group"
                       >

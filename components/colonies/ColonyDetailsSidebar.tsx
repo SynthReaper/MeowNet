@@ -282,8 +282,9 @@ export default function ColonyDetailsSidebar({
           {showAddShelter && (
             <form onSubmit={handleAddShelter} className="bg-[var(--bg-elevated)]/50 p-4 rounded-xl border border-[var(--bg-border)]/30 flex flex-col gap-3">
               <div>
-                <label className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Structure/Material</label>
+                <label htmlFor="colony-shelter-material" className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Structure/Material</label>
                 <input
+                  id="colony-shelter-material"
                   type="text"
                   placeholder="e.g. Tote box with styrofoam"
                   value={shelterMaterial}
@@ -294,8 +295,9 @@ export default function ColonyDetailsSidebar({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Cat Capacity</label>
+                  <label htmlFor="colony-shelter-capacity" className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Cat Capacity</label>
                   <input
+                    id="colony-shelter-capacity"
                     type="number"
                     min="1"
                     value={shelterCapacity}
@@ -304,8 +306,9 @@ export default function ColonyDetailsSidebar({
                   />
                 </div>
                 <div>
-                  <label className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">R-Value Insulation</label>
+                  <label htmlFor="colony-shelter-insulation" className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">R-Value Insulation</label>
                   <input
+                    id="colony-shelter-insulation"
                     type="number"
                     step="0.1"
                     min="0.5"
@@ -387,8 +390,9 @@ export default function ColonyDetailsSidebar({
           {showAddMedLog && (
             <form onSubmit={handleAddMedicalLog} className="bg-[var(--bg-elevated)]/50 p-4 rounded-xl border border-[var(--bg-border)]/30 flex flex-col gap-3">
               <div>
-                <label className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Treatment Type</label>
+                <label htmlFor="colony-med-type" className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Treatment Type</label>
                 <select
+                  id="colony-med-type"
                   value={medLogType}
                   onChange={(e) => setMedLogType(e.target.value as any)}
                   className="w-full bg-[var(--bg-void)] text-[var(--empire-cream)] font-body text-xs p-2 rounded-lg border border-[var(--bg-border)]/40 outline-none"
@@ -400,8 +404,9 @@ export default function ColonyDetailsSidebar({
                 </select>
               </div>
               <div>
-                <label className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Clinical Notes</label>
+                <label htmlFor="colony-med-notes" className="text-[9px] font-bold text-[var(--empire-cream)]/50 uppercase block mb-1">Clinical Notes</label>
                 <textarea
+                  id="colony-med-notes"
                   placeholder="Record what medicine or treatment was administered..."
                   value={medNotes}
                   onChange={(e) => setMedNotes(e.target.value)}
@@ -553,7 +558,7 @@ export default function ColonyDetailsSidebar({
               const sterPct = p.total > 0 ? (p.sterilized / p.total) * 100 : 0;
 
               return (
-                <div key={idx} className="flex flex-col gap-1">
+                <div key={p.year} className="flex flex-col gap-1">
                   <div className="flex justify-between text-[9px] font-bold uppercase">
                     <span className="text-[var(--empire-cream)]">{p.year}</span>
                     <span className="text-[var(--empire-cream)]/60 font-data">

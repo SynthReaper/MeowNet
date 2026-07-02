@@ -51,7 +51,7 @@ export default function PasswordStrength({ password }: PasswordStrengthProps) {
           <div className="flex gap-1.5">
             {checks.map((ok, i) => (
               <span
-                key={i}
+                key={TIPS[i]}
                 title={TIPS[i]}
                 className="font-body text-[9px] transition-colors"
                 style={{ color: ok ? 'var(--life-teal)' : 'var(--text-secondary)' }}

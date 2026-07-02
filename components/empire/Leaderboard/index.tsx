@@ -1,7 +1,7 @@
 'use client';
 // components/empire/Leaderboard/index.tsx — Weekly leaderboard with 30s refresh and geolocation Local filter
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import useSWR from 'swr';
 import { createClient } from '@/lib/supabase/client';
 
@@ -89,7 +89,7 @@ export default function Leaderboard({ entries: initialEntries, currentUserId }: 
                 catLat = geojson.coordinates[1];
               }
             } else if (typeof loc === 'string') {
-              const match = loc.match(/POINT\(([^ ]+) ([^ )]+)\)/);
+              const match = /POINT\(([^ ]+) ([^ )]+)\)/.exec(loc);
               if (match) {
                 catLng = parseFloat(match[1]);
                 catLat = parseFloat(match[2]);

@@ -1,6 +1,5 @@
 // app/terms/page.tsx — Terms of Service
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import Navbar from '@/components/nav/Navbar';
 import Footer from '@/components/nav/Footer';
 
@@ -95,9 +94,9 @@ export default function TermsPage() {
 
           {/* Policy Sections Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {sections.map((s, idx) => (
+            {sections.map((s) => (
               <div 
-                key={idx}
+                key={s.heading}
                 className="bg-white dark:bg-[var(--bg-surface)] rounded-2xl p-6 border border-[var(--bg-border)] shadow-ambient flex gap-4 hover:shadow-active transition-all duration-300"
               >
                 <div className="bg-[var(--bg-elevated)] text-[var(--empire-gold)] p-3 rounded-xl h-fit">

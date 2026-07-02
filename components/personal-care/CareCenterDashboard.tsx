@@ -223,11 +223,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
               height *= MAX_WIDTH / width;
               width = MAX_WIDTH;
             }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
+          } else if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
           }
           canvas.width = width;
           canvas.height = height;
@@ -645,8 +643,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
           {isAddingCat ? (
             <form onSubmit={handleAddCat} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Name</label>
+                <label htmlFor="cc-cat-name" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Name</label>
                 <input
+                  id="cc-cat-name"
                   type="text"
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
@@ -658,8 +657,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Photo</label>
+                <label htmlFor="cc-cat-photo" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Photo</label>
                 <input
+                  id="cc-cat-photo"
                   type="file"
                   accept="image/*"
                   onChange={handlePhotoUpload}
@@ -669,8 +669,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Status</label>
+                  <label htmlFor="cc-cat-status" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Status</label>
                   <select
+                    id="cc-cat-status"
                     value={newCatStatus}
                     onChange={(e) => setNewCatStatus(e.target.value)}
                     className="w-full font-body text-xs px-2 py-2 rounded-xl border outline-none"
@@ -682,8 +683,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Age</label>
+                  <label htmlFor="cc-cat-age" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Age</label>
                   <select
+                    id="cc-cat-age"
                     value={newCatAge}
                     onChange={(e) => setNewCatAge(e.target.value)}
                     className="w-full font-body text-xs px-2 py-2 rounded-xl border outline-none"
@@ -698,8 +700,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Color/Pattern</label>
+                <label htmlFor="cc-cat-color" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Color/Pattern</label>
                 <input
+                  id="cc-cat-color"
                   type="text"
                   value={newCatColor}
                   onChange={(e) => setNewCatColor(e.target.value)}
@@ -739,10 +742,18 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                   return (
                     <div
                       key={c.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => {
                         setSelectedCatId(c.id);
                         if (activeTab === 'settings') {
                           setActiveTab('overview');
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          setSelectedCatId(c.id);
+                          if (activeTab === 'settings') setActiveTab('overview');
                         }
                       }}
                       onMouseMove={handleCardMouseMove}
@@ -824,10 +835,11 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
 
             <form onSubmit={handleSaveConfig} className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase pl-1">
+                <label htmlFor="cc-gemini-key" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase pl-1">
                   Google Gemini API Key
                 </label>
                 <input
+                  id="cc-gemini-key"
                   type="password"
                   value={config.geminiKey || ''}
                   onChange={(e) => setConfig({ ...config, geminiKey: e.target.value })}
@@ -838,10 +850,11 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase pl-1">
+                <label htmlFor="cc-openai-key" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase pl-1">
                   OpenAI API Key
                 </label>
                 <input
+                  id="cc-openai-key"
                   type="password"
                   value={config.openaiKey || ''}
                   onChange={(e) => setConfig({ ...config, openaiKey: e.target.value })}
@@ -852,10 +865,11 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase pl-1">
+                <label htmlFor="cc-anthropic-key" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase pl-1">
                   Anthropic Claude API Key
                 </label>
                 <input
+                  id="cc-anthropic-key"
                   type="password"
                   value={config.anthropicKey || ''}
                   onChange={(e) => setConfig({ ...config, anthropicKey: e.target.value })}
@@ -867,10 +881,11 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase pl-1">
+                  <label htmlFor="cc-pref-provider" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase pl-1">
                     Preferred AI Provider
                   </label>
                   <select
+                    id="cc-pref-provider"
                     value={config.preferredProvider}
                     onChange={(e) => {
                       const prov = e.target.value as 'gemini' | 'openai' | 'anthropic';
@@ -890,10 +905,11 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase pl-1">
+                  <label htmlFor="cc-pref-model" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase pl-1">
                     Active AI Model
                   </label>
                   <select
+                    id="cc-pref-model"
                     value={config.preferredModel}
                     onChange={(e) => setConfig({ ...config, preferredModel: e.target.value })}
                     className="w-full font-body text-xs px-3 py-3 rounded-2xl border outline-none focus:border-[var(--empire-gold)] transition-all"
@@ -1057,9 +1073,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                         No telemetry or log history recorded for this cat.
                       </p>
                     ) : (
-                      timelineEvents.map((evt, idx) => (
+                      timelineEvents.map((evt) => (
                         <div
-                          key={idx}
+                          key={`${evt.date}-${evt.title}`}
                           className="border p-3.5 rounded-2xl flex gap-4 items-start transition-all hover:bg-black/5"
                           style={{ background: 'var(--bg-elevated)', borderColor: 'var(--dropdown-border)' }}
                         >
@@ -1100,8 +1116,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Heartbeat (BPM)</label>
+                      <label htmlFor="vitals-bpm" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Heartbeat (BPM)</label>
                       <input
+                        id="vitals-bpm"
                         type="number"
                         value={inputBpm}
                         onChange={(e) => setInputBpm(e.target.value)}
@@ -1110,8 +1127,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Respiration (RR/min)</label>
+                      <label htmlFor="vitals-rr" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Respiration (RR/min)</label>
                       <input
+                        id="vitals-rr"
                         type="number"
                         value={inputRr}
                         onChange={(e) => setInputRr(e.target.value)}
@@ -1123,8 +1141,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
 
                   <div className="grid grid-cols-3 gap-3">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Weight (kg)</label>
+                      <label htmlFor="vitals-weight" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Weight (kg)</label>
                       <input
+                        id="vitals-weight"
                         type="number"
                         step="0.1"
                         value={inputWeight}
@@ -1134,8 +1153,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Sleep (hrs)</label>
+                      <label htmlFor="vitals-sleep" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Sleep (hrs)</label>
                       <input
+                        id="vitals-sleep"
                         type="number"
                         step="0.5"
                         value={inputSleep}
@@ -1145,8 +1165,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Calories (kcal)</label>
+                      <label htmlFor="vitals-calories" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Calories (kcal)</label>
                       <input
+                        id="vitals-calories"
                         type="number"
                         value={inputCalories}
                         onChange={(e) => setInputCalories(e.target.value)}
@@ -1157,8 +1178,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Stress Level ({inputStress}/5)</label>
+                    <label htmlFor="vitals-stress" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Stress Level ({inputStress}/5)</label>
                     <input
+                      id="vitals-stress"
                       type="range"
                       min="1"
                       max="5"
@@ -1251,7 +1273,7 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                                     const [x, y] = pathCoords[idx].split(',');
                                     return (
                                       <circle
-                                        key={idx}
+                                        key={p.date}
                                         cx={x}
                                         cy={y}
                                         r="1.2"
@@ -1273,9 +1295,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                         <span className="font-display text-[10px] text-[var(--text-secondary)] opacity-60 uppercase tracking-wider font-bold">
                           Logs Feed
                         </span>
-                        {[...activeCat.data.vitals].reverse().map((log, idx) => (
+                        {[...activeCat.data.vitals].reverse().map((log) => (
                           <div
-                            key={idx}
+                            key={log.date}
                             className="border p-3 rounded-2xl flex flex-wrap justify-between items-center text-xs"
                             style={{ background: 'var(--bg-elevated)', borderColor: 'var(--dropdown-border)' }}
                           >
@@ -1311,8 +1333,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                   </h3>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Title</label>
+                    <label htmlFor="cal-title" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Title</label>
                     <input
+                      id="cal-title"
                       type="text"
                       value={calTitle}
                       onChange={(e) => setCalTitle(e.target.value)}
@@ -1325,8 +1348,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Type</label>
+                      <label htmlFor="cal-type" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Type</label>
                       <select
+                        id="cal-type"
                         value={calType}
                         onChange={(e) => setCalType(e.target.value as 'pill' | 'appointment')}
                         className="font-body text-xs p-2.5 rounded-xl border outline-none"
@@ -1337,8 +1361,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                       </select>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Date</label>
+                      <label htmlFor="cal-date" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Date</label>
                       <input
+                        id="cal-date"
                         type="date"
                         value={calDate}
                         onChange={(e) => setCalDate(e.target.value)}
@@ -1431,8 +1456,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                   </h3>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Treatment / Vaccine</label>
+                    <label htmlFor="med-treatment" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Treatment / Vaccine</label>
                     <input
+                      id="med-treatment"
                       type="text"
                       value={medTreatment}
                       onChange={(e) => setMedTreatment(e.target.value)}
@@ -1445,8 +1471,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Dose</label>
+                      <label htmlFor="med-dose" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Dose</label>
                       <input
+                        id="med-dose"
                         type="text"
                         value={medDose}
                         onChange={(e) => setMedDose(e.target.value)}
@@ -1456,8 +1483,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                       />
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Date Administered</label>
+                      <label htmlFor="med-date" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Date Administered</label>
                       <input
+                        id="med-date"
                         type="date"
                         value={medDate}
                         onChange={(e) => setMedDate(e.target.value)}
@@ -1468,8 +1496,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Veterinarian Name / Clinic</label>
+                    <label htmlFor="med-vet" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Veterinarian Name / Clinic</label>
                     <input
+                      id="med-vet"
                       type="text"
                       value={medVet}
                       onChange={(e) => setMedVet(e.target.value)}
@@ -1480,8 +1509,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Next Booster Date (Optional)</label>
+                    <label htmlFor="med-booster" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Next Booster Date (Optional)</label>
                     <input
+                      id="med-booster"
                       type="date"
                       value={medBooster}
                       onChange={(e) => setMedBooster(e.target.value)}
@@ -1570,8 +1600,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                   </h3>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Field Key</label>
+                    <label htmlFor="custom-key" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Field Key</label>
                     <input
+                      id="custom-key"
                       type="text"
                       value={customKey}
                       onChange={(e) => setCustomKey(e.target.value)}
@@ -1583,8 +1614,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Field Value</label>
+                    <label htmlFor="custom-val" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Field Value</label>
                     <input
+                      id="custom-val"
                       type="text"
                       value={customVal}
                       onChange={(e) => setCustomVal(e.target.value)}
@@ -1664,8 +1696,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                   </h3>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Category</label>
+                    <label htmlFor="act-category" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Category</label>
                     <select
+                      id="act-category"
                       value={actCategory}
                       onChange={(e) => setActCategory(e.target.value)}
                       className="font-body text-xs p-2.5 rounded-xl border outline-none"
@@ -1680,8 +1713,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Notes</label>
+                    <label htmlFor="act-notes" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Notes</label>
                     <textarea
+                      id="act-notes"
                       value={actNotes}
                       onChange={(e) => setActNotes(e.target.value)}
                       placeholder="Add descriptions or notes here…"

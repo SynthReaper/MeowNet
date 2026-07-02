@@ -69,7 +69,7 @@ export default function TicketChatWindow({ ticket, currentUserId, currentUserRol
         onUpdate({
           ...ticket,
           chat_messages: res.chat_messages,
-          status: nextStatus as 'pending' | 'solved' | 'closed' | 'resolved'
+          status: nextStatus
         });
       } else {
         setError(res.error || 'Failed to send message');
@@ -153,7 +153,7 @@ export default function TicketChatWindow({ ticket, currentUserId, currentUserRol
           
           return (
             <div
-              key={index}
+              key={`${msg.sender_id}-${msg.timestamp}`}
               className={`max-w-[85%] flex flex-col gap-1 ${
                 isMe ? 'self-end items-end' : 'self-start items-start'
               }`}

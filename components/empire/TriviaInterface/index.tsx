@@ -124,7 +124,7 @@ export default function TriviaInterface({ initialStats, question, playedToday: i
                   const isSelected = selectedIdx === idx;
                   return (
                     <button
-                      key={idx}
+                      key={option}
                       onClick={() => setSelectedIdx(idx)}
                       disabled={isSubmitting}
                       className={`w-full p-4 rounded-xl text-left border font-body text-sm font-semibold transition-all flex items-center justify-between ${

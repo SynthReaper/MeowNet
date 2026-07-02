@@ -87,16 +87,14 @@ export default function AuthBridge() {
               setSyncStamp();
             }
           }
-        } else {
+        } else if (session) {
           // User is signed out of Clerk
-          if (session) {
-            const isClerkSynced = session.user?.user_metadata?.clerk_synced === true;
-            if (isClerkSynced) {
-              console.log('User signed out of Clerk, signing out of Supabase...');
-              await supabase.auth.signOut();
-              clearSyncStamp();
-              router.refresh();
-            }
+          const isClerkSynced = session.user?.user_metadata?.clerk_synced === true;
+          if (isClerkSynced) {
+            console.log('User signed out of Clerk, signing out of Supabase...');
+            await supabase.auth.signOut();
+            clearSyncStamp();
+            router.refresh();
           }
         }
       } catch (err) {

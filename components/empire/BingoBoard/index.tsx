@@ -85,7 +85,7 @@ export default function BingoBoard({ initialCard }: BingoBoardProps) {
 
             return (
               <button
-                key={idx}
+                key={isFree ? 'free-space' : `${square.type}-${square.label}`}
                 disabled={isCompleted || isClaiming !== null}
                 onClick={() => handleSquareClick(idx)}
                 className={`p-1 md:p-3 rounded-xl border flex flex-col items-center justify-center text-center transition-all aspect-square relative overflow-hidden cursor-pointer ${

@@ -72,7 +72,7 @@ export default function NoticesPage() {
           .from('profiles' as never)
           .select('role')
           .eq('id', clerkUser.id)
-          .single() as unknown as { data: { role: 'user' | 'admin' | 'moderator' | null } | null; error: unknown });
+          .single() as unknown as Promise<{ data: { role: 'user' | 'admin' | 'moderator' | null } | null; error: unknown }>);
         if (data) {
           setRole(data.role);
           return;
@@ -86,7 +86,7 @@ export default function NoticesPage() {
           .from('profiles' as never)
           .select('role')
           .eq('id', user.id)
-          .single() as unknown as { data: { role: 'user' | 'admin' | 'moderator' | null } | null; error: unknown });
+          .single() as unknown as Promise<{ data: { role: 'user' | 'admin' | 'moderator' | null } | null; error: unknown }>);
         if (data) setRole(data.role);
         else setRole(null);
       } else {
@@ -106,20 +106,18 @@ export default function NoticesPage() {
           .then(({ data }) => {
             if (data) setRole(data.role);
           });
+      } else if (clerkUser) {
+        (supabase
+          .from('profiles' as never)
+          .select('role')
+          .eq('id', clerkUser.id)
+          .single() as unknown as Promise<{ data: { role: 'user' | 'admin' | 'moderator' | null } | null; error: unknown }>)
+          .then(({ data }) => {
+            if (data) setRole(data.role);
+            else setRole(null);
+          });
       } else {
-        if (clerkUser) {
-          (supabase
-            .from('profiles' as never)
-            .select('role')
-            .eq('id', clerkUser.id)
-            .single() as unknown as Promise<{ data: { role: 'user' | 'admin' | 'moderator' | null } | null; error: unknown }>)
-            .then(({ data }) => {
-              if (data) setRole(data.role);
-              else setRole(null);
-            });
-        } else {
-          setRole(null);
-        }
+        setRole(null);
       }
     });
 
@@ -348,8 +346,8 @@ export default function NoticesPage() {
       {/* Notices list */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-60">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--bg-border)] p-6 flex flex-col gap-4 h-[220px]">
+          {[1, 2, 3].map((item) => (
+            <div key={item} className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--bg-border)] p-6 flex flex-col gap-4 h-[220px]">
               <div className="h-6 bg-[var(--bg-border)]/40 w-3/4 rounded-md"></div>
               <div className="h-4 bg-[var(--bg-border)]/30 w-full rounded-md"></div>
               <div className="h-4 bg-[var(--bg-border)]/30 w-5/6 rounded-md"></div>

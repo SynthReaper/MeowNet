@@ -187,7 +187,7 @@ interface CustomTooltipProps {
 }
 
 const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
-  if (active && payload && payload.length) {
+  if (active && payload?.length) {
     return (
       <div className="bg-[var(--bg-surface)] border border-[var(--bg-border)] p-3 rounded-xl shadow-ambient text-xs font-body text-[var(--empire-cream)]">
         <p className="font-bold mb-1">{label}</p>
@@ -284,10 +284,8 @@ export default function AdminDashboardClient({
 
   const [resolvingQueryId, setResolvingQueryId] = useState<string | null>(null);
   const [queryResolutionText, setQueryResolutionText] = useState('');
-  const [shiftingQueryId] = useState<string | null>(null);
-  const [shiftReasonText] = useState('');
 
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   // Supreme Data Management states
@@ -380,32 +378,6 @@ export default function AdminDashboardClient({
     });
   }, [auditLogs, auditActionFilter, auditStaffFilter, auditDateFilter]);
 
-  const handleExportAuditsToCSV = () => {
-    if (filteredAuditLogs.length === 0) return;
-    const headers = ['Log ID', 'Staff Member', 'Staff Role', 'Action', 'Target ID', 'Details', 'Timestamp'];
-    const rows = filteredAuditLogs.map(log => [
-      log.id,
-      log.actor_name,
-      log.actor_role,
-      log.action,
-      log.target_id || '',
-      (log.details || '').replace(/"/g, '""'),
-      formatUTCDateTime(log.created_at)
-    ]);
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(r => r.map(val => `"${val}"`).join(','))
-    ].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `meownet_audit_logs_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showNotification('success', 'Filtered audit logs successfully exported to CSV.');
-  };
 
 
 
@@ -2610,7 +2582,7 @@ export default function AdminDashboardClient({
                           </div>
                         ) : (
                           q.status === 'pending' && (
-                            <div className="flex gap-2.5 justify-end pt-3 border-t border-[var(--bg-border)]/15" onClick={(e) => e.stopPropagation()}>
+                            <div role="presentation" className="flex gap-2.5 justify-end pt-3 border-t border-[var(--bg-border)]/15" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                               {resolvingQueryId === q.id ? (
                                 <div className="w-full flex flex-col gap-2">
                                   <textarea
@@ -3130,7 +3102,7 @@ export default function AdminDashboardClient({
       {/* Selected Volunteer Profile Modal */}
       {selectedProfile && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setSelectedProfile(null)} />
+          <div role="presentation" aria-hidden="true" className="fixed inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setSelectedProfile(null)} onKeyDown={() => setSelectedProfile(null)} />
           <div className="relative w-full max-w-3xl bg-[var(--bg-surface)] border border-[var(--bg-border)]/50 shadow-[0_0_50px_rgba(212,163,89,0.15)] rounded-2xl overflow-hidden z-10 p-6 flex flex-col gap-5 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start border-b border-[var(--bg-border)]/20 pb-3">
               <div>
@@ -3213,8 +3185,9 @@ export default function AdminDashboardClient({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Volunteer Bio</label>
+                <label htmlFor="admin-edit-bio" className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Volunteer Bio</label>
                 <textarea
+                  id="admin-edit-bio"
                   rows={2}
                   value={editBio}
                   onChange={(e) => setEditBio(e.target.value)}
@@ -3224,8 +3197,9 @@ export default function AdminDashboardClient({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Location Neighborhood</label>
+                  <label htmlFor="admin-edit-neighborhood" className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Location Neighborhood</label>
                   <input
+                    id="admin-edit-neighborhood"
                     type="text"
                     value={editNeighborhood}
                     onChange={(e) => setEditNeighborhood(e.target.value)}
@@ -3233,8 +3207,9 @@ export default function AdminDashboardClient({
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Contact Phone</label>
+                  <label htmlFor="admin-edit-phone" className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Contact Phone</label>
                   <input
+                    id="admin-edit-phone"
                     type="text"
                     value={editPhone}
                     onChange={(e) => setEditPhone(e.target.value)}
@@ -3251,8 +3226,9 @@ export default function AdminDashboardClient({
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Set New Password</label>
+                    <label htmlFor="admin-edit-password" className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Set New Password</label>
                     <input
+                      id="admin-edit-password"
                       type="password"
                       placeholder="Enter new password (min 6 chars)"
                       value={editPassword}
@@ -3261,8 +3237,9 @@ export default function AdminDashboardClient({
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Expiration Date/Time</label>
+                    <label htmlFor="admin-edit-expiry" className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Expiration Date/Time</label>
                     <input
+                      id="admin-edit-expiry"
                       type="datetime-local"
                       value={editExpiryDate}
                       onChange={(e) => setEditExpiryDate(e.target.value)}
@@ -3270,8 +3247,9 @@ export default function AdminDashboardClient({
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Usage Limit (Max logins)</label>
+                    <label htmlFor="admin-edit-max-usages" className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Usage Limit (Max logins)</label>
                     <input
+                      id="admin-edit-max-usages"
                       type="number"
                       placeholder="Unlimited"
                       value={editMaxUsages}
@@ -3475,7 +3453,7 @@ export default function AdminDashboardClient({
       {/* Add User Dialog */}
       {isAddUserOpen && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="fixed inset-0" onClick={() => setIsAddUserOpen(false)} />
+          <div role="presentation" aria-hidden="true" className="fixed inset-0" onClick={() => setIsAddUserOpen(false)} onKeyDown={() => setIsAddUserOpen(false)} />
           <div
             className="relative w-full max-w-2xl bg-[var(--bg-surface)] rounded-3xl border border-[var(--bg-border)] shadow-[0_25px_60px_rgba(0,0,0,0.4)] overflow-hidden z-10 p-6 sm:p-8 flex flex-col gap-6 max-h-[90vh] overflow-y-auto"
             style={{ boxShadow: 'var(--shadow-card)' }}
@@ -3733,7 +3711,7 @@ export default function AdminDashboardClient({
       {/* Edit Cat sighting Modal */}
       {editingCat && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="fixed inset-0" onClick={() => setEditingCat(null)} />
+          <div role="presentation" aria-hidden="true" className="fixed inset-0" onClick={() => setEditingCat(null)} onKeyDown={() => setEditingCat(null)} />
           <div className="relative w-full max-w-md bg-[var(--bg-surface)] border border-[var(--bg-border)]/50 shadow-[0_0_50px_rgba(212,163,89,0.15)] rounded-2xl overflow-hidden z-10 p-6 flex flex-col gap-5">
             <div className="flex justify-between items-start border-b border-[var(--bg-border)]/20 pb-3">
               <div>
@@ -3753,8 +3731,9 @@ export default function AdminDashboardClient({
 
             <form onSubmit={handleUpdateCatSubmit} className="flex flex-col gap-4">
               <div>
-                <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Cat Name</label>
+                <label htmlFor="admin-cat-name" className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Cat Name</label>
                 <input
+                  id="admin-cat-name"
                   type="text"
                   value={catForm.name}
                   onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
@@ -3763,8 +3742,9 @@ export default function AdminDashboardClient({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Breed Sighting Estimate</label>
+                <label htmlFor="admin-cat-breed" className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Breed Sighting Estimate</label>
                 <input
+                  id="admin-cat-breed"
                   type="text"
                   value={catForm.breed_estimate}
                   onChange={(e) => setCatForm({ ...catForm, breed_estimate: e.target.value })}
@@ -3773,8 +3753,9 @@ export default function AdminDashboardClient({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Status</label>
+                <label htmlFor="admin-cat-status" className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Status</label>
                 <select
+                  id="admin-cat-status"
                   value={catForm.status}
                   onChange={(e) => setCatForm({ ...catForm, status: e.target.value })}
                   className="w-full mt-1 p-2 border border-[var(--bg-border)] rounded-xl font-body text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] focus:outline-none focus:border-[var(--empire-gold)]"
@@ -3786,8 +3767,9 @@ export default function AdminDashboardClient({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Health Notes</label>
+                <label htmlFor="admin-cat-health" className="text-[10px] font-bold text-[var(--empire-cream)]/40 uppercase">Health Notes</label>
                 <textarea
+                  id="admin-cat-health"
                   value={catForm.health_notes || ''}
                   onChange={(e) => setCatForm({ ...catForm, health_notes: e.target.value })}
                   className="w-full mt-1 p-2 border border-[var(--bg-border)] rounded-xl font-body text-xs text-[var(--text-primary)] bg-[var(--bg-surface)] focus:outline-none focus:border-[var(--empire-gold)]"
@@ -3818,7 +3800,7 @@ export default function AdminDashboardClient({
       {/* DETAILED CAT MODAL */}
       {selectedCat && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="fixed inset-0" onClick={() => setSelectedCat(null)} />
+          <div role="presentation" aria-hidden="true" className="fixed inset-0" onClick={() => setSelectedCat(null)} onKeyDown={() => setSelectedCat(null)} />
           <div className="relative bg-[var(--bg-surface)] rounded-2xl border border-[var(--bg-border)]/50 shadow-ambient max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 z-10 flex flex-col gap-6">
             <div className="flex justify-between items-start gap-4 border-b border-[var(--bg-border)]/20 pb-4">
               <div>
@@ -4007,7 +3989,7 @@ export default function AdminDashboardClient({
       {/* EDIT & DETAIL TNR EVENT MODAL */}
       {selectedEvent && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="fixed inset-0" onClick={() => { setSelectedEvent(null); setEditEventOpen(false); }} />
+          <div role="presentation" aria-hidden="true" className="fixed inset-0" onClick={() => { setSelectedEvent(null); setEditEventOpen(false); }} onKeyDown={() => { setSelectedEvent(null); setEditEventOpen(false); }} />
           <div className="relative bg-[var(--bg-surface)] rounded-2xl border border-[var(--bg-border)]/50 shadow-ambient max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 z-10 flex flex-col gap-6">
             <div className="flex justify-between items-start gap-4 border-b border-[var(--bg-border)]/20 pb-4">
               <div>
@@ -4033,8 +4015,9 @@ export default function AdminDashboardClient({
             {editEventOpen ? (
               <form onSubmit={handleUpdateEvent} className="flex flex-col gap-4 text-xs font-body text-[var(--empire-cream)]">
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Campaign Title</label>
+                  <label htmlFor="admin-event-title" className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Campaign Title</label>
                   <input
+                    id="admin-event-title"
                     type="text"
                     required
                     value={editEventTitle}
@@ -4044,8 +4027,9 @@ export default function AdminDashboardClient({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Description</label>
+                  <label htmlFor="admin-event-desc" className="font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">Description</label>
                   <textarea
+                    id="admin-event-desc"
                     rows={4}
                     value={editEventDescription}
                     onChange={(e) => setEditEventDescription(e.target.value)}
@@ -4176,7 +4160,7 @@ export default function AdminDashboardClient({
       {/* RAISE QUERY MODAL */}
       {queryModal?.open && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="fixed inset-0" onClick={() => { setQueryModal(null); setQueryMessage(''); }} />
+          <div role="presentation" aria-hidden="true" className="fixed inset-0" onClick={() => { setQueryModal(null); setQueryMessage(''); }} onKeyDown={() => { setQueryModal(null); setQueryMessage(''); }} />
           <div className="relative bg-[var(--bg-surface)] rounded-2xl border border-[var(--bg-border)] max-w-md w-full p-6 shadow-2xl z-10 flex flex-col gap-4">
             <div>
               <h3 className="font-display text-base font-bold text-[var(--empire-cream)] flex items-center gap-2">

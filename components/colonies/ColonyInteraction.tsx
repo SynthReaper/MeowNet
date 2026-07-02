@@ -108,7 +108,7 @@ export default function ColonyInteraction({
       {/* Stats Update Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
+          <div role="presentation" aria-hidden="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} onKeyDown={() => setIsModalOpen(false)} />
           <div className="relative w-full max-w-md bg-[var(--bg-surface)] border border-[var(--bg-border)]/50 shadow-2xl rounded-2xl z-10 p-6 flex flex-col gap-4">
             <div>
               <h3 className="font-display text-lg font-bold text-[var(--empire-gold)] flex items-center gap-2">
@@ -129,8 +129,9 @@ export default function ColonyInteraction({
 
             <form onSubmit={handleUpdateSubmit} className="flex flex-col gap-4">
               <div>
-                <label className="text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider block mb-1">Estimated Population</label>
+                <label htmlFor="colony-population" className="text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider block mb-1">Estimated Population</label>
                 <input
+                  id="colony-population"
                   type="number"
                   min="0"
                   required
@@ -141,8 +142,9 @@ export default function ColonyInteraction({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider block mb-1">TNR sterilized Count</label>
+                <label htmlFor="colony-tnr-count" className="text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wider block mb-1">TNR sterilized Count</label>
                 <input
+                  id="colony-tnr-count"
                   type="number"
                   min="0"
                   required

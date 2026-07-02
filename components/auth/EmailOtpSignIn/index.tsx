@@ -25,7 +25,7 @@ export default function EmailOtpSignIn({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendCountdown, setResendCountdown] = useState(0);
-  const [sent, setSent] = useState(false);
+
 
   // OTP input refs for auto-focus
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -48,7 +48,6 @@ export default function EmailOtpSignIn({
         identifier: email.trim(),
       });
       setStep('code');
-      setSent(true);
       setResendCountdown(60);
       // Focus first OTP box
       setTimeout(() => inputRefs.current[0]?.focus(), 150);
@@ -213,18 +212,20 @@ export default function EmailOtpSignIn({
 
           {/* 6-box OTP input */}
           <div className="flex gap-2 justify-center">
-            {code.map((digit, idx) => (
-              <input
-                key={idx}
-                ref={(el) => { inputRefs.current[idx] = el; }}
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                value={digit}
-                onChange={(e) => handleDigitChange(idx, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(idx, e)}
-                onFocus={(e) => e.target.select()}
-                disabled={loading}
+            {[0, 1, 2, 3, 4, 5].map((slot) => {
+              const digit = code[slot];
+              return (
+                <input
+                  key={slot}
+                  ref={(el) => { inputRefs.current[slot] = el; }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={digit}
+                  onChange={(e) => handleDigitChange(slot, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(slot, e)}
+                  onFocus={(e) => e.target.select()}
+                  disabled={loading}
                 className={`w-11 h-13 text-center font-display text-xl font-bold rounded-xl border-2 transition-all outline-none
                   ${digit
                     ? 'border-[var(--empire-gold)] bg-[var(--empire-gold)]/10 text-[var(--empire-gold)]'
@@ -233,7 +234,8 @@ export default function EmailOtpSignIn({
                   disabled:opacity-50`}
                 style={{ paddingTop: '0.6rem', paddingBottom: '0.6rem' }}
               />
-            ))}
+            );
+          })}
           </div>
 
           {error && (

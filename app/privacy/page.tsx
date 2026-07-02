@@ -102,8 +102,8 @@ export default function PrivacyPage() {
               </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {shortPoints.map((p, idx) => (
-                <div key={idx} className="flex gap-3 items-start">
+              {shortPoints.map((p) => (
+                <div key={p.icon} className="flex gap-3 items-start">
                   <span className="material-symbols-outlined text-[var(--life-teal)] text-lg mt-0.5">
                     {p.icon}
                   </span>
@@ -117,9 +117,9 @@ export default function PrivacyPage() {
 
           {/* Policy Sections Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {sections.map((s, idx) => (
+            {sections.map((s) => (
               <div 
-                key={idx}
+                key={s.heading}
                 className="bg-white dark:bg-[var(--bg-surface)] rounded-2xl p-6 border border-[var(--bg-border)] shadow-ambient flex gap-4 hover:shadow-active transition-all duration-300"
               >
                 <div className="bg-[var(--bg-elevated)] text-[var(--empire-gold)] p-3 rounded-xl h-fit">

@@ -164,7 +164,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {mode === 'signup' && (
           <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(245,230,200,0.6)', marginBottom: '0.375rem' }}>
+            <label htmlFor="auth-display-name" style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(245,230,200,0.6)', marginBottom: '0.375rem' }}>
               Display Name
             </label>
             <input
@@ -180,7 +180,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         )}
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(245,230,200,0.6)', marginBottom: '0.375rem' }}>
+          <label htmlFor="auth-email" style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(245,230,200,0.6)', marginBottom: '0.375rem' }}>
             Email <span style={{ color: 'var(--status-stray)' }}>*</span>
           </label>
           <input
@@ -196,7 +196,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         </div>
 
         <div>
-          <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(245,230,200,0.6)', marginBottom: '0.375rem' }}>
+          <label htmlFor="auth-password" style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(245,230,200,0.6)', marginBottom: '0.375rem' }}>
             Password <span style={{ color: 'var(--status-stray)' }}>*</span>
           </label>
           <input
