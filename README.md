@@ -279,4 +279,4 @@ Created for **#hackthekitty 2026** by [SynthReaper](https://github.com/SynthReap
 
 ---
 
-**Author:** [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com · **Version:** 0.8.0 · **License:** [MIT](LICENSE)
+**Author:** [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com · **Version:** 0.8.1 · **License:** [MIT](LICENSE)

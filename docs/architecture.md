@@ -1,6 +1,6 @@
 # MeowNet Architecture
 
-> Last updated: 2026-07-02 · v0.8.0
+> Last updated: 2026-07-02 · v0.8.1
 
 ## System Overview
 

@@ -1,6 +1,6 @@
 # MeowNet Database Documentation
 
-> Last updated: 2026-07-02 · v0.8.0 · Migrations: 0001–0003 (Consolidated + Personal Care)
+> Last updated: 2026-07-02 · v0.8.1 · Migrations: 0001–0003 (Consolidated + Personal Care)
 
 ---
 

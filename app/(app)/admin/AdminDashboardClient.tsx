@@ -1532,7 +1532,7 @@ export default function AdminDashboardClient({
             </span>
             <span>All Channels nominal</span>
           </div>
-          <span className="text-[8px] text-[var(--empire-cream)]/30 font-mono">MeowNet Admin Console v0.8.0</span>
+          <span className="text-[8px] text-[var(--empire-cream)]/30 font-mono">MeowNet Admin Console v0.8.1</span>
         </div>
       </div>
 

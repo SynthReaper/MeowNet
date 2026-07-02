@@ -1,7 +1,7 @@
 # Agent Instructions — MeowNet
 
 > **Author:** SynthReaper · synthreaperx@gmail.com · https://github.com/SynthReaper
-> **Project:** MeowNet — #hackthekitty 2026 · v0.8.0
+> **Project:** MeowNet — #hackthekitty 2026 · v0.8.1
 
 ---
 
@@ -28,55 +28,67 @@ Never use yarn, pnpm, or bun unless explicitly requested by the user.
 ## Project Structure
 
 ```
-app/(app)/          -> Auth-gated routes (force-dynamic)
-  admin/            -> Admin dashboard, RBAC, audit logs, credential manager
-  cats/             -> Browse, log, cat profiles
-  colonies/         -> Stray cat colony management
-  community/        -> Public/private chat channels + DMs
-  empire/           -> Leaderboard, badges, guilds, trivia, bingo, tycoon
-  events/           -> TNR event list, create, detail
-  map/              -> Leaflet realtime cat map
-  moderator/        -> Moderator dashboard, query escalation queue
-  notices/          -> Targeted notice board
-  profile/          -> User profile + GDPR deletion
-  reports/          -> Volunteer field reports
-  safety/           -> Colony safety guides
-  stories/          -> Cat success stories
-  weather/          -> Feline Weather Safety Watch
+app/(app)/               -> Auth-gated routes (force-dynamic)
+  admin/                 -> Admin dashboard, RBAC, audit logs, credential manager
+  cats/                  -> Browse, log, cat profiles
+  colonies/              -> Stray cat colony management
+  community/             -> Public/private chat channels + DMs
+  empire/                -> Leaderboard, badges, guilds, trivia, bingo, tycoon
+  events/                -> TNR event list, create, detail
+  map/                   -> Leaflet realtime cat map
+  moderator/             -> Moderator dashboard, query escalation queue
+  notices/               -> Targeted notice board
+  personal-helper/       -> Full-screen Personal AI Helper console
+  profile/               -> User profile + GDPR deletion
+    care-center/         -> Private client-side encrypted Personal Care Center
+  reports/               -> Volunteer field reports
+  safety/                -> Colony safety guides
+  stories/               -> Cat success stories
+  weather/               -> Feline Weather Safety Watch
 
-app/auth/           -> Login, signup, callback (force-dynamic)
-  login/            -> Clerk social login (no direct-db option for volunteers)
-  signup/           -> Clerk social signup
-  moderator-login/  -> Staff login: BOTH Clerk + Database Direct (AuthTabs slider)
-  admin-login/      -> Admin login: BOTH Clerk + Database Direct (AuthTabs slider)
+app/auth/                -> Login, signup, callback (force-dynamic)
+  login/                 -> Clerk social login (no direct-db option for volunteers)
+  signup/                -> Clerk social signup
+  moderator-login/       -> Staff login: BOTH Clerk + Database Direct (AuthTabs slider)
+  admin-login/           -> Admin login: BOTH Clerk + Database Direct (AuthTabs slider)
 
-app/api/            -> API routes
-  ai/breed/         -> ML proxy (breed estimation)
-  ai/meow/          -> ML proxy (meow mood classifier)
-  ai/health/        -> ML warmup ping
+app/api/                 -> API routes
+  ai/breed/              -> ML proxy (breed estimation)
+  ai/meow/               -> ML proxy (meow mood classifier)
+  ai/health/             -> ML warmup ping
+  ai/personal-helper/    -> Secure multi-provider AI chat proxy (model allowlist enforced)
   privacy/delete-account/ -> GDPR erasure
-  weather/          -> Open-Meteo server proxy (single + batch)
-  catfact/          -> Catfact.ninja proxy with local fallback
-  tenor/            -> Tenor GIF search proxy
+  weather/               -> Open-Meteo server proxy (single + batch)
+  catfact/               -> Catfact.ninja proxy with local fallback
+  tenor/                 -> Tenor GIF search proxy
 
-app/not-found.tsx   -> Custom 404 page
-app/verify/         -> Public certificate verification portal
+app/not-found.tsx        -> Custom 404 page
+app/verify/              -> Public certificate verification portal
 
-components/         -> UI components (client = 'use client', else server)
-  auth/AuthTabs/    -> Sliding segmented auth toggle (Clerk <-> Database Direct)
-  auth/AuthBridge/  -> Clerk->Supabase session synchronization
-  auth/AuthForm/    -> Database Direct login form
-  ui/InteractiveCat/-> Interactive SVG cat companion
-  ui/Broadcasts.tsx -> Page-targeted notice broadcast system
+components/              -> UI components (client = 'use client', else server)
+  auth/AuthTabs/         -> Sliding segmented auth toggle (Clerk <-> Database Direct)
+  auth/AuthBridge/       -> Clerk->Supabase session synchronization
+  auth/AuthForm/         -> Database Direct login form
+  personal-care/
+    VaultUnlock.tsx      -> Passphrase gate — encrypts vault token to localStorage
+    HelperWidget.tsx     -> Collapsible floating AI helper (auto-unlock from vault token)
+    HelperPage.tsx       -> Full-screen AI helper console with lock handler
+  ui/InteractiveCat/     -> Interactive SVG cat companion
+  ui/Broadcasts.tsx      -> Page-targeted notice broadcast system
 
-lib/actions/        -> Server Actions (always 'use server')
+lib/actions/             -> Server Actions (always 'use server')
 lib/privacy/consent-text.ts  -> Client-safe copy (NO server imports)
 lib/privacy/consent.ts       -> Server-only GDPR functions
-lib/supabase/server.ts       -> Server client (next/headers -- server only)
+lib/security/
+  encryption.ts          -> Web Crypto AES-GCM-256 encryptData / decryptData helpers
+  exif.ts                -> EXIF strip (sharp WASM) — mandatory before photo upload
+  sanitize.ts            -> sanitizeText() — 3-pass HTML strip + entity encoding
+  url.ts                 -> getSafeImageSrc() — DOMPurify + encodeURI fallback
+lib/supabase/server.ts       -> Server client (next/headers — server only)
 lib/supabase/client.ts       -> Browser client (safe in client components)
 lib/welfare/welfare-score.ts -> Cat welfare score algorithm (0-100)
 
-supabase/migrations/         -> 0001-0002, run in order
+supabase/migrations/         -> 0001-0003, run in order
 python-ml/                   -> FastAPI ML service, separate deploy
 
 docs/                        -> Developer documentation
@@ -105,6 +117,7 @@ docs/                        -> Developer documentation
 - Auth pages: `/auth/login` and `/auth/signup` handle Clerk only. `/auth/moderator-login` and `/auth/admin-login` use `AuthTabs` (both Clerk + Database Direct sliding toggle)
 - Do not add emoji characters inside TypeScript/TSX source code, JSX comments, or inline code strings
 - Run `npm run type-check` after every code change — 0 errors required before marking a task complete
+- `decryptData()` returns `unknown` — always cast to the expected type: `as string`, `as PrivateConfig`, etc.
 
 ---
 
@@ -159,15 +172,55 @@ export async function myAction(formData: FormData) {
 ## Weather Proxy Pattern
 
 ```ts
-// Correct -- server-side proxy
+// Correct — server-side proxy
 const res = await fetch('/api/weather?lat=40.75&lng=-73.99&city=New+York');
 
 // Batch mode for multiple locations
 const res = await fetch(`/api/weather?lats=${lats}&lngs=${lngs}`);
 
-// Wrong -- direct browser fetch intercepted by extensions
+// NEVER — direct browser fetch blocked by ad blockers
 const res = await fetch('https://api.open-meteo.com/v1/forecast?...');
 ```
+
+## AI Personal Helper Proxy Pattern
+
+```ts
+// Correct — use the secure server proxy with explicit provider + model
+const res = await fetch('/api/ai/personal-helper', {
+  method: 'POST',
+  body: JSON.stringify({ apiKey, provider, model, messages }),
+});
+
+// Allowed models per provider (server enforces this allowlist):
+// gemini:    gemini-2.5-flash | gemini-1.5-flash | gemini-1.5-pro
+// openai:    gpt-4o | gpt-4o-mini
+// anthropic: claude-3-5-sonnet-latest | claude-3-5-haiku-latest
+```
+
+## Vault / Zero-Knowledge Encryption Pattern
+
+```ts
+import { encryptData, decryptData } from '@/lib/security/encryption';
+
+// On vault unlock — store encrypted passphrase, never plaintext
+const encrypted = await encryptData(passphrase, user.id);
+localStorage.setItem('meownet_vault_token', encrypted);
+localStorage.removeItem('meownet_vault_key'); // remove legacy plaintext key
+
+// On remount — auto-unlock by decrypting with user.id as the key
+const token = localStorage.getItem('meownet_vault_token');
+if (token) {
+  const passphrase = await decryptData(token, user.id) as string;
+  onUnlock(passphrase);
+}
+
+// On lock / logout — clear both keys
+localStorage.removeItem('meownet_vault_token');
+localStorage.removeItem('meownet_vault_key');
+```
+
+> **Never** store vault passphrases or API keys in localStorage as plaintext.
+> **Never** log passphrases or keys to `console.*`.
 
 ---
 
@@ -184,6 +237,9 @@ Before any code change is complete:
 - UUID params validated before DB calls
 - No `SUPABASE_SERVICE_ROLE_KEY` in client bundles
 - New system settings keys added to `ALLOWED_SETTING_KEYS` in `lib/actions/admin.ts`
+- AI proxy `model` param validated against `ALLOWED_MODELS` allowlist — no free-form model URLs
+- Vault passphrase never written to localStorage in plaintext — use `encryptData(phrase, user.id)`
+- `getSafeImageSrc()` used for all user-supplied image URLs — never assign raw URL to `innerHTML` or `src` directly
 
 ---
 
@@ -213,6 +269,9 @@ npm run build        # Must succeed
 | Creating `correct.sql` | Prohibited file name |
 | Emoji characters inside TSX/TS source code or JSX comments | Code quality / tooling compatibility |
 | Skipping `npm run type-check` before marking task done | TypeScript discipline |
+| Storing vault passphrase as plaintext in `localStorage` | Security — use AES-GCM-256 via `encryptData` |
+| Free-form `model` param in AI proxy without allowlist check | SSRF prevention |
+| Assigning raw user-supplied URLs to `innerHTML` or DOM `.src` | DOM XSS |
 
 ---
 
@@ -238,6 +297,48 @@ After completing any task that changes source code, database schema, configurati
 | `docs/deployment.md` | Config changes, migration count, workflow changes |
 | `docs/HACKATHON.md` | Major feature additions visible to judges |
 | `SETUP.md` | Env var changes, CLI command changes |
+| `SECURITY.md` | Supported version table when bumping version |
+
+### Tier 3 — Update When Applicable
+
+| File | When |
+|------|------|
+| `.github/PULL_REQUEST_TEMPLATE.md` | New security checklist items |
+| `.github/ISSUE_TEMPLATE/bug_report.md` | Version bump — update example version strings |
+| `python-ml/README.md` | ML service changes |
+| `app/globals.css` | Version comment block when bumping version |
+| `app/(app)/admin/AdminDashboardClient.tsx` | Version watermark string when bumping version |
+
+### Version Consistency Rule
+
+When bumping the version, these files must ALL be updated atomically:
+
+```
+CHANGELOG.md          -> promote [Unreleased] to [X.Y.Z] + add comparison link
+README.md             -> version badge
+AGENTS.md             -> header + footer
+.agents/AGENTS.md     -> header + footer
+package.json          -> "version" field
+package-lock.json     -> top-level "version" fields (x2, not node engine constraints)
+SECURITY.md           -> supported versions table
+docs/HACKATHON.md     -> header badge + footer credit
+docs/api.md           -> Last updated header
+docs/security.md      -> Last updated header
+docs/architecture.md  -> Last updated header
+docs/database.md      -> Last updated header
+docs/deployment.md    -> Last updated header
+app/globals.css       -> version comment
+app/(app)/admin/AdminDashboardClient.tsx -> console watermark
+.github/ISSUE_TEMPLATE/bug_report.md -> example version + feature gate note
+```
+
+### Documentation Update Rules
+
+1. Read the actual source file before updating docs — never document assumptions.
+2. Version strings must match across all files listed above.
+3. Dates use `YYYY-MM-DD` format consistently.
+4. Historical audit references (e.g., "audit performed on 2026-06-30 (v0.8.0)") are preserved — do not overwrite.
+5. Node engine `>= X.Y.Z` constraints in `package-lock.json` third-party packages are NOT MeowNet version strings — leave them unchanged.
 
 ---
 
@@ -246,9 +347,9 @@ After completing any task that changes source code, database schema, configurati
 | Agent | Focus |
 |-------|-------|
 | Bastet | Next.js, Three.js, Supabase, UI |
-| Anubis | RLS, EXIF, GDPR, security |
-| Hermes | GraphQL / API schema |
-| Archimedes | Obsidian vault, docs, ADRs |
+| Anubis | RLS, EXIF, GDPR, security, vault encryption |
+| Hermes | GraphQL / API schema, proxy routes |
+| Archimedes | Obsidian vault, docs, ADRs, version sync |
 
 ---
 
@@ -257,4 +358,4 @@ After completing any task that changes source code, database schema, configurati
 - **Email:** synthreaperx@gmail.com
 - **GitHub:** https://github.com/SynthReaper
 - **Project:** https://github.com/SynthReaper/MeowNet
-- **Version:** 0.8.0
+- **Version:** 0.8.1

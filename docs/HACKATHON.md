@@ -2,7 +2,7 @@
 
 # MeowNet — Hackathon Judge Guide
 
-**#hackthekitty 2026 · v0.8.0**
+**#hackthekitty 2026 · v0.8.1**
 
 *A complete walkthrough for evaluators — no developer setup required.*
 
@@ -351,4 +351,4 @@ Use this to guide a structured evaluation:
 
 ---
 
-*MeowNet — #hackthekitty 2026 · v0.8.0 · [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com*
+*MeowNet — #hackthekitty 2026 · v0.8.1 · [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com*

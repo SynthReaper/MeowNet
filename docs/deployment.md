@@ -1,6 +1,6 @@
 # MeowNet Deployment Guide
 
-> Last updated: 2026-06-30 · v0.8.0
+> Last updated: 2026-07-02 · v0.8.1
 
 ---
 
