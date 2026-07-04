@@ -7,10 +7,10 @@ import { useRouter } from 'next/navigation';
 import { deleteCat, lendAPaw, withdrawPledges } from '@/lib/actions/cats';
 
 interface CatActionsProps {
-  catId: string;
-  isOwner: boolean;
-  shelterUrl: string | null;
-  hasPledged: boolean;
+  readonly catId: string;
+  readonly isOwner: boolean;
+  readonly shelterUrl: string | null;
+  readonly hasPledged: boolean;
 }
 
 const PLEDGE_OPTIONS = [
@@ -187,6 +187,7 @@ export default function CatActions({ catId, isOwner, shelterUrl, hasPledged: ini
                   {PLEDGE_OPTIONS.map((opt) => (
                     <label 
                       key={opt.value} 
+                      aria-label={opt.label}
                       className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                         selectedPledges.includes(opt.value) 
                           ? 'bg-[var(--bg-border)]/10 border-[var(--empire-gold)]' 

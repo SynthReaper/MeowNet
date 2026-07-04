@@ -11,7 +11,7 @@ import PasswordStrength from '@/components/auth/PasswordStrength';
 
 type ResetStep = 'email' | 'code' | 'success';
 
-function CatPawDecor({ className }: { className?: string }) {
+function CatPawDecor({ className }: Readonly<{ className?: string }>) {
   return (
     <svg className={className} viewBox="0 0 60 60" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
       <ellipse cx="30" cy="40" rx="14" ry="12" opacity="0.9"/>

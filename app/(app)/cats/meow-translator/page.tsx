@@ -108,7 +108,7 @@ export default function MeowTranslatorPage() {
       mediaRecorder.start();
       setRecording(true);
       startCanvasAnimation(stream);
-    } catch (err: any) {
+    } catch {
       setError('Microphone access denied or unavailable. Please upload an audio file instead.');
     }
   };
@@ -260,7 +260,9 @@ export default function MeowTranslatorPage() {
               <div className="flex flex-col items-center gap-3 z-10">
                 <span className="material-symbols-outlined text-emerald-400 text-5xl animate-pulse">audiotrack</span>
                 <span className="font-body text-xs text-[var(--empire-cream)]/60">Audio file ready for translation</span>
-                <audio src={getSafeImageSrc(audioUrl)} controls className="h-10 mt-1" />
+                <audio src={getSafeImageSrc(audioUrl)} controls className="h-10 mt-1">
+                  <track kind="captions" src="" label="Captions" />
+                </audio>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3 z-10 text-center px-4">

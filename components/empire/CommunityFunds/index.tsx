@@ -6,22 +6,22 @@ import { useRouter } from 'next/navigation';
 import { createCommunityFund, donateToFund } from '@/lib/actions/cats';
 
 interface Fund {
-  id: string;
-  name: string;
-  category: string;
-  target_points: number;
-  raised_points: number;
-  description: string | null;
-  is_anonymous: boolean;
-  created_at: string;
-  profiles?: {
-    display_name: string | null;
+  readonly id: string;
+  readonly name: string;
+  readonly category: string;
+  readonly target_points: number;
+  readonly raised_points: number;
+  readonly description: string | null;
+  readonly is_anonymous: boolean;
+  readonly created_at: string;
+  readonly profiles?: {
+    readonly display_name: string | null;
   } | null;
 }
 
 interface CommunityFundsProps {
-  funds: Fund[];
-  userPoints: number;
+  readonly funds: Fund[];
+  readonly userPoints: number;
 }
 
 const CATEGORY_ICONS: Record<string, string> = {

@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
-export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PublicProfilePage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id: targetUserId } = await params;
   const supabase = await createServerClient();
   const { data: { user: currentUser } } = await supabase.auth.getUser();

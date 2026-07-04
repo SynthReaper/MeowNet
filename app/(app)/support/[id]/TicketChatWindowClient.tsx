@@ -7,9 +7,9 @@ import TicketChatWindow from '@/components/profile/TicketChatWindow';
 import { createClient } from '@/lib/supabase/client';
 
 interface Props {
-  initialTicket: any;
-  currentUserId: string;
-  currentUserRole: 'admin' | 'moderator' | 'user';
+  readonly initialTicket: any;
+  readonly currentUserId: string;
+  readonly currentUserRole: 'admin' | 'moderator' | 'user';
 }
 
 export default function TicketChatWindowClient({ initialTicket, currentUserId, currentUserRole }: Props) {

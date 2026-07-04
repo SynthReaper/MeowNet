@@ -148,16 +148,10 @@ export default function LogCatForm() {
           { label: 'Location', num: 2 },
           { label: 'Details', num: 3 },
         ].map((s) => (
-          <div 
+          <button 
+            type="button"
             key={s.num} 
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                if (step > s.num) setStep(s.num);
-              }
-            }}
-            className="flex flex-col items-center gap-1 cursor-pointer" 
+            className="flex flex-col items-center gap-1 cursor-pointer bg-transparent border-none p-0 outline-none" 
             onClick={() => step > s.num && setStep(s.num)}
           >
             <div 
@@ -172,7 +166,7 @@ export default function LogCatForm() {
             <span className={`font-body text-xs font-semibold ${step >= s.num ? 'text-[var(--empire-cream)]' : 'text-[var(--empire-cream)]/40'}`}>
               {s.label}
             </span>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -273,7 +267,7 @@ export default function LogCatForm() {
           </div>
 
           <div className="bg-[var(--bg-elevated)] p-4 rounded-xl border border-[var(--bg-border)]/40 mb-6">
-            <label htmlFor="location_privacy_log" className="flex items-start gap-3 cursor-pointer">
+            <label htmlFor="location_privacy_log" className="flex items-start gap-3 cursor-pointer" aria-label="Enable Location Fuzzing">
               <input 
                 id="location_privacy_log"
                 type="checkbox" 

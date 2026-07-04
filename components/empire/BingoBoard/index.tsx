@@ -5,19 +5,19 @@ import React, { useState } from 'react';
 import { claimBingoSquare } from '@/lib/actions/gamification';
 
 interface BingoCard {
-  id: string;
-  week_start: string;
-  squares: Array<{
-    label: string;
-    type: string;
-    completed: boolean;
+  readonly id: string;
+  readonly week_start: string;
+  readonly squares: Array<{
+    readonly label: string;
+    readonly type: string;
+    readonly completed: boolean;
   }>;
-  completed_squares: number;
-  is_bingo_achieved: boolean;
+  readonly completed_squares: number;
+  readonly is_bingo_achieved: boolean;
 }
 
 interface BingoBoardProps {
-  initialCard: BingoCard;
+  readonly initialCard: BingoCard;
 }
 
 export default function BingoBoard({ initialCard }: BingoBoardProps) {
@@ -83,35 +83,47 @@ export default function BingoBoard({ initialCard }: BingoBoardProps) {
             const isCompleted = square.completed;
             const claiming = isClaiming === idx;
 
+            let squareBgClass = 'bg-[var(--bg-elevated)] border-[var(--bg-border)]/50 text-[var(--empire-cream)]/80 hover:bg-[var(--bg-border)]/10 hover:border-[var(--bg-border)]';
+            if (isCompleted) {
+              squareBgClass = isFree 
+                ? 'bg-gradient-to-br from-[#e0f7f4] to-[#c5f2eb] border-[var(--life-teal)] text-[#0d594b]'
+                : 'bg-[#fff7f2] border-[var(--empire-gold)] text-[var(--empire-gold)] shadow-sm';
+            }
+
+            const renderSquareIcon = () => {
+              if (claiming) {
+                return <span className="material-symbols-outlined text-lg animate-spin text-[var(--empire-gold)]">sync</span>;
+              }
+              if (isCompleted) {
+                return (
+                  <span className="material-symbols-outlined text-base md:text-xl font-bold animate-fade-in">
+                    {isFree ? 'pets' : 'check_circle'}
+                  </span>
+                );
+              }
+              
+              let iconName = 'explore';
+              if (square.type === 'log_cat') iconName = 'photo_camera';
+              else if (square.type === 'check_weather') iconName = 'thermostat';
+              else if (square.type === 'view_map') iconName = 'map';
+              else if (square.type === 'join_chat') iconName = 'chat_bubble';
+              else if (square.type === 'trivia_complete') iconName = 'quiz';
+              
+              return (
+                <span className="material-symbols-outlined text-base md:text-lg opacity-40">
+                  {iconName}
+                </span>
+              );
+            };
+
             return (
               <button
                 key={isFree ? 'free-space' : `${square.type}-${square.label}`}
                 disabled={isCompleted || isClaiming !== null}
                 onClick={() => handleSquareClick(idx)}
-                className={`p-1 md:p-3 rounded-xl border flex flex-col items-center justify-center text-center transition-all aspect-square relative overflow-hidden cursor-pointer ${
-                  isCompleted
-                    ? isFree
-                      ? 'bg-gradient-to-br from-[#e0f7f4] to-[#c5f2eb] border-[var(--life-teal)] text-[#0d594b]'
-                      : 'bg-[#fff7f2] border-[var(--empire-gold)] text-[var(--empire-gold)] shadow-sm'
-                    : 'bg-[var(--bg-elevated)] border-[var(--bg-border)]/50 text-[var(--empire-cream)]/80 hover:bg-[var(--bg-border)]/10 hover:border-[var(--bg-border)]'
-                }`}
+                className={`p-1 md:p-3 rounded-xl border flex flex-col items-center justify-center text-center transition-all aspect-square relative overflow-hidden cursor-pointer ${squareBgClass}`}
               >
-                {claiming ? (
-                  <span className="material-symbols-outlined text-lg animate-spin text-[var(--empire-gold)]">sync</span>
-                ) : isCompleted ? (
-                  <span className="material-symbols-outlined text-base md:text-xl font-bold animate-fade-in">
-                    {isFree ? 'pets' : 'check_circle'}
-                  </span>
-                ) : (
-                  <span className="material-symbols-outlined text-base md:text-lg opacity-40">
-                    {square.type === 'log_cat' ? 'photo_camera' :
-                     square.type === 'check_weather' ? 'thermostat' :
-                     square.type === 'view_map' ? 'map' :
-                     square.type === 'join_chat' ? 'chat_bubble' :
-                     square.type === 'trivia_complete' ? 'quiz' :
-                     'explore'}
-                  </span>
-                )}
+                {renderSquareIcon()}
 
                 <span className="font-display text-[8px] md:text-[10px] font-bold mt-1.5 leading-tight break-all md:break-normal line-clamp-2 select-none">
                   {square.label}

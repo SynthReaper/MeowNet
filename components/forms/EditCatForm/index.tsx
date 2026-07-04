@@ -212,7 +212,7 @@ export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
           </div>
 
           <div className="bg-[var(--bg-elevated)] p-4 rounded-xl border border-[var(--bg-border)]/40">
-            <label htmlFor="location_privacy" className="flex items-start gap-3 cursor-pointer">
+            <label htmlFor="location_privacy" className="flex items-start gap-3 cursor-pointer" aria-label="Enable Location Fuzzing">
               <input 
                 id="location_privacy"
                 type="checkbox" 

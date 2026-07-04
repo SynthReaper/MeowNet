@@ -152,7 +152,7 @@ export default function OnboardingTour() {
 
   return (
     <>
-      <div role="presentation" aria-hidden="true" className="tour-backdrop" onClick={handleSkip} onKeyDown={handleSkip} />
+      <div aria-hidden="true" className="tour-backdrop" onClick={handleSkip} onKeyDown={handleSkip} />
       <div
         ref={tooltipRef}
         className="tour-tooltip"

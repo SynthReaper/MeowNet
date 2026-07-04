@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 
-interface AuthFormProps { mode: 'login' | 'signup'; }
+interface AuthFormProps { readonly mode: 'login' | 'signup'; }
 
 const ERROR_MAP: Record<string, string> = {
   'Invalid login credentials': 'Incorrect email or password.',

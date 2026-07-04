@@ -6,13 +6,13 @@ import { useRouter } from 'next/navigation';
 import { joinColonyAsCaretaker, updateColonyStats } from '@/lib/actions/colonies';
 
 interface Props {
-  colonyId: string;
-  caretakerId: string | null;
-  createdBy: string | null;
-  currentUserId: string | null;
-  userRole: string;
-  populationEstimate: number;
-  tnrCount: number;
+  readonly colonyId: string;
+  readonly caretakerId: string | null;
+  readonly createdBy: string | null;
+  readonly currentUserId: string | null;
+  readonly userRole: string;
+  readonly populationEstimate: number;
+  readonly tnrCount: number;
 }
 
 export default function ColonyInteraction({
@@ -108,7 +108,7 @@ export default function ColonyInteraction({
       {/* Stats Update Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div role="presentation" aria-hidden="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} onKeyDown={() => setIsModalOpen(false)} />
+          <div aria-hidden="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} onKeyDown={() => setIsModalOpen(false)} />
           <div className="relative w-full max-w-md bg-[var(--bg-surface)] border border-[var(--bg-border)]/50 shadow-2xl rounded-2xl z-10 p-6 flex flex-col gap-4">
             <div>
               <h3 className="font-display text-lg font-bold text-[var(--empire-gold)] flex items-center gap-2">

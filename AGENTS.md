@@ -1,7 +1,7 @@
 # Agent Instructions — MeowNet
 
 > **Author:** SynthReaper · synthreaperx@gmail.com · https://github.com/SynthReaper
-> **Project:** MeowNet — #hackthekitty 2026 · v0.8.1
+> **Project:** MeowNet — #hackthekitty 2026 · v0.8.2
 
 ---
 
@@ -358,4 +358,4 @@ app/(app)/admin/AdminDashboardClient.tsx -> console watermark
 - **Email:** synthreaperx@gmail.com
 - **GitHub:** https://github.com/SynthReaper
 - **Project:** https://github.com/SynthReaper/MeowNet
-- **Version:** 0.8.1
+- **Version:** 0.8.2

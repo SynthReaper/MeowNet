@@ -4,32 +4,39 @@
 import React, { useState } from 'react';
 import { createTriviaQuestion, createBingoTask, createGuild } from '@/lib/actions/gamification';
 
+const OPTION_SLOTS = [
+  { id: 'opt-0', index: 0 },
+  { id: 'opt-1', index: 1 },
+  { id: 'opt-2', index: 2 },
+  { id: 'opt-3', index: 3 },
+];
+
 interface TriviaQuestion {
-  id: string;
-  question: string;
-  options: string[];
-  correct_index: number;
-  explanation: string;
+  readonly id: string;
+  readonly question: string;
+  readonly options: string[];
+  readonly correct_index: number;
+  readonly explanation: string;
 }
 
 interface BingoTemplate {
-  id: string;
-  label: string;
-  type: string;
-  description: string | null;
+  readonly id: string;
+  readonly label: string;
+  readonly type: string;
+  readonly description: string | null;
 }
 
 interface Guild {
-  id: string;
-  name: string;
-  description: string | null;
-  points: number;
+  readonly id: string;
+  readonly name: string;
+  readonly description: string | null;
+  readonly points: number;
 }
 
 interface AdminGamificationClientProps {
-  initialTrivia: TriviaQuestion[];
-  initialBingo: BingoTemplate[];
-  initialGuilds: Guild[];
+  readonly initialTrivia: TriviaQuestion[];
+  readonly initialBingo: BingoTemplate[];
+  readonly initialGuilds: Guild[];
 }
 
 export default function AdminGamificationClient({
@@ -231,21 +238,21 @@ export default function AdminGamificationClient({
                 />
               </div>
 
-              {triviaForm.options.map((option, idx) => (
-                <div key={`trivia-choice-field-${idx}`} className="flex flex-col gap-1.5">
-                  <label className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60">Option {idx + 1}</label>
+              {OPTION_SLOTS.map((slot) => (
+                <div key={slot.id} className="flex flex-col gap-1.5">
+                  <label className="font-body text-[10px] font-bold text-[var(--empire-cream)]/60">Option {slot.index + 1}</label>
                   <input
-                    aria-label={`Option ${idx + 1}`}
+                    aria-label={`Option ${slot.index + 1}`}
                     required
                     type="text"
-                    value={option}
+                    value={triviaForm.options[slot.index]}
                     onChange={e => {
                       const opts = [...triviaForm.options];
-                      opts[idx] = e.target.value;
+                      opts[slot.index] = e.target.value;
                       setTriviaForm(prev => ({ ...prev, options: opts }));
                     }}
                     className="p-2.5 border border-[var(--bg-border)] rounded-xl font-body text-xs text-[var(--empire-cream)] bg-[var(--bg-elevated)]"
-                    placeholder={`e.g. Choice ${idx + 1}`}
+                    placeholder={`e.g. Choice ${slot.index + 1}`}
                   />
                 </div>
               ))}
@@ -409,7 +416,7 @@ export default function AdminGamificationClient({
                 <div className="grid grid-cols-2 gap-2 mt-1">
                   {q.options.map((opt, oIdx) => (
                     <span
-                      key={`trivia-opt-${oIdx}`}
+                      key={opt}
                       className={`px-2 py-1 rounded text-[10px] font-semibold border ${
                         oIdx === q.correct_index
                           ? 'bg-[#e9faf4] border-[#8bf1e6] text-[#0d594b]'

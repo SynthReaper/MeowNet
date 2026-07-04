@@ -5,9 +5,9 @@ import { useState, useTransition } from 'react';
 import { signUpForEvent } from '@/lib/actions/events';
 
 interface EventSignupButtonProps {
-  eventId: string;
-  isSignedUp: boolean;
-  isFull: boolean;
+  readonly eventId: string;
+  readonly isSignedUp: boolean;
+  readonly isFull: boolean;
 }
 
 export default function EventSignupButton({ eventId, isSignedUp: initialSignedUp, isFull }: EventSignupButtonProps) {

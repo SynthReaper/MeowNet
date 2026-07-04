@@ -3,7 +3,7 @@
 
 import { useEffect, useRef } from 'react';
 
-interface MetricCardProps { icon: string; label: string; value: number; color: string; bgColor: string; iconColor: string; }
+interface MetricCardProps { readonly icon: string; readonly label: string; readonly value: number; readonly color: string; readonly bgColor: string; readonly iconColor: string; }
 
 function MetricCard({ icon, label, value, color, bgColor, iconColor }: MetricCardProps) {
   const ref = useRef<HTMLDivElement>(null!);

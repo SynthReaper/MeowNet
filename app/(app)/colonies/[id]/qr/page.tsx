@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ColonyQRPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ColonyQRPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
   const supabase = await createServerClient();
 

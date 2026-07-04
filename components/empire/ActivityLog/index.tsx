@@ -2,13 +2,13 @@
 // components/empire/ActivityLog/index.tsx
 
 interface PointLogEntry {
-  activity: string;
-  points: number;
-  created_at: string;
+  readonly activity: string;
+  readonly points: number;
+  readonly created_at: string;
 }
 
 interface ActivityLogProps {
-  entries: PointLogEntry[];
+  readonly entries: PointLogEntry[];
 }
 
 const ACTIVITY_CONFIG: Record<string, { label: string; icon: string; bg: string; color: string }> = {

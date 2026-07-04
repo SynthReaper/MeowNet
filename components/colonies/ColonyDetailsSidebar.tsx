@@ -6,31 +6,31 @@ import { addWinterShelter, inspectWinterShelter } from '@/lib/actions/colonies';
 import { createMedicalLog, transferEmpirePointsToColonyFund } from '@/lib/actions/medical';
 
 interface Shelter {
-  id: string;
-  material: string;
-  capacity_cats: number | null;
-  insulation_r: number | null;
-  last_inspected: string | null;
+  readonly id: string;
+  readonly material: string;
+  readonly capacity_cats: number | null;
+  readonly insulation_r: number | null;
+  readonly last_inspected: string | null;
 }
 
 interface MedicalLog {
-  id: string;
-  log_type: 'vaccine' | 'parasite_treatment' | 'injury' | 'checkup';
-  notes: string;
-  created_at: string;
-  recorded_by: string;
+  readonly id: string;
+  readonly log_type: 'vaccine' | 'parasite_treatment' | 'injury' | 'checkup';
+  readonly notes: string;
+  readonly created_at: string;
+  readonly recorded_by: string;
 }
 
 interface Props {
-  colonyId: string;
-  initialShelters: Shelter[];
-  initialMedicalLogs: MedicalLog[];
-  initialFundBalance: number;
-  isAuthorized: boolean;
-  userPoints: number;
-  initialPop: number;
-  initialTnr: number;
-  coords: { lat: number; lng: number };
+  readonly colonyId: string;
+  readonly initialShelters: Shelter[];
+  readonly initialMedicalLogs: MedicalLog[];
+  readonly initialFundBalance: number;
+  readonly isAuthorized: boolean;
+  readonly userPoints: number;
+  readonly initialPop: number;
+  readonly initialTnr: number;
+  readonly coords: { lat: number; lng: number };
 }
 
 export default function ColonyDetailsSidebar({
@@ -222,6 +222,128 @@ export default function ColonyDetailsSidebar({
 
   const projections = calculateProjections();
 
+  const renderWeatherSafety = () => {
+    if (loadingWeather) {
+      return (
+        <div className="flex flex-col items-center justify-center py-8 gap-2">
+          <div className="w-5 h-5 border-2 border-[var(--empire-gold)] border-t-transparent rounded-full animate-spin" />
+          <span className="font-body text-[10px] text-[var(--empire-cream)]/40 uppercase font-bold tracking-wider">Syncing meteorological forecast...</span>
+        </div>
+      );
+    }
+
+    if (!weatherData) {
+      return (
+        <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs text-center font-bold">
+          Unable to reach Open-Meteo proxy to sync coordinates forecast.
+        </div>
+      );
+    }
+
+    const temp = weatherData.temp || 65;
+    const wind = weatherData.windspeed || 0;
+    const precipP = weatherData.precipProb || 0;
+    const precipIn = weatherData.todayPrecipIn || 0;
+    
+    let coldHazard = 0;
+    if (temp < 32) {
+      coldHazard = Math.min(50, (32 - temp) * 3);
+    }
+    let heatHazard = 0;
+    if (temp > 90) {
+      heatHazard = Math.min(50, (temp - 90) * 3);
+    }
+    const precipHazard = Math.min(30, (precipP * 0.1) + (precipIn * 15));
+    let windHazard = 0;
+    if (wind > 15) {
+      windHazard = Math.min(20, (wind - 15) * 1);
+    }
+
+    const baseRisk = Math.min(100, coldHazard + heatHazard + precipHazard + windHazard);
+
+    const totalCapacity = initialShelters.reduce((acc, s) => acc + (s.capacity_cats || 2), 0);
+    const validShelters = initialShelters.filter(s => s.insulation_r !== null);
+    const avgRVal = validShelters.length > 0 
+      ? validShelters.reduce((acc, s) => acc + (s.insulation_r || 3.5), 0) / validShelters.length
+      : 3.5;
+    
+    const safetyRatio = Math.min(1, totalCapacity / Math.max(1, initialPop));
+    const mitigationScore = safetyRatio * avgRVal * 10;
+
+    const vulnerabilityScore = Math.max(0, Math.min(100, Math.round(baseRisk - mitigationScore)));
+
+    let rating = 'Optimal Safety';
+    let ratingColor = 'text-emerald-500';
+    let ratingBg = 'bg-emerald-500/10 border-emerald-500/20';
+    let guidance = 'No immediate action required. Colony winterization is sufficient for current forecasts.';
+
+    if (vulnerabilityScore > 50) {
+      rating = 'Extreme Danger';
+      ratingColor = 'text-red-500';
+      ratingBg = 'bg-red-500/10 border-red-500/20';
+      guidance = 'Colony is severely exposed to frostbite hazards. Coordinate emergency thermal straw distribution and shelter deployment.';
+    } else if (vulnerabilityScore > 20) {
+      rating = 'Moderate Vulnerability';
+      ratingColor = 'text-amber-500';
+      ratingBg = 'bg-amber-500/10 border-amber-500/20';
+      guidance = 'Colony is partially vulnerable. Inspect shelter door flaps, seals, and ensure fresh water supply remains unfrozen.';
+    }
+
+    return (
+      <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-1 duration-200">
+        {/* Visual Vulnerability Gauge */}
+        <div className={`p-4 rounded-xl border flex flex-col items-center text-center ${ratingBg}`}>
+          <span className="text-[10px] font-black uppercase tracking-wider text-[var(--empire-cream)]/50">Safety Risk Index</span>
+          <div className={`text-4xl font-black mt-2 mb-1 ${ratingColor}`}>
+            {vulnerabilityScore} <span className="text-lg font-bold">/ 100</span>
+          </div>
+          <span className={`text-[10px] font-black uppercase tracking-widest ${ratingColor}`}>{rating}</span>
+          <p className="font-body text-[10px] text-[var(--empire-cream)]/70 mt-2 leading-relaxed max-w-[280px]">
+            {guidance}
+          </p>
+        </div>
+
+        {/* Forecast Stats */}
+        <div className="bg-[var(--bg-elevated)] p-4 rounded-xl border border-[var(--bg-border)]/30 flex flex-col gap-2.5">
+          <div className="flex justify-between items-center text-xs">
+            <span className="font-semibold text-[var(--empire-cream)]/50">Fahrenheit Temperature</span>
+            <strong className="font-semibold text-[var(--empire-cream)]">{temp}°F (Feels {Math.round(weatherData.apparentTemp ?? temp)}°F)</strong>
+          </div>
+          <div className="flex justify-between items-center text-xs">
+            <span className="font-semibold text-[var(--empire-cream)]/50">Wind Speed</span>
+            <strong className="font-semibold text-[var(--empire-cream)]">{wind} mph</strong>
+          </div>
+          <div className="flex justify-between items-center text-xs">
+            <span className="font-semibold text-[var(--empire-cream)]/50">Precipitation Sum</span>
+            <strong className="font-semibold text-[var(--empire-cream)]">{precipIn} inches ({precipP}% probability)</strong>
+          </div>
+          <div className="flex justify-between items-center text-xs">
+            <span className="font-semibold text-[var(--empire-cream)]/50">WMO Description</span>
+            <strong className="font-semibold text-[var(--empire-cream)] flex items-center gap-1">
+              <span className="material-symbols-outlined text-sm text-[var(--empire-gold)]">{weatherData.icon}</span>
+              <span>{weatherData.description}</span>
+            </strong>
+          </div>
+        </div>
+
+        {/* Audit Checklist */}
+        <div className="flex flex-col gap-1 text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">
+          <span>Mitigation Factors:</span>
+          <div className="flex flex-col gap-1.5 mt-1">
+            <div className="flex justify-between bg-white/5 p-2 rounded-lg items-center border border-white/5">
+              <span>Shelter Capacity vs. Colony Pop:</span>
+              <strong className="text-[var(--empire-cream)]">{totalCapacity} / {initialPop} cats ({Math.round(safetyRatio * 100)}%)</strong>
+            </div>
+            <div className="flex justify-between bg-white/5 p-2 rounded-lg items-center border border-white/5">
+              <span>Average Insulation R-value:</span>
+              <strong className="text-[var(--empire-cream)]">R-{avgRVal.toFixed(1)}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="bg-white border border-[var(--bg-border)] rounded-2xl p-6 shadow-ambient flex flex-col gap-6">
       {/* Dynamic Tabs */}
@@ -394,7 +516,7 @@ export default function ColonyDetailsSidebar({
                 <select
                   id="colony-med-type"
                   value={medLogType}
-                  onChange={(e) => setMedLogType(e.target.value as any)}
+                  onChange={(e) => setMedLogType(e.target.value as 'vaccine' | 'parasite_treatment' | 'injury' | 'checkup')}
                   className="w-full bg-[var(--bg-void)] text-[var(--empire-cream)] font-body text-xs p-2 rounded-lg border border-[var(--bg-border)]/40 outline-none"
                 >
                   <option value="checkup">🧑‍⚕️ Standard Checkup</option>
@@ -441,11 +563,14 @@ export default function ColonyDetailsSidebar({
           ) : (
             <div className="relative border-l border-[var(--bg-border)]/40 ml-2 space-y-4">
               {initialMedicalLogs.map(log => {
-                const badgeColor = 
-                  log.log_type === 'vaccine' ? 'bg-sky-50 text-sky-700 border-sky-100' :
-                  log.log_type === 'injury' ? 'bg-rose-50 text-rose-700 border-rose-100' :
-                  log.log_type === 'parasite_treatment' ? 'bg-purple-50 text-purple-700 border-purple-100' :
-                  'bg-zinc-50 text-zinc-700 border-zinc-100';
+                let badgeColor = 'bg-zinc-50 text-zinc-700 border-zinc-100';
+                if (log.log_type === 'vaccine') {
+                  badgeColor = 'bg-sky-50 text-sky-700 border-sky-100';
+                } else if (log.log_type === 'injury') {
+                  badgeColor = 'bg-rose-50 text-rose-700 border-rose-100';
+                } else if (log.log_type === 'parasite_treatment') {
+                  badgeColor = 'bg-purple-50 text-purple-700 border-purple-100';
+                }
 
                 return (
                   <div key={log.id} className="relative pl-6">
@@ -604,119 +729,7 @@ export default function ColonyDetailsSidebar({
             </p>
           </div>
 
-          {loadingWeather ? (
-            <div className="flex flex-col items-center justify-center py-8 gap-2">
-              <div className="w-5 h-5 border-2 border-[var(--empire-gold)] border-t-transparent rounded-full animate-spin" />
-              <span className="font-body text-[10px] text-[var(--empire-cream)]/40 uppercase font-bold tracking-wider">Syncing meteorological forecast...</span>
-            </div>
-          ) : weatherData ? (() => {
-            const temp = weatherData.temp || 65;
-            const wind = weatherData.windspeed || 0;
-            const precipP = weatherData.precipProb || 0;
-            const precipIn = weatherData.todayPrecipIn || 0;
-            
-            let coldHazard = 0;
-            if (temp < 32) {
-              coldHazard = Math.min(50, (32 - temp) * 3);
-            }
-            let heatHazard = 0;
-            if (temp > 90) {
-              heatHazard = Math.min(50, (temp - 90) * 3);
-            }
-            const precipHazard = Math.min(30, (precipP * 0.1) + (precipIn * 15));
-            let windHazard = 0;
-            if (wind > 15) {
-              windHazard = Math.min(20, (wind - 15) * 1);
-            }
-
-            const baseRisk = Math.min(100, coldHazard + heatHazard + precipHazard + windHazard);
-
-            const totalCapacity = initialShelters.reduce((acc, s) => acc + (s.capacity_cats || 2), 0);
-            const validShelters = initialShelters.filter(s => s.insulation_r !== null);
-            const avgRVal = validShelters.length > 0 
-              ? validShelters.reduce((acc, s) => acc + (s.insulation_r || 3.5), 0) / validShelters.length
-              : 3.5;
-            
-            const safetyRatio = Math.min(1, totalCapacity / Math.max(1, initialPop));
-            const mitigationScore = safetyRatio * avgRVal * 10;
-
-            const vulnerabilityScore = Math.max(0, Math.min(100, Math.round(baseRisk - mitigationScore)));
-
-            let rating = 'Optimal Safety';
-            let ratingColor = 'text-emerald-500';
-            let ratingBg = 'bg-emerald-500/10 border-emerald-500/20';
-            let guidance = 'No immediate action required. Colony winterization is sufficient for current forecasts.';
-
-            if (vulnerabilityScore > 50) {
-              rating = 'Critical Hazard';
-              ratingColor = 'text-rose-500';
-              ratingBg = 'bg-rose-500/10 border-rose-500/20';
-              guidance = 'Immediate action recommended. Current weather conditions present safety hazards. Deploy additional insulated shelters packed with straw.';
-            } else if (vulnerabilityScore > 20) {
-              rating = 'Moderate Concern';
-              ratingColor = 'text-amber-500';
-              ratingBg = 'bg-amber-500/10 border-amber-500/20';
-              guidance = 'Colony is partially vulnerable. Inspect shelter door flaps, seals, and ensure fresh water supply remains unfrozen.';
-            }
-
-            return (
-              <div className="flex flex-col gap-4 animate-in fade-in slide-in-from-top-1 duration-200">
-                {/* Visual Vulnerability Gauge */}
-                <div className={`p-4 rounded-xl border flex flex-col items-center text-center ${ratingBg}`}>
-                  <span className="text-[10px] font-black uppercase tracking-wider text-[var(--empire-cream)]/50">Safety Risk Index</span>
-                  <div className={`text-4xl font-black mt-2 mb-1 ${ratingColor}`}>
-                    {vulnerabilityScore} <span className="text-lg font-bold">/ 100</span>
-                  </div>
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${ratingColor}`}>{rating}</span>
-                  <p className="font-body text-[10px] text-[var(--empire-cream)]/70 mt-2 leading-relaxed max-w-[280px]">
-                    {guidance}
-                  </p>
-                </div>
-
-                {/* Forecast Stats */}
-                <div className="bg-[var(--bg-elevated)] p-4 rounded-xl border border-[var(--bg-border)]/30 flex flex-col gap-2.5">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-[var(--empire-cream)]/50">Fahrenheit Temperature</span>
-                    <strong className="font-semibold text-[var(--empire-cream)]">{temp}°F (Feels {Math.round(weatherData.apparentTemp ?? temp)}°F)</strong>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-[var(--empire-cream)]/50">Wind Speed</span>
-                    <strong className="font-semibold text-[var(--empire-cream)]">{wind} mph</strong>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-[var(--empire-cream)]/50">Precipitation Sum</span>
-                    <strong className="font-semibold text-[var(--empire-cream)]">{precipIn} inches ({precipP}% probability)</strong>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-semibold text-[var(--empire-cream)]/50">WMO Description</span>
-                    <strong className="font-semibold text-[var(--empire-cream)] flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm text-[var(--empire-gold)]">{weatherData.icon}</span>
-                      <span>{weatherData.description}</span>
-                    </strong>
-                  </div>
-                </div>
-
-                {/* Audit Checklist */}
-                <div className="flex flex-col gap-1 text-[10px] font-bold text-[var(--empire-cream)]/50 uppercase tracking-wide">
-                  <span>Mitigation Factors:</span>
-                  <div className="flex flex-col gap-1.5 mt-1">
-                    <div className="flex justify-between bg-white/5 p-2 rounded-lg items-center border border-white/5">
-                      <span>Shelter Capacity vs. Colony Pop:</span>
-                      <strong className="text-[var(--empire-cream)]">{totalCapacity} / {initialPop} cats ({Math.round(safetyRatio * 100)}%)</strong>
-                    </div>
-                    <div className="flex justify-between bg-white/5 p-2 rounded-lg items-center border border-white/5">
-                      <span>Average Insulation R-value:</span>
-                      <strong className="text-[var(--empire-cream)]">R-{avgRVal.toFixed(1)}</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })() : (
-            <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs text-center font-bold">
-              Unable to reach Open-Meteo proxy to sync coordinates forecast.
-            </div>
-          )}
+{renderWeatherSafety()}
         </div>
       )}
     </div>

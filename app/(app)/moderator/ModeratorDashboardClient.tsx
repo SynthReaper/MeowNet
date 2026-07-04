@@ -46,91 +46,91 @@ import {
 import FuturisticAuditDashboard from '@/components/admin/FuturisticAuditDashboard';
 
 interface Cat {
-  id: string;
-  name: string;
-  status: 'stray' | 'tnr' | 'adoptable' | 'adopted';
-  breed_estimate: string | null;
-  age_estimate: string | null;
-  owner_id: string | null;
-  created_at: string;
-  photo_url: string | null;
-  is_verified: boolean;
-  health_flags: string[] | null;
-  health_notes: string | null;
-  sterilized: boolean;
-  vaccinated: boolean;
-  microchipped: boolean;
-  contact_info: string | null;
-  bcs_estimate: number | null;
-  color: string | null;
-  shelter_url: string | null;
-  breed_confidence: number | null;
-  location: any;
+  readonly id: string;
+  readonly name: string;
+  readonly status: 'stray' | 'tnr' | 'adoptable' | 'adopted';
+  readonly breed_estimate: string | null;
+  readonly age_estimate: string | null;
+  readonly owner_id: string | null;
+  readonly created_at: string;
+  readonly photo_url: string | null;
+  readonly is_verified: boolean;
+  readonly health_flags: string[] | null;
+  readonly health_notes: string | null;
+  readonly sterilized: boolean;
+  readonly vaccinated: boolean;
+  readonly microchipped: boolean;
+  readonly contact_info: string | null;
+  readonly bcs_estimate: number | null;
+  readonly color: string | null;
+  readonly shelter_url: string | null;
+  readonly breed_confidence: number | null;
+  readonly location: any;
 }
 
 interface TNREvent {
-  id: string;
-  title: string;
-  description: string | null;
-  capacity: number;
-  status: 'pending' | 'open' | 'cancelled';
-  created_at: string;
-  cats_tnrd_count: number;
-  event_time: string;
-  organizer_id: string;
-  location: any;
+  readonly id: string;
+  readonly title: string;
+  readonly description: string | null;
+  readonly capacity: number;
+  readonly status: 'pending' | 'open' | 'cancelled';
+  readonly created_at: string;
+  readonly cats_tnrd_count: number;
+  readonly event_time: string;
+  readonly organizer_id: string;
+  readonly location: any;
 }
 
 interface Query {
-  id: string;
-  target_type: 'cat' | 'event' | 'profile' | 'general';
-  target_id: string | null;
-  moderator_id: string | null;
-  volunteer_id: string;
-  message: string;
-  status: 'pending' | 'solved' | 'closed' | 'resolved';
-  response: string | null;
-  created_at: string;
-  chat_messages?: any[];
+  readonly id: string;
+  readonly target_type: 'cat' | 'event' | 'profile' | 'general';
+  readonly target_id: string | null;
+  readonly moderator_id: string | null;
+  readonly volunteer_id: string;
+  readonly message: string;
+  readonly status: 'pending' | 'solved' | 'closed' | 'resolved';
+  readonly response: string | null;
+  readonly created_at: string;
+  readonly chat_messages?: any[];
 }
 
 interface Profile {
-  id: string;
-  display_name: string | null;
-  role: string;
-  empire_points: number;
-  created_at: string;
-  bio: string | null;
-  preferred_role: string | null;
-  location_neighborhood: string | null;
-  contact_phone: string | null;
-  is_enabled: boolean;
-  password_expires_at?: string | null;
+  readonly id: string;
+  readonly display_name: string | null;
+  readonly role: string;
+  readonly empire_points: number;
+  readonly created_at: string;
+  readonly bio: string | null;
+  readonly preferred_role: string | null;
+  readonly location_neighborhood: string | null;
+  readonly contact_phone: string | null;
+  readonly is_enabled: boolean;
+  readonly password_expires_at?: string | null;
 }
 
 interface AuditLog {
-  id: string;
-  actor_id: string;
-  actor_role: string;
-  action: string;
-  target_id: string | null;
-  details: string | null;
-  created_at: string;
-  actor_name: string;
+  readonly id: string;
+  readonly actor_id: string;
+  readonly actor_role: string;
+  readonly action: string;
+  readonly target_id: string | null;
+  readonly details: string | null;
+  readonly created_at: string;
+  readonly actor_name: string;
 }
 
 interface Props {
-  initialCats: Cat[];
-  initialEvents: TNREvent[];
-  initialQueries: Query[];
-  initialProfiles: Profile[];
-  initialAuditLogs?: AuditLog[];
-  currentUser: {
-    id: string;
-    role: string;
-    sub_role: string | null;
-    edits_count: number;
-    max_edits: number;
+  readonly initialCats: Cat[];
+  readonly initialEvents: TNREvent[];
+  readonly initialQueries: Query[];
+  readonly initialProfiles: Profile[];
+  readonly initialAuditLogs?: AuditLog[];
+  readonly currentUser: {
+    readonly id: string;
+    readonly role: string;
+    readonly sub_role: string | null;
+    readonly edits_count: number;
+    readonly max_edits: number;
   } | null;
 }
 
@@ -1238,8 +1238,8 @@ export default function ModeratorDashboardClient({
                           paddingAngle={3}
                           dataKey="value"
                         >
-                          {verificationRatioData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          {verificationRatioData.map((entry) => (
+                            <Cell key={`cell-${entry.name}`} fill={entry.color} />
                           ))}
                         </Pie>
                         <Legend verticalAlign="bottom" height={24} formatter={(value) => <span className="text-[10px] font-body font-semibold text-[var(--empire-cream)]/75">{value}</span>} />

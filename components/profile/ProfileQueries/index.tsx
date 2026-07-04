@@ -6,27 +6,27 @@ import { useRouter } from 'next/navigation';
 import { submitUserProfileQuery } from '@/lib/actions/admin';
 
 export interface ChatMessage {
-  sender_id: string;
-  sender_name: string;
-  sender_role: 'volunteer' | 'moderator';
-  message: string;
-  timestamp: string;
+  readonly sender_id: string;
+  readonly sender_name: string;
+  readonly sender_role: 'volunteer' | 'moderator';
+  readonly message: string;
+  readonly timestamp: string;
 }
 
 interface Query {
-  id: string;
-  target_type: 'cat' | 'event' | 'profile' | 'message' | 'general';
-  target_id: string | null;
-  message: string;
-  status: 'pending' | 'solved' | 'closed' | 'resolved';
-  response?: string | null;
-  created_at: string;
-  chat_messages?: ChatMessage[];
-  volunteer_id: string;
+  readonly id: string;
+  readonly target_type: 'cat' | 'event' | 'profile' | 'message' | 'general';
+  readonly target_id: string | null;
+  readonly message: string;
+  readonly status: 'pending' | 'solved' | 'closed' | 'resolved';
+  readonly response?: string | null;
+  readonly created_at: string;
+  readonly chat_messages?: ChatMessage[];
+  readonly volunteer_id: string;
 }
 
 interface Props {
-  initialQueries: Query[];
+  readonly initialQueries: Query[];
 }
 
 export default function ProfileQueries({ initialQueries }: Props) {

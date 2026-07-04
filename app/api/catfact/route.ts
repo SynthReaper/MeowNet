@@ -52,16 +52,19 @@ export async function GET(req: NextRequest) {
     const params = new URLSearchParams();
     if (searchParams.get('limit'))      params.set('limit',      searchParams.get('limit')!);
     if (searchParams.get('max_length')) params.set('max_length', searchParams.get('max_length')!);
-    upstreamUrl = `${BASE}/facts${params.size ? `?${params}` : ''}`;
+    const factsQuery = params.size ? `?${params.toString()}` : '';
+    upstreamUrl = `${BASE}/facts${factsQuery}`;
   } else if (endpoint === 'breeds') {
     const params = new URLSearchParams();
     if (searchParams.get('limit')) params.set('limit', searchParams.get('limit')!);
-    upstreamUrl = `${BASE}/breeds${params.size ? `?${params}` : ''}`;
+    const breedsQuery = params.size ? `?${params.toString()}` : '';
+    upstreamUrl = `${BASE}/breeds${breedsQuery}`;
   } else {
     // Default: single random fact
     const params = new URLSearchParams();
     if (searchParams.get('max_length')) params.set('max_length', searchParams.get('max_length')!);
-    upstreamUrl = `${BASE}/fact${params.size ? `?${params}` : ''}`;
+    const factQuery = params.size ? `?${params.toString()}` : '';
+    upstreamUrl = `${BASE}/fact${factQuery}`;
   }
 
   try {

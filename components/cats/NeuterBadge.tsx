@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation';
 import { requestNeuterVerification, getNeuterProof } from '@/lib/actions/neuter';
 
 interface Props {
-  catId: string;
-  isSterilized: boolean;
-  canRequest: boolean;
+  readonly catId: string;
+  readonly isSterilized: boolean;
+  readonly canRequest: boolean;
 }
 
 export default function NeuterBadge({ catId, isSterilized, canRequest }: Props) {

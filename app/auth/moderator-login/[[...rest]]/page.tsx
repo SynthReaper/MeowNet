@@ -15,12 +15,11 @@ export const metadata: Metadata = {
 
 export default async function ModeratorLoginPage({
   searchParams,
-}: {
+}: Readonly<{
   searchParams: Promise<Record<string, string>>;
-}) {
+}>) {
   const { userId } = await auth();
   const params = await searchParams;
-  const isDirect = params?.direct === 'true';
 
   // If already authenticated, check role and redirect dynamically
   if (userId) {

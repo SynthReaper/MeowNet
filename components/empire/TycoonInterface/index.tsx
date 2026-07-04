@@ -4,32 +4,32 @@ import React, { useState, useEffect } from 'react';
 import { purchaseSanctuaryUpgrade, claimIdlePoints } from '@/lib/actions/gamification';
 
 interface Sanctuary {
-  id: string;
-  name: string;
-  level: number;
-  point_multiplier: number;
-  idle_points_rate: number;
-  last_claimed_at?: string | null;
+  readonly id: string;
+  readonly name: string;
+  readonly level: number;
+  readonly point_multiplier: number;
+  readonly idle_points_rate: number;
+  readonly last_claimed_at?: string | null;
 }
 
 interface Upgrade {
-  id: string;
-  sanctuary_id?: string;
-  upgrade_type: 'shelter_bed' | 'kibble_feeder' | 'first_aid' | 'play_area';
-  level: number;
-  cost_points: number;
+  readonly id: string;
+  readonly sanctuary_id?: string;
+  readonly upgrade_type: 'shelter_bed' | 'kibble_feeder' | 'first_aid' | 'play_area';
+  readonly level: number;
+  readonly cost_points: number;
 }
 
 interface Particle {
-  id: number; x: number; y: number; vx: number; vy: number;
-  life: number; maxLife: number; color: string; size: number; text?: string;
+  readonly id: number; x: number; y: number; vx: number; vy: number;
+  readonly life: number; maxLife: number; color: string; size: number; text?: string;
 }
 
 interface TycoonInterfaceProps {
-  initialSanctuary: Sanctuary;
-  initialUpgrades: Upgrade[];
-  initialUserPoints: number;
-  initialAccumulatedPoints: number;
+  readonly initialSanctuary: Sanctuary;
+  readonly initialUpgrades: Upgrade[];
+  readonly initialUserPoints: number;
+  readonly initialAccumulatedPoints: number;
 }
 export default function TycoonInterface({ initialSanctuary, initialUpgrades, initialUserPoints, initialAccumulatedPoints }: TycoonInterfaceProps) {
   const [sanctuary, setSanctuary] = useState<Sanctuary>(initialSanctuary);
@@ -627,6 +627,7 @@ export default function TycoonInterface({ initialSanctuary, initialUpgrades, ini
         <div className="flex flex-col gap-3">
           {UPGRADES.map(cfg=>{
             const lv=getLevel(cfg.type), cost=cfg.baseCost*(lv+1), busy=isUpgrading===cfg.type, afford=userPoints>=cost, unlocked=lv>0;
+            const buttonText = busy ? 'Buying...' : (unlocked ? `Upgrade (${cost})` : `Unlock (${cost})`);
             return (
               <div key={cfg.type} className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:shadow-md ${unlocked?'border-emerald-200/60 bg-gradient-to-r from-emerald-50/50 to-transparent':'border-[var(--bg-border)]/40 bg-[var(--bg-elevated)]'}`}>
                 <div className="flex gap-3 min-w-0">
@@ -644,7 +645,7 @@ export default function TycoonInterface({ initialSanctuary, initialUpgrades, ini
                 </div>
                 <button disabled={busy||!afford} onClick={()=>handleUpgrade(cfg.type as any,cost)} className={`px-4 py-2.5 rounded-xl font-display text-[10px] font-extrabold tracking-wide uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer flex-shrink-0 hover:scale-105 active:scale-95 disabled:scale-100 disabled:pointer-events-none ${afford?'text-white shadow-md hover:shadow-lg':'bg-slate-100 text-slate-400 border border-slate-200 opacity-60'}`} style={afford?{background:'linear-gradient(135deg,var(--empire-gold),#f97316)'}:{}}>
                   <span className="material-symbols-outlined text-xs">shopping_cart</span>
-                  {busy?'Buying...':unlocked?`Upgrade (${cost})`:`Unlock (${cost})`}
+                  {buttonText}
                 </button>
               </div>
             );

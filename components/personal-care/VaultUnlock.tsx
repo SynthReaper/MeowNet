@@ -8,7 +8,7 @@ import { encryptData, decryptData } from '@/lib/security/encryption';
 import { createClient } from '@/lib/supabase/client';
 
 interface VaultUnlockProps {
-  onUnlock: (passphrase: string) => void;
+  readonly onUnlock: (passphrase: string) => void;
 }
 
 export default function VaultUnlock({ onUnlock }: VaultUnlockProps) {

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: { template: '%s | MeowNet', default: 'MeowNet' },
 };
 
-export default function AppLayout({ children }: { children: ReactNode }) {
+export default function AppLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-void)' }}>
       <Navbar />

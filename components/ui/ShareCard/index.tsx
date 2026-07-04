@@ -4,10 +4,10 @@
 import { useRef, useEffect, useCallback } from 'react';
 
 interface Props {
-  displayName: string;
-  points: number;
-  catLogsCount: number;
-  tnrCount: number;
+  readonly displayName: string;
+  readonly points: number;
+  readonly catLogsCount: number;
+  readonly tnrCount: number;
 }
 
 export default function ShareCard({ displayName, points, catLogsCount, tnrCount }: Props) {

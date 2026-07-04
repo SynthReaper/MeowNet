@@ -4,8 +4,8 @@
 import { AI_CONSENT_TEXT } from '@/lib/privacy/consent-text';
 
 interface ConsentGateProps {
-  onAccept: () => void;
-  onDecline: () => void;
+  readonly onAccept: () => void;
+  readonly onDecline: () => void;
 }
 
 export default function ConsentGate({ onAccept, onDecline }: ConsentGateProps) {

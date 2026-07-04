@@ -92,7 +92,6 @@ export default function WeatherPage() {
   const [thresholdF, setThresholdF] = useState(41); // default 5°C
   const [rawWeatherList, setRawWeatherList] = useState<any[]>([]);
   const [colonies, setColonies] = useState<any[]>([]);
-  const [loadingColonies, setLoadingColonies] = useState(true);
 
   useEffect(() => {
     const stored = localStorage.getItem('meownet_weather_reports');
@@ -187,8 +186,6 @@ export default function WeatherPage() {
         }
       } catch (err) {
         console.error('Failed to load colonies for weather risk analysis', err);
-      } finally {
-        setLoadingColonies(false);
       }
     }
 

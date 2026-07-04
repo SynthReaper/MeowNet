@@ -6,9 +6,9 @@ import { useSignIn } from '@clerk/nextjs/legacy';
 import { useRouter } from 'next/navigation';
 
 interface EmailOtpSignInProps {
-  redirectUrl?: string;
-  onSuccess?: () => void;
-  onBack?: () => void;
+  readonly redirectUrl?: string;
+  readonly onSuccess?: () => void;
+  readonly onBack?: () => void;
 }
 
 export default function EmailOtpSignIn({

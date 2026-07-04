@@ -593,8 +593,9 @@ export default function NoticesPage() {
                     <span className="font-display font-bold text-sm text-[var(--text-primary)]">Pin Announcement 📌</span>
                     <span className="font-body text-xs text-[var(--text-muted)]">Feature this notice at the top of the board and homepage.</span>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                  <label htmlFor="pinned-checkbox" className="relative inline-flex items-center cursor-pointer select-none shrink-0" aria-label="Pin Announcement">
                     <input
+                      id="pinned-checkbox"
                       type="checkbox"
                       checked={pinned}
                       onChange={(e) => setPinned(e.target.checked)}
@@ -609,8 +610,9 @@ export default function NoticesPage() {
                     <span className="font-display font-bold text-sm text-[var(--text-primary)]">Active / Published</span>
                     <span className="font-body text-xs text-[var(--text-muted)]">Uncheck to save as a draft or hide it from the board.</span>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                  <label htmlFor="active-checkbox" className="relative inline-flex items-center cursor-pointer select-none shrink-0" aria-label="Active / Published">
                     <input
+                      id="active-checkbox"
                       type="checkbox"
                       checked={active}
                       onChange={(e) => setActive(e.target.checked)}
@@ -625,8 +627,9 @@ export default function NoticesPage() {
                     <span className="font-display font-bold text-sm text-[var(--text-primary)]">Global Broadcast Banner</span>
                     <span className="font-body text-xs text-[var(--text-muted)]">Render alert bar at top of all pages.</span>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                  <label htmlFor="broadcast-checkbox" className="relative inline-flex items-center cursor-pointer select-none shrink-0" aria-label="Global Broadcast Banner">
                     <input
+                      id="broadcast-checkbox"
                       type="checkbox"
                       disabled={role !== 'admin'}
                       checked={isBroadcast}
@@ -665,8 +668,9 @@ export default function NoticesPage() {
                     <span className="font-display font-bold text-sm text-[var(--text-primary)]">Site-Wide Popup Dialog</span>
                     <span className="font-body text-xs text-[var(--text-muted)]">Display a popup modal to users on load.</span>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                  <label htmlFor="popup-checkbox" className="relative inline-flex items-center cursor-pointer select-none shrink-0" aria-label="Site-Wide Popup Dialog">
                     <input
+                      id="popup-checkbox"
                       type="checkbox"
                       disabled={role !== 'admin'}
                       checked={isPopup}

@@ -111,7 +111,9 @@ export default function MeowFiPage() {
           ref={el => { audioRefs.current[ch.id] = el; }}
           src={ch.url}
           preload="auto"
-        />
+        >
+          <track kind="captions" src="" label="Captions" />
+        </audio>
       ))}
 
       {/* Header */}
@@ -280,8 +282,7 @@ export default function MeowFiPage() {
         </a>
       </div>
 
-      {/* Breathing animation styles */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes breatheCat {
           0%, 100% {
             d: path("M 140 100 A 50 45 0 1 1 50 120");
@@ -292,7 +293,7 @@ export default function MeowFiPage() {
             transform: scale(1.02);
           }
         }
-      `}</style>
+      ` }} />
     </div>
   );
 }

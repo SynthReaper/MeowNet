@@ -1,6 +1,6 @@
 # MeowNet Security Documentation
 
-> Last updated: 2026-07-02 · v0.8.1
+> Last updated: 2026-07-04 · v0.8.2
 
 ---
 

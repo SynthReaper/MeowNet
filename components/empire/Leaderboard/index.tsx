@@ -6,8 +6,8 @@ import useSWR from 'swr';
 import { createClient } from '@/lib/supabase/client';
 
 interface LeaderboardEntry {
-  id: string; display_name: string | null; avatar_url: string | null;
-  weekly_points: number; actions_taken: number; badge_ids: string[] | null;
+  readonly id: string; display_name: string | null; avatar_url: string | null;
+  readonly weekly_points: number; actions_taken: number; badge_ids: string[] | null;
 }
 
 interface LeaderboardProps { entries: LeaderboardEntry[]; currentUserId?: string; }

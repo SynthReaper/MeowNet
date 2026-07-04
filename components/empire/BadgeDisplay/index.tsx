@@ -4,8 +4,8 @@
 import { BADGE_REGISTRY, RARITY_COLORS, type BadgeRarity } from '@/lib/gamification/badges';
 
 interface BadgeDisplayProps {
-  badges: typeof BADGE_REGISTRY;
-  earnedBadgeIds: string[];
+  readonly badges: typeof BADGE_REGISTRY;
+  readonly earnedBadgeIds: string[];
 }
 
 const ICON_MAP: Record<string, string> = {

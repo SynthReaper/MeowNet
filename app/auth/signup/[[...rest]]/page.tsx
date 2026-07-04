@@ -14,12 +14,11 @@ export const metadata: Metadata = {
 
 export default async function SignupPage({
   searchParams,
-}: {
+}: Readonly<{
   searchParams: Promise<Record<string, string>>;
-}) {
+}>) {
   const { userId } = await auth();
   const params = await searchParams;
-  const isDirect = params?.direct === 'true';
 
   // If already authenticated, redirect dynamically based on their Supabase role
   if (userId) {

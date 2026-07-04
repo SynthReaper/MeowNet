@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 
 interface Props {
-  clerkForm: React.ReactNode;
-  databaseForm: React.ReactNode;
-  credentialsBlock?: React.ReactNode;
+  readonly clerkForm: React.ReactNode;
+  readonly databaseForm: React.ReactNode;
+  readonly credentialsBlock?: React.ReactNode;
 }
 
 export default function AuthTabs({ clerkForm, databaseForm, credentialsBlock }: Props) {

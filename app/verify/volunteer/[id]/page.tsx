@@ -15,10 +15,10 @@ function verifyCryptoSignature(userId: string, cats: string, events: string, poi
 export default async function VolunteerVerificationPage({
   params,
   searchParams,
-}: {
+}: Readonly<{
   params: Promise<{ id: string }>;
   searchParams: Promise<{ cats?: string; events?: string; points?: string; sig?: string }>;
-}) {
+}>) {
   const { id: userId } = await params;
   const { cats = '0', events = '0', points = '0', sig = '' } = await searchParams;
 

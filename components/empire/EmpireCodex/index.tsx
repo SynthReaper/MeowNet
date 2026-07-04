@@ -177,8 +177,8 @@ export default function EmpireCodex() {
                       <div className="mb-3">
                         <span className="font-body text-[10px] font-bold uppercase tracking-wider text-[var(--life-teal)]">Authorized Powers</span>
                         <ul className="list-disc pl-5 font-body text-xs text-[var(--empire-cream)]/80 mt-1 space-y-1">
-                          {role.powers.map((pow, pIdx) => (
-                            <li key={pIdx}>{pow}</li>
+                          {role.powers.map((pow) => (
+                            <li key={pow}>{pow}</li>
                           ))}
                         </ul>
                       </div>

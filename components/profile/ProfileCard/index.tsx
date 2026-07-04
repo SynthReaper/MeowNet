@@ -5,13 +5,13 @@ import { useState, useTransition } from 'react';
 import { updateProfile } from '@/lib/actions/profile';
 
 interface Profile {
-  id: string; display_name: string | null; avatar_url: string | null;
-  empire_points: number; weekly_points: number; created_at: string;
-  bio?: string | null;
-  preferred_role?: string | null;
-  location_neighborhood?: string | null;
-  contact_phone?: string | null;
-  password_expires_at?: string | null;
+  readonly id: string; display_name: string | null; avatar_url: string | null;
+  readonly empire_points: number; weekly_points: number; created_at: string;
+  readonly bio?: string | null;
+  readonly preferred_role?: string | null;
+  readonly location_neighborhood?: string | null;
+  readonly contact_phone?: string | null;
+  readonly password_expires_at?: string | null;
 }
 
 interface ProfileCardProps { profile: Profile; email: string; badgeCount: number; }

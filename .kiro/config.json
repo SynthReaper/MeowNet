@@ -1,0 +1,17 @@
+{
+  "project": "MeowNet",
+  "version": "0.8.2",
+  "steering": {
+    "directory": ".kiro/steering",
+    "strict_mode": true
+  },
+  "spec_mode": {
+    "directory": ".kiro/specs"
+  },
+  "hooks": {
+    "pre_commit": [
+      "npm run type-check",
+      "npm run lint"
+    ]
+  }
+}

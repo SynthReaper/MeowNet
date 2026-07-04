@@ -5,22 +5,22 @@ import React, { useState } from 'react';
 import { submitTriviaAnswer } from '@/lib/actions/gamification';
 
 interface TriviaStats {
-  current_streak: number;
-  max_streak: number;
-  total_correct: number;
-  total_played: number;
+  readonly current_streak: number;
+  readonly max_streak: number;
+  readonly total_correct: number;
+  readonly total_played: number;
 }
 
 interface Question {
-  id: string;
-  question: string;
-  options: string[];
+  readonly id: string;
+  readonly question: string;
+  readonly options: string[];
 }
 
 interface TriviaInterfaceProps {
-  initialStats: TriviaStats;
-  question: Question | null;
-  playedToday: boolean;
+  readonly initialStats: TriviaStats;
+  readonly question: Question | null;
+  readonly playedToday: boolean;
 }
 
 export default function TriviaInterface({ initialStats, question, playedToday: initialPlayedToday }: TriviaInterfaceProps) {

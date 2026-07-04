@@ -13,63 +13,63 @@ import {
 import { encryptData, decryptData } from '@/lib/security/encryption';
 
 interface PrivateCatData {
-  name: string;
-  photoUrl: string;
-  status: string;
-  ageEstimate: string;
-  color: string;
-  vitals: Array<{
-    date: string;
-    bpm: number;
-    rr: number;
-    weight: number;
-    sleep: number;
-    calories: number;
-    stress: number; // 1-5 scale
+  readonly name: string;
+  readonly photoUrl: string;
+  readonly status: string;
+  readonly ageEstimate: string;
+  readonly color: string;
+  readonly vitals: Array<{
+    readonly date: string;
+    readonly bpm: number;
+    readonly rr: number;
+    readonly weight: number;
+    readonly sleep: number;
+    readonly calories: number;
+    readonly stress: number; // 1-5 scale
   }>;
-  calendar: Array<{
-    id: string;
-    date: string;
-    title: string;
-    type: 'pill' | 'appointment';
-    completed: boolean;
+  readonly calendar: Array<{
+    readonly id: string;
+    readonly date: string;
+    readonly title: string;
+    readonly type: 'pill' | 'appointment';
+    readonly completed: boolean;
   }>;
-  activities: Array<{
-    id: string;
-    date: string;
-    category: string;
-    notes: string;
+  readonly activities: Array<{
+    readonly id: string;
+    readonly date: string;
+    readonly category: string;
+    readonly notes: string;
   }>;
-  medical?: Array<{
-    id: string;
-    date: string;
-    treatment: string;
-    dose: string;
-    vetName: string;
-    nextBoosterDate?: string;
+  readonly medical?: Array<{
+    readonly id: string;
+    readonly date: string;
+    readonly treatment: string;
+    readonly dose: string;
+    readonly vetName: string;
+    readonly nextBoosterDate?: string;
   }>;
-  customFields?: Array<{
-    id: string;
-    key: string;
-    value: string;
+  readonly customFields?: Array<{
+    readonly id: string;
+    readonly key: string;
+    readonly value: string;
   }>;
 }
 
 interface DecryptedCat {
-  id: string;
-  data: PrivateCatData;
+  readonly id: string;
+  readonly data: PrivateCatData;
 }
 
 interface PrivateConfig {
-  geminiKey: string;
-  openaiKey: string;
-  anthropicKey: string;
-  preferredProvider: 'gemini' | 'openai' | 'anthropic';
-  preferredModel: string;
+  readonly geminiKey: string;
+  readonly openaiKey: string;
+  readonly anthropicKey: string;
+  readonly preferredProvider: 'gemini' | 'openai' | 'anthropic';
+  readonly preferredModel: string;
 }
 
 interface CareCenterDashboardProps {
-  passphrase: string;
+  readonly passphrase: string;
 }
 
 const PROVIDER_MODELS = {

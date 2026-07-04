@@ -11,6 +11,17 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 - **AI Feline Facial & Acoustic Translation (On Hold)**: Facial vector embeddings for duplicate merging, and meow acoustics state classifier translation.
 - **Autonomous AI Agent Ecosystem (On Hold)**: Multi-agent council comprising Bastet-Agent, Hermes-Agent, Anubis-Agent, Socrates-Agent, Archimedes-Agent, Freya-Agent, and Odin-Agent.
 
+
+## [0.8.2] — 2026-07-04 · Code Quality & SonarQube Compliance Sweep
+
+### Fixed
+- **SonarQube Smell Correction**: Cleaned up remaining unused assignments, variables, and state setters (`isDirect`, `cardTitle`, `subtitle`, `filteredAuditLogs`, `setIsSearchingDMUser`, `loadingColonies`). Fixed redundant exception parameter declarations in empty `catch` blocks and named destructured state elements. Corrected nested template literals and nested ternary expressions in `cats/page.tsx` and `events/[id]/page.tsx`. Ensured label-control accessibility pairings in onboarding screen inputs and resolved invalid React styled-jsx custom properties.
+- **Readonly Props Wrapper**: Configured all 56 component files to mark props interfaces and inline objects as readonly, improving compilation checks and resolving SonarQube accessibility/read-only code smells.
+- **Media Track Element**: Added required `<track kind="captions">` tags to audio controls in `meow-translator/page.tsx` and `meow-fi/page.tsx` for accessibility compliance.
+- **Backdrop Role Correction**: Removed redundant `role="presentation"` from modal overlay backdrops in `ColonyInteraction.tsx` and `OnboardingTour/index.tsx` while retaining `aria-hidden="true"`.
+- **Nested Template Literals**: Extracted conditional path query parameters into separate variables in `catfact/route.ts` to satisfy SonarQube's nested template constraints.
+- **Type Assertion Hardening**: Removed redundant `as any` casting from reverse geocoding geo-response resolution in `app/api/weather/route.ts` and refactored it to use proper union typing in `ColonyDetailsSidebar.tsx`.
+- **Phase 1–10 Quality Sweeps**: Extracted 33 nested tab routes in `AdminDashboardClient.tsx` and 18 nested ternaries in `CommunityClient.tsx` into clean, individual helper render methods to significantly reduce cognitive complexity and nesting depth. Eliminated nested ternaries in `app/page.tsx`, `BingoBoard/index.tsx`, `TycoonInterface/index.tsx`, `ColonyDetailsSidebar.tsx`, and `HelperPage.tsx`. Addressed non-native interactive keyboard listeners, normalized double JSX spacing, and completed minor TypeScript cleanups.
 ---
 
 ## [0.8.1] — 2026-07-02 · Security Hardening, Care Cockpit Redesign, and Mega Menu Overhaul
@@ -225,7 +236,8 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 
 ---
 
-[Unreleased]: https://github.com/SynthReaper/MeowNet/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/SynthReaper/MeowNet/compare/v0.8.2...HEAD
+[0.8.2]: https://github.com/SynthReaper/MeowNet/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/SynthReaper/MeowNet/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/SynthReaper/MeowNet/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/SynthReaper/MeowNet/compare/v0.6.0...v0.7.0

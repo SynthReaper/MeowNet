@@ -211,11 +211,7 @@ function PollCard({ messageId, messageText }: Readonly<PollProps>) {
               disabled={isAnyVoted}
               onClick={() => handleVote(idx)}
               className={`w-full relative overflow-hidden p-2 rounded-xl border text-left text-[11px] font-semibold font-body transition-all flex items-center justify-between min-h-[36px] bg-white border-[#dbc2b2]/30 ${
-                isVoted 
-                  ? 'border-[#eb8424] text-[#944a00]' 
-                  : isAnyVoted 
-                    ? 'text-[#5c4a3c]/50' 
-                    : 'hover:border-[#eb8424]/60 hover:bg-[#dbc2b2]/5 text-[#5c4a3c] cursor-pointer'
+                isVoted ? 'border-[#eb8424] text-[#944a00]' : (isAnyVoted ? 'text-[#5c4a3c]/50' : 'hover:border-[#eb8424]/60 hover:bg-[#dbc2b2]/5 text-[#5c4a3c] cursor-pointer')
               }`}
             >
               <div 
@@ -440,7 +436,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
   const [isJoining, setIsJoining] = useState(false);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
   const [searchUserId, setSearchUserId] = useState('');
-  const [isSearchingDMUser, setIsSearchingDMUser] = useState(false);
+  const isSearchingDMUser = false;
   const [isNewChannelPrivate, setIsNewChannelPrivate] = useState(true);
 
   // Fetch DM partner on URL params
@@ -563,7 +559,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
   const [isPending, setIsPending] = useState(false);
 
   // Custom messaging states (Location, Polls, Alerts)
-  const [, setIsSharingLocation] = useState(false);
+  const [isSharingLocation, setIsSharingLocation] = useState(false);
   const [isPollModalOpen, setIsPollModalOpen] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
@@ -574,7 +570,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
       try {
         const saved = localStorage.getItem('approved_dms_list');
         return saved ? JSON.parse(saved) : {};
-      } catch (e) {
+      } catch {
         return {};
       }
     }
@@ -1737,10 +1733,10 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
             ) : activeChannel ? (
               <>
                 <span className="material-symbols-outlined text-xl text-[#eb8424]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  {activeChannel.slug === 'general' ? 'forum' : 
-                   activeChannel.slug === 'adoption-stories' ? 'favorite' :
-                   activeChannel.slug === 'volunteer-hub' ? 'groups' :
-                   activeChannel.slug === 'urgent-medical' ? 'medical_services' : activeChannel.icon}
+                  activeChannel.slug === 'general' ? 'forum' : 
+                   (activeChannel.slug === 'adoption-stories' ? 'favorite' :
+                   (activeChannel.slug === 'volunteer-hub' ? 'groups' :
+                   (activeChannel.slug === 'urgent-medical' ? 'medical_services' : activeChannel.icon)))
                 </span>
                 <div>
                   <h1 className="font-display text-sm font-extrabold text-[#5c4a3c] dark:text-[var(--text-primary)] leading-tight">
@@ -1749,11 +1745,11 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="w-2 h-2 rounded-full bg-[#10b981] shrink-0" />
                     <span className="font-body text-[10px] text-[#5c4a3c]/50 dark:text-[var(--text-muted)] font-bold uppercase tracking-wider">
-                      {activeChannel.slug === 'general' ? `${globalProfiles.length || 6} members online • Active` :
-                       activeChannel.slug === 'volunteer-hub' ? `${globalProfiles.length || 6} online volunteers • Real-time dispatch` :
-                       activeChannel.slug === 'adoption-stories' ? `${Math.max(2, Math.ceil(globalProfiles.length * 0.4))} members online • Sharing stories` :
-                       activeChannel.slug === 'urgent-medical' ? `${Math.max(1, Math.ceil(globalProfiles.length * 0.15))} members online • Critical coordination` :
-                       `${globalProfiles.length || 6} members online • Active Now`}
+                      activeChannel.slug === 'general' ? `${globalProfiles.length || 6} members online • Active` :
+                       (activeChannel.slug === 'volunteer-hub' ? `${globalProfiles.length || 6} online volunteers • Real-time dispatch` :
+                       (activeChannel.slug === 'adoption-stories' ? `${Math.max(2, Math.ceil(globalProfiles.length * 0.4))} members online • Sharing stories` :
+                       (activeChannel.slug === 'urgent-medical' ? `${Math.max(1, Math.ceil(globalProfiles.length * 0.15))} members online • Critical coordination` :
+                       `${globalProfiles.length || 6} members online • Active Now`)))
                     </span>
                   </div>
                 </div>
@@ -1887,20 +1883,22 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
                       onMouseLeave={() => setHoveredMsg(null)}
                     >
                       {/* Left avatar — only on first message of incoming group */}
-                      {!isOwn && !isSameGroup ? (
-                        <div className="w-9 h-9 rounded-full overflow-hidden border border-[#dbc2b2]/45 shrink-0 bg-[#f7f0e8] flex items-center justify-center shadow-sm">
-                          {activeDMUser.avatar_url ? (
-                            <img src={activeDMUser.avatar_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="font-display text-sm font-bold text-[#eb8424]">
-                              {activeDMUser.display_name?.[0]?.toUpperCase() ?? '?'}
-                            </span>
-                          )}
-                        </div>
-                      ) : !isOwn ? (
-                        // Spacer so grouped messages stay aligned
-                        <div className="w-9 shrink-0" />
-                      ) : null}
+                      {!isOwn && (
+                        !isSameGroup ? (
+                          <div className="w-9 h-9 rounded-full overflow-hidden border border-[#dbc2b2]/45 shrink-0 bg-[#f7f0e8] flex items-center justify-center shadow-sm">
+                            {activeDMUser.avatar_url ? (
+                              <img src={activeDMUser.avatar_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="font-display text-sm font-bold text-[#eb8424]">
+                                {activeDMUser.display_name?.[0]?.toUpperCase() ?? '?'}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          // Spacer so grouped messages stay aligned
+                          <div className="w-9 shrink-0" />
+                        )
+                      )}
 
                       <div className={`flex flex-col max-w-[72%] ${isOwn ? 'items-end' : 'items-start'}`}>
                         {/* Name + role badge — only on first message of group */}
@@ -1986,18 +1984,20 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
                       </div>
 
                       {/* Right avatar — only on first message of own group */}
-                      {isOwn && !isSameGroup ? (
-                        <div className="w-9 h-9 rounded-full overflow-hidden border border-[#dbc2b2]/45 shrink-0 bg-[#fceee1] flex items-center justify-center shadow-sm">
-                          {currentUser?.avatarUrl ? (
-                            <img src={currentUser.avatarUrl} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="font-display text-xs font-bold text-[#eb8424]">ME</span>
-                          )}
-                        </div>
-                      ) : isOwn ? (
-                        // Spacer so grouped messages stay aligned
-                        <div className="w-9 shrink-0" />
-                      ) : null}
+                      {isOwn && (
+                        !isSameGroup ? (
+                          <div className="w-9 h-9 rounded-full overflow-hidden border border-[#dbc2b2]/45 shrink-0 bg-[#fceee1] flex items-center justify-center shadow-sm">
+                            {currentUser?.avatarUrl ? (
+                              <img src={currentUser.avatarUrl} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="font-display text-xs font-bold text-[#eb8424]">ME</span>
+                            )}
+                          </div>
+                        ) : (
+                          // Spacer so grouped messages stay aligned
+                          <div className="w-9 shrink-0" />
+                        )
+                      )}
 
                       {/* Hover Reaction Toolbar Menu for DMs */}
                       {hoveredMsg === dm.id && (
@@ -2343,7 +2343,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
           <div className="px-5 lg:px-6 py-2.5 bg-[#f7f0e8]/50 border-t border-[#dbc2b2]/35 flex items-center justify-between gap-3 animate-slide-up select-none">
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-xl text-[#eb8424]">
-                {attachedFile.type.startsWith('image/') ? 'image' : attachedFile.type.startsWith('video/') ? 'video_file' : 'picture_as_pdf'}
+                {attachedFile.type.startsWith('image/') ? 'image' : (attachedFile.type.startsWith('video/') ? 'video_file' : 'picture_as_pdf')}
               </span>
               <div className="text-xs font-body">
                 <p className="font-extrabold text-[#5c4a3c] truncate max-w-md">{attachedFile.name}</p>
@@ -3261,12 +3261,12 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
 
 // ─── Inline Modal Helper ──────────────────────────────────────────────────────
 
-function ProfileDetailModal({ userId, onClose, onStartDM, currentUser }: {
+function ProfileDetailModal({ userId, onClose, onStartDM, currentUser }: Readonly<{
   userId: string;
   onClose: () => void;
   onStartDM: (user: Profile) => void;
   currentUser: { id: string; role: string; displayName: string; avatarUrl: string | null } | null;
-}) {
+}>) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 

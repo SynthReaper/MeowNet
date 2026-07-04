@@ -10,15 +10,15 @@ import { useCatInserts } from '@/hooks/useRealtime';
 import { fuzzCoordinates } from '@/lib/geo/utils';
 
 export interface CatMarkerData {
-  id: string;
-  lat: number;
-  lng: number;
-  status: string;
-  name?: string | null;
-  breed_estimate?: string | null;
-  photo_url: string;
-  health_notes?: string | null;
-  created_at?: string;
+  readonly id: string;
+  readonly lat: number;
+  readonly lng: number;
+  readonly status: string;
+  readonly name?: string | null;
+  readonly breed_estimate?: string | null;
+  readonly photo_url: string;
+  readonly health_notes?: string | null;
+  readonly created_at?: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -65,11 +65,11 @@ function MarkerLayer({
   cats, 
   onNewCat,
   onSelectCat 
-}: { 
+}: Readonly<{ 
   cats: CatMarkerData[]; 
   onNewCat: () => void;
   onSelectCat?: (id: string | null) => void;
-}) {
+}>) {
   useCatInserts(useCallback(() => onNewCat(), [onNewCat]));
 
   return (
@@ -91,11 +91,11 @@ function MarkerLayer({
 }
 
 interface CatMapProps {
-  cats?: CatMarkerData[];
-  onNewCat?: () => void;
-  selectedCatId?: string | null;
-  onSelectCat?: (id: string | null) => void;
-  showHeatmap?: boolean;
+  readonly cats?: CatMarkerData[];
+  readonly onNewCat?: () => void;
+  readonly selectedCatId?: string | null;
+  readonly onSelectCat?: (id: string | null) => void;
+  readonly showHeatmap?: boolean;
 }
 
 export default function CatMap({ cats: propCats, onNewCat, selectedCatId, onSelectCat, showHeatmap = false }: CatMapProps) {

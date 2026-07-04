@@ -7,49 +7,49 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
 interface Cat {
-  id: string;
-  name: string;
-  status: 'stray' | 'tnr' | 'adoptable' | 'adopted';
-  breed_estimate: string | null;
-  age_estimate: string | null;
-  owner_id: string | null;
-  created_at: string;
-  photo_url: string | null;
-  is_verified: boolean;
-  health_flags: string[] | null;
-  health_notes: string | null;
-  sterilized: boolean;
-  vaccinated: boolean;
-  microchipped: boolean;
-  contact_info: string | null;
-  bcs_estimate: number | null;
-  color: string | null;
-  shelter_url: string | null;
-  breed_confidence: number | null;
-  location: any;
+  readonly id: string;
+  readonly name: string;
+  readonly status: 'stray' | 'tnr' | 'adoptable' | 'adopted';
+  readonly breed_estimate: string | null;
+  readonly age_estimate: string | null;
+  readonly owner_id: string | null;
+  readonly created_at: string;
+  readonly photo_url: string | null;
+  readonly is_verified: boolean;
+  readonly health_flags: string[] | null;
+  readonly health_notes: string | null;
+  readonly sterilized: boolean;
+  readonly vaccinated: boolean;
+  readonly microchipped: boolean;
+  readonly contact_info: string | null;
+  readonly bcs_estimate: number | null;
+  readonly color: string | null;
+  readonly shelter_url: string | null;
+  readonly breed_confidence: number | null;
+  readonly location: any;
 }
 
 interface TNREvent {
-  id: string;
-  title: string;
-  description: string | null;
-  capacity: number;
-  status: 'pending' | 'open' | 'cancelled';
-  created_at: string;
-  cats_tnrd_count: number;
-  event_time: string;
-  organizer_id: string;
-  location: any;
+  readonly id: string;
+  readonly title: string;
+  readonly description: string | null;
+  readonly capacity: number;
+  readonly status: 'pending' | 'open' | 'cancelled';
+  readonly created_at: string;
+  readonly cats_tnrd_count: number;
+  readonly event_time: string;
+  readonly organizer_id: string;
+  readonly location: any;
 }
 
 interface ModeratorHotspotsMapProps {
-  cats: Cat[];
-  events: TNREvent[];
-  onToggleCatVerified: (catId: string, current: boolean) => void;
-  onModerateEvent: (eventId: string, action: 'approve' | 'cancel') => void;
-  onSelectCat: (cat: Cat) => void;
-  onSelectEvent: (event: TNREvent) => void;
-  actionLoadingId: string | null;
+  readonly cats: Cat[];
+  readonly events: TNREvent[];
+  readonly onToggleCatVerified: (catId: string, current: boolean) => void;
+  readonly onModerateEvent: (eventId: string, action: 'approve' | 'cancel') => void;
+  readonly onSelectCat: (cat: Cat) => void;
+  readonly onSelectEvent: (event: TNREvent) => void;
+  readonly actionLoadingId: string | null;
 }
 
 const parseLocation = (loc: any) => {

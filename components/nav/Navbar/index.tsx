@@ -633,19 +633,9 @@ export default function Navbar() {
               )}
 
               {/* Notification Bell */}
-              <div 
-                className="relative" 
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.stopPropagation();
-                  }
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
+              <div className="relative">
                 <button
-                  onClick={() => setIsNotifOpen(!isNotifOpen)}
+                  onClick={(e) => { e.stopPropagation(); setIsNotifOpen(!isNotifOpen); }}
                   type="button"
                   id="nav-notifications-toggle"
                   className="h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer relative"
@@ -662,6 +652,7 @@ export default function Navbar() {
 
                 {isNotifOpen && (
                   <div
+                    onClick={(e) => e.stopPropagation()}
                     className="absolute right-0 mt-2.5 w-80 rounded-2xl z-50 overflow-hidden flex flex-col max-h-[380px]"
                     style={{
                       background: 'var(--dropdown-bg)',
@@ -695,17 +686,11 @@ export default function Navbar() {
                         </div>
                       ) : (
                         notifications.map((n) => (
-                          <div
+                          <button
+                            type="button"
                             key={n.id}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                handleNotifClick(n);
-                              }
-                            }}
                             onClick={() => handleNotifClick(n)}
-                            className="p-3 text-left cursor-pointer flex gap-3 items-start transition-all"
+                            className="w-full text-left p-3 cursor-pointer flex gap-3 items-start transition-all border-none bg-transparent"
                             style={!n.is_read ? {background:'rgba(217,119,6,0.04)'} : {}}
                           >
                             <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{background:n.type==='private_message'?'rgba(217,119,6,0.1)':'rgba(var(--life-teal-rgb,14,165,233),0.1)'}}>
@@ -735,7 +720,7 @@ export default function Navbar() {
                               )}
                             </div>
                             {!n.is_read && <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5" style={{background:'var(--empire-gold)'}}/>}
-                          </div>
+                          </button>
                         ))
                       )}
                     </div>

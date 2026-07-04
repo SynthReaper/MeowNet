@@ -5,21 +5,21 @@ import { useState, useMemo, useEffect } from 'react';
 import { raiseAuditLogDispute } from '@/lib/actions/admin';
 
 export interface AuditLogEntry {
-  id: string;
-  actor_id: string;
-  actor_role: string;
-  action: string;
-  target_id: string | null;
-  details: string | null;
-  created_at: string;
-  profiles?: {
-    display_name: string | null;
+  readonly id: string;
+  readonly actor_id: string;
+  readonly actor_role: string;
+  readonly action: string;
+  readonly target_id: string | null;
+  readonly details: string | null;
+  readonly created_at: string;
+  readonly profiles?: {
+    readonly display_name: string | null;
   } | null;
 }
 
 interface Props {
-  initialAuditLogs: AuditLogEntry[];
-  currentUserRole: 'admin' | 'moderator';
+  readonly initialAuditLogs: AuditLogEntry[];
+  readonly currentUserRole: 'admin' | 'moderator';
 }
 
 export default function FuturisticAuditDashboard({ initialAuditLogs, currentUserRole }: Props) {

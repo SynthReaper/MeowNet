@@ -6,32 +6,32 @@ import { createClient } from '@/lib/supabase/client';
 import { joinGuild, leaveGuild, contributeToGuildQuest, userCreateGuild } from '@/lib/actions/gamification';
 
 interface Guild {
-  id: string;
-  name: string;
-  description: string | null;
-  logo_url: string | null;
-  points: number;
-  member_count?: number;
-  min_points_required?: number;
-  category?: string;
-  creator_id?: string | null;
+  readonly id: string;
+  readonly name: string;
+  readonly description: string | null;
+  readonly logo_url: string | null;
+  readonly points: number;
+  readonly member_count?: number;
+  readonly min_points_required?: number;
+  readonly category?: string;
+  readonly creator_id?: string | null;
 }
 
 interface GuildQuest {
-  id: string;
-  guild_id: string;
-  title: string;
-  description: string | null;
-  target_points: number;
-  current_points: number;
-  is_completed: boolean;
+  readonly id: string;
+  readonly guild_id: string;
+  readonly title: string;
+  readonly description: string | null;
+  readonly target_points: number;
+  readonly current_points: number;
+  readonly is_completed: boolean;
 }
 
 interface GuildsInterfaceProps {
-  guilds: Guild[];
-  currentGuildId: string | null;
-  quests: GuildQuest[];
-  userPoints: number;
+  readonly guilds: Guild[];
+  readonly currentGuildId: string | null;
+  readonly quests: GuildQuest[];
+  readonly userPoints: number;
 }
 
 export default function GuildsInterface({

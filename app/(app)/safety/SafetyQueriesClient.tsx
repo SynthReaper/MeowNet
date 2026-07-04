@@ -4,16 +4,16 @@ import { useState, useTransition } from 'react';
 import { submitUserProfileQuery } from '@/lib/actions/admin';
 
 interface Query {
-  id: string;
-  message: string;
-  status: string;
-  response: string | null;
-  created_at: string;
+  readonly id: string;
+  readonly message: string;
+  readonly status: string;
+  readonly response: string | null;
+  readonly created_at: string;
 }
 
 interface Props {
-  initialQueries: Query[];
-  userId: string;
+  readonly initialQueries: Query[];
+  readonly userId: string;
 }
 
 export default function SafetyQueriesClient({ initialQueries, userId }: Props) {

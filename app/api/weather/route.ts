@@ -166,7 +166,7 @@ export async function GET(req: NextRequest) {
           }
         );
         if (geoRes.ok) {
-          const geoData = await geoRes.json() as any;
+          const geoData = await geoRes.json();
           const addr = geoData.address ?? {};
           locationName = addr.city || addr.town || addr.village || addr.county || 'Your Area';
         } else {

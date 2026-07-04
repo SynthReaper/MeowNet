@@ -4,8 +4,8 @@ import { useState, useTransition } from 'react';
 import { submitModeratorApplication } from '@/lib/actions/admin';
 
 interface Props {
-  points: number;
-  hasPendingApp: boolean;
+  readonly points: number;
+  readonly hasPendingApp: boolean;
 }
 
 export default function ModeratorApplicationCard({ points, hasPendingApp }: Props) {

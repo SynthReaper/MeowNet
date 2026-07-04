@@ -338,12 +338,13 @@ export default function OnboardingClient() {
             <div className="flex flex-col gap-4">
               {/* Display Name */}
               <div className="flex flex-col gap-1.5">
-                <label className="font-display text-xs font-bold text-[var(--empire-cream)] flex items-center gap-1">
+                <label htmlFor="onboarding-display-name" className="font-display text-xs font-bold text-[var(--empire-cream)] flex items-center gap-1">
                   Display Name <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] text-[18px] pointer-events-none">badge</span>
                   <input
+                    id="onboarding-display-name"
                     type="text"
                     required
                     placeholder="e.g. Jane Doe"

@@ -4,8 +4,8 @@ import { notFound, redirect } from 'next/navigation';
 import TicketChatWindowClient from './TicketChatWindowClient';
 
 interface PageProps {
-  params: Promise<{
-    id: string;
+  readonly params: Promise<{
+    readonly id: string;
   }>;
 }
 

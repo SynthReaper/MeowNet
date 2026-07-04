@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic';
 
 async function handleVerification(formData: FormData) {
   'use server';
-  const token = formData.get('token')?.toString().trim();
+  const tokenVal = formData.get('token');
+  const token = typeof tokenVal === 'string' ? tokenVal.trim() : null;
   if (!token) return;
 
   // Case 1: Standard UUID (Proof of Neuter Certificate)
@@ -58,7 +59,7 @@ async function handleVerification(formData: FormData) {
   redirect('/verify?error=invalid_token');
 }
 
-export default async function VerifyPortalPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function VerifyPortalPage({ searchParams }: Readonly<{ searchParams: Promise<{ error?: string }> }>) {
   const { error } = await searchParams;
 
   return (

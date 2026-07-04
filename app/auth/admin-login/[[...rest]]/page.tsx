@@ -34,8 +34,7 @@ export default async function AdminLoginPage() {
     }
   }
 
-  const cardTitle = '👑 Control Center Log In';
-  const subtitle = 'Authorized access for MeowNet system administrators.';
+
   const colorPrimary = 'var(--empire-gold)';
   const glowColor = 'rgba(242, 180, 56, 0.08)';
   const emojis = ['👑', '🔑', '⚙️', '🔒', '💻', '📈', '🛡️', '🐱'];

@@ -10,7 +10,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostGIS-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.8.1-blueviolet)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.8.2-blueviolet)](CHANGELOG.md)
 
 *Built for **#hackthekitty 2026** · by [SynthReaper](https://github.com/SynthReaper)*
 
@@ -269,6 +269,8 @@ npm run build         # Production build
 
 Created for **#hackthekitty 2026** by [SynthReaper](https://github.com/SynthReaper).
 
+- **Kiro AI** — Specifying, modeling, and designing the new Social Impact features (.kiro specifications)
+- **Aikido Security** — Automated security audits and vulnerability scanning ([security-audit-report.pdf](aikido-security-audit/security-audit-report.pdf))
 - **Supabase** — Database, Auth, Storage, Realtime
 - **Clerk** — User identity and OAuth
 - **Leaflet** — Interactive map
@@ -279,4 +281,4 @@ Created for **#hackthekitty 2026** by [SynthReaper](https://github.com/SynthReap
 
 ---
 
-**Author:** [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com · **Version:** 0.8.1 · **License:** [MIT](LICENSE)
+**Author:** [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com · **Version:** 0.8.2 · **License:** [MIT](LICENSE)

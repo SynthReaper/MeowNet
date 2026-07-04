@@ -15,7 +15,7 @@ const STATUS_CONFIG: Record<string, { color: string; label: string; icon: string
   fostered:   { color: '#818CF8', label: 'Fostered', icon: 'check_circle', bg: 'rgba(129,140,248,0.15)' },
 };
 
-function CatCard({ cat, isRestricted }: { cat: CatListItem; isRestricted: boolean }) {
+function CatCard({ cat, isRestricted }: Readonly<{ cat: CatListItem; isRestricted: boolean }>) {
   const status = STATUS_CONFIG[cat.status] ?? { color: '#887365', label: cat.status, icon: 'pets', bg: '#f1ede7' };
 
   const content = (
@@ -91,7 +91,7 @@ function CatCard({ cat, isRestricted }: { cat: CatListItem; isRestricted: boolea
   );
 }
 
-interface CatGridProps { cats: CatListItem[]; }
+interface CatGridProps { readonly cats: CatListItem[]; }
 
 export default function CatGrid({ cats }: CatGridProps) {
   const { isSignedIn } = useUser();

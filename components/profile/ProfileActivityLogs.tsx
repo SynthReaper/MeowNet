@@ -4,20 +4,20 @@
 import { useState } from 'react';
 
 interface PointLogEntry {
-  activity: string;
-  points: number;
-  created_at: string;
+  readonly activity: string;
+  readonly points: number;
+  readonly created_at: string;
 }
 
 interface AuditLogEntry {
-  action: string;
-  details: string | null;
-  created_at: string;
+  readonly action: string;
+  readonly details: string | null;
+  readonly created_at: string;
 }
 
 interface Props {
-  recentPoints: PointLogEntry[];
-  auditLogs: AuditLogEntry[];
+  readonly recentPoints: PointLogEntry[];
+  readonly auditLogs: AuditLogEntry[];
 }
 
 export default function ProfileActivityLogs({ recentPoints, auditLogs }: Props) {

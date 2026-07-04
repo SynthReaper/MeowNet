@@ -138,12 +138,12 @@ export default function HelperPage() {
       const configRes = await getPrivateConfig();
       if (configRes.success && configRes.data?.encrypted_keys) {
         const configObj = (await decryptData(configRes.data.encrypted_keys, phrase)) as PrivateConfig;
-        const activeKey =
-          configObj.preferredProvider === 'gemini'
-            ? configObj.geminiKey
-            : configObj.preferredProvider === 'openai'
-            ? configObj.openaiKey
-            : configObj.anthropicKey;
+        let activeKey = configObj.anthropicKey;
+        if (configObj.preferredProvider === 'gemini') {
+          activeKey = configObj.geminiKey;
+        } else if (configObj.preferredProvider === 'openai') {
+          activeKey = configObj.openaiKey;
+        }
 
         setApiKey(activeKey || '');
         setProvider(configObj.preferredProvider || 'gemini');
@@ -424,7 +424,120 @@ Provide helpful, expert, and practical cat care advice based on the data.
     };
   };
 
-  if (!passphrase) {
+  
+  const renderHudCareContext = () => {
+    if (isLoadingCats) {
+      return (
+        <div className="flex-grow flex items-center justify-center">
+          <div className="w-6 h-6 rounded-full border-2 border-[var(--empire-gold)] border-t-transparent animate-spin" />
+        </div>
+      );
+    }
+
+    if (cats.length === 0) {
+      return (
+        <div className="flex-grow flex flex-col items-center justify-center text-center gap-2 py-10">
+          <span className="material-symbols-outlined text-2xl text-[var(--text-primary)] opacity-20">pets</span>
+          <p className="font-body text-xs text-[var(--text-secondary)] opacity-50">No private cats registered.</p>
+          <Link
+            href="/profile/care-center"
+            className="text-[var(--empire-gold)] font-bold text-xs hover:underline"
+          >
+            Register a cat
+          </Link>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-4">
+        {cats.map((c, idx) => {
+          const latestVital = c.vitals.length > 0 ? c.vitals[c.vitals.length - 1] : null;
+          const activeReminders = c.reminders.filter((item) => !item.completed);
+          
+          // Vitals alerts
+          const isUrgent = latestVital && (latestVital.bpm < 110 || latestVital.bpm > 230 || latestVital.rr < 16 || latestVital.rr > 35);
+          
+          return (
+            <div
+              key={c.id}
+              onMouseMove={handleCardMouseMove}
+              onMouseLeave={handleCardMouseLeave}
+              className="border p-4 rounded-2xl flex flex-col gap-3 shadow-sm preserve-3d domino-fade-item"
+              style={{
+                animationDelay: `${idx * 80}ms`,
+                background: 'var(--bg-elevated)',
+                borderColor: isUrgent ? '#ef4444' : 'var(--dropdown-border)'
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <img
+                  src={c.photoUrl}
+                  alt={c.name}
+                  className="w-10 h-10 rounded-full object-cover border"
+                  style={{ borderColor: 'var(--dropdown-border)' }}
+                />
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-display text-xs font-bold text-[var(--text-primary)]">{c.name}</span>
+                    {isUrgent && (
+                      <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                    )}
+                  </div>
+                  <span className="font-body text-[10px] text-[var(--text-secondary)] opacity-70 capitalize">
+                    {c.status} · {c.age}
+                  </span>
+                </div>
+              </div>
+
+              {latestVital ? (
+                <div
+                  className="grid grid-cols-2 gap-2 text-[10px] font-body p-2.5 rounded-xl border"
+                  style={{
+                    background: 'var(--dropdown-bg)',
+                    borderColor: 'var(--dropdown-border)'
+                  }}
+                >
+                  <span className="text-[var(--text-secondary)] opacity-80">Heartbeat: <strong className="text-[var(--text-primary)] font-bold">{latestVital.bpm} bpm</strong></span>
+                  <span className="text-[var(--text-secondary)] opacity-80">Breathing: <strong className="text-[var(--text-primary)] font-bold">{latestVital.rr} /min</strong></span>
+                  <span className="text-[var(--text-secondary)] opacity-80">Weight: <strong className="text-[var(--text-primary)] font-bold">{latestVital.weight} kg</strong></span>
+                  <span className="text-[var(--text-secondary)] opacity-80">Stress: <strong className="text-[var(--text-primary)] font-bold">{latestVital.stress}/5</strong></span>
+                </div>
+              ) : (
+                <div
+                  className="text-[10px] font-body text-[var(--text-secondary)] opacity-50 p-2 rounded-xl text-center border"
+                  style={{
+                    background: 'var(--dropdown-bg)',
+                    borderColor: 'var(--dropdown-border)'
+                  }}
+                >
+                  No recent vitals logged.
+                </div>
+              )}
+
+              {activeReminders.length > 0 && (
+                <div
+                  className="flex flex-col gap-1.5 border-t pt-2"
+                  style={{ borderColor: 'var(--dropdown-border)' }}
+                >
+                  <span className="text-[9px] text-[var(--empire-gold)] font-bold uppercase tracking-wider">
+                    Active Alerts
+                  </span>
+                  {activeReminders.slice(0, 2).map((item) => (
+                    <div key={item.id} className="flex justify-between text-[9px] font-body text-[var(--text-secondary)] opacity-80">
+                      <span>· {item.title}</span>
+                      <span className="opacity-60">{item.date}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+if (!passphrase) {
     return (
       <div className="flex-grow w-full max-w-7xl mx-auto px-4 md:px-12 py-16 flex flex-col items-center justify-center">
         <VaultUnlock onUnlock={handleUnlock} />
@@ -483,108 +596,7 @@ Provide helpful, expert, and practical cat care advice based on the data.
             HUD Care Context
           </h3>
           
-          {isLoadingCats ? (
-            <div className="flex-grow flex items-center justify-center">
-              <div className="w-6 h-6 rounded-full border-2 border-[var(--empire-gold)] border-t-transparent animate-spin" />
-            </div>
-          ) : cats.length === 0 ? (
-            <div className="flex-grow flex flex-col items-center justify-center text-center gap-2 py-10">
-              <span className="material-symbols-outlined text-2xl text-[var(--text-primary)] opacity-20">pets</span>
-              <p className="font-body text-xs text-[var(--text-secondary)] opacity-50">No private cats registered.</p>
-              <Link
-                href="/profile/care-center"
-                className="text-[var(--empire-gold)] font-bold text-xs hover:underline"
-              >
-                Register a cat
-              </Link>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {cats.map((c, idx) => {
-                const latestVital = c.vitals.length > 0 ? c.vitals[c.vitals.length - 1] : null;
-                const activeReminders = c.reminders.filter((item) => !item.completed);
-                
-                // Vitals alerts
-                const isUrgent = latestVital && (latestVital.bpm < 110 || latestVital.bpm > 230 || latestVital.rr < 16 || latestVital.rr > 35);
-                
-                return (
-                  <div
-                    key={c.id}
-                    onMouseMove={handleCardMouseMove}
-                    onMouseLeave={handleCardMouseLeave}
-                    className="border p-4 rounded-2xl flex flex-col gap-3 shadow-sm preserve-3d domino-fade-item"
-                    style={{
-                      animationDelay: `${idx * 80}ms`,
-                      background: 'var(--bg-elevated)',
-                      borderColor: isUrgent ? '#ef4444' : 'var(--dropdown-border)'
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={c.photoUrl}
-                        alt={c.name}
-                        className="w-10 h-10 rounded-full object-cover border"
-                        style={{ borderColor: 'var(--dropdown-border)' }}
-                      />
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-display text-xs font-bold text-[var(--text-primary)]">{c.name}</span>
-                          {isUrgent && (
-                            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-                          )}
-                        </div>
-                        <span className="font-body text-[10px] text-[var(--text-secondary)] opacity-70 capitalize">
-                          {c.status} · {c.age}
-                        </span>
-                      </div>
-                    </div>
-
-                    {latestVital ? (
-                      <div
-                        className="grid grid-cols-2 gap-2 text-[10px] font-body p-2.5 rounded-xl border"
-                        style={{
-                          background: 'var(--dropdown-bg)',
-                          borderColor: 'var(--dropdown-border)'
-                        }}
-                      >
-                        <span className="text-[var(--text-secondary)] opacity-80">Heartbeat: <strong className="text-[var(--text-primary)] font-bold">{latestVital.bpm} bpm</strong></span>
-                        <span className="text-[var(--text-secondary)] opacity-80">Breathing: <strong className="text-[var(--text-primary)] font-bold">{latestVital.rr} /min</strong></span>
-                        <span className="text-[var(--text-secondary)] opacity-80">Weight: <strong className="text-[var(--text-primary)] font-bold">{latestVital.weight} kg</strong></span>
-                        <span className="text-[var(--text-secondary)] opacity-80">Stress: <strong className="text-[var(--text-primary)] font-bold">{latestVital.stress}/5</strong></span>
-                      </div>
-                    ) : (
-                      <div
-                        className="text-[10px] font-body text-[var(--text-secondary)] opacity-50 p-2 rounded-xl text-center border"
-                        style={{
-                          background: 'var(--dropdown-bg)',
-                          borderColor: 'var(--dropdown-border)'
-                        }}
-                      >
-                        No recent vitals logged.
-                      </div>
-                    )}
-
-                    {activeReminders.length > 0 && (
-                      <div
-                        className="flex flex-col gap-1.5 border-t pt-2"
-                        style={{ borderColor: 'var(--dropdown-border)' }}
-                      >
-                        <span className="text-[9px] text-[var(--empire-gold)] font-bold uppercase tracking-wider">
-                          Active Alerts
-                        </span>
-                        {activeReminders.slice(0, 2).map((item) => (
-                          <div key={item.id} className="flex justify-between text-[9px] font-body text-[var(--text-secondary)] opacity-80">
-                            <span>· {item.title}</span>
-                            <span className="opacity-60">{item.date}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {renderHudCareContext()}
         </div>
 
         {/* Right Column: Chat Console (8 cols) */}

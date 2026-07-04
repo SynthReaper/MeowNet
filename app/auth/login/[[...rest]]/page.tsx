@@ -32,9 +32,9 @@ const ERROR_MESSAGES: Record<string, { title: string; body: string; icon: string
 
 export default async function LoginPage({
   searchParams,
-}: {
+}: Readonly<{
   searchParams: Promise<Record<string, string>>;
-}) {
+}>) {
   const { userId } = await auth();
   const params = await searchParams;
 
@@ -59,7 +59,6 @@ export default async function LoginPage({
 
   const errorParam = params?.error ?? null;
   const errorInfo = errorParam ? ERROR_MESSAGES[errorParam] ?? null : null;
-  const isDirect = params?.direct === 'true';
 
   const colorPrimary = 'var(--empire-gold)';
 

@@ -5,30 +5,30 @@ import { useState, useTransition, useRef, useEffect } from 'react';
 import { addQueryChatMessage, closeModeratorQuery } from '@/lib/actions/admin';
 
 interface ChatMessage {
-  sender_id: string;
-  sender_name: string;
-  sender_role: 'volunteer' | 'moderator';
-  message: string;
-  timestamp: string;
+  readonly sender_id: string;
+  readonly sender_name: string;
+  readonly sender_role: 'volunteer' | 'moderator';
+  readonly message: string;
+  readonly timestamp: string;
 }
 
 interface QueryTicket {
-  id: string;
-  target_type: string;
-  target_id: string | null;
-  message: string;
-  status: 'pending' | 'solved' | 'closed' | 'resolved';
-  created_at: string;
-  chat_messages?: ChatMessage[];
-  volunteer_id: string;
+  readonly id: string;
+  readonly target_type: string;
+  readonly target_id: string | null;
+  readonly message: string;
+  readonly status: 'pending' | 'solved' | 'closed' | 'resolved';
+  readonly created_at: string;
+  readonly chat_messages?: ChatMessage[];
+  readonly volunteer_id: string;
 }
 
 interface Props {
-  ticket: QueryTicket;
-  currentUserId: string;
-  currentUserRole: 'admin' | 'moderator' | 'user';
-  onUpdate: (updatedTicket: QueryTicket) => void;
-  onBack?: () => void;
+  readonly ticket: QueryTicket;
+  readonly currentUserId: string;
+  readonly currentUserRole: 'admin' | 'moderator' | 'user';
+  readonly onUpdate: (updatedTicket: QueryTicket) => void;
+  readonly onBack?: () => void;
 }
 
 export default function TicketChatWindow({ ticket, currentUserId, currentUserRole, onUpdate, onBack }: Props) {

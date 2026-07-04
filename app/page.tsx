@@ -409,6 +409,32 @@ export default function LandingPage() {
   }, []);
 
   const featuredEvent = events[0];
+
+  let alertBorderClass = 'border-[var(--life-teal)]/20 shadow-[0_4px_24px_rgba(0,106,99,0.04)] hover:shadow-[0_4px_24px_rgba(0,106,99,0.08)]';
+  let alertIconContainerClass = 'bg-[var(--life-teal)]/10 text-[var(--life-teal)] border border-[var(--life-teal)]/20';
+  let alertIcon = 'check_circle';
+  let alertDotClass = 'bg-[var(--life-teal)]';
+  let alertLabelClass = 'text-[var(--life-teal)]';
+  let alertLabel = 'Status OK';
+  let alertButtonClass = 'bg-[var(--life-teal)] hover:bg-[var(--life-teal)]/95 text-white';
+
+  if (activeAlert.type === 'warning') {
+    alertBorderClass = 'border-red-500/20 shadow-[0_4px_24px_rgba(220,38,38,0.04)] hover:shadow-[0_4px_24px_rgba(220,38,38,0.08)]';
+    alertIconContainerClass = 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20';
+    alertIcon = 'warning';
+    alertDotClass = 'bg-red-600';
+    alertLabelClass = 'text-red-500';
+    alertLabel = 'Active Alert';
+    alertButtonClass = 'bg-red-600 hover:bg-red-700 text-white';
+  } else if (activeAlert.type === 'caution') {
+    alertBorderClass = 'border-[var(--empire-gold)]/20 shadow-[0_4px_24px_rgba(242,140,56,0.04)] hover:shadow-[0_4px_24px_rgba(242,140,56,0.08)]';
+    alertIconContainerClass = 'bg-[var(--empire-gold)]/10 text-[var(--empire-gold)] border border-[var(--empire-gold)]/20';
+    alertIcon = 'error';
+    alertDotClass = 'bg-[var(--empire-gold)]';
+    alertLabelClass = 'text-[var(--empire-gold)]';
+    alertLabel = 'Advisory';
+    alertButtonClass = 'bg-[var(--empire-gold)] hover:bg-[var(--empire-gold-dim)] text-white';
+  }
   const upcomingEvents = events.slice(1);
 
   return (
@@ -579,7 +605,19 @@ export default function LandingPage() {
               const initials = (cat.profiles?.display_name || 'Anonymous').slice(0, 2).toUpperCase();
               const isTnr = cat.status === 'tnr_done' || cat.status === 'tnr';
               const isAdopted = cat.status === 'adopted';
-              const badgeText = isAdopted ? 'Adopted' : isTnr ? "TNR'd" : cat.status === 'adoptable' ? 'Adoptable' : 'New';
+              
+              let badgeText = 'New';
+              let badgeBg = 'bg-[var(--life-teal)]/90';
+              if (isAdopted) {
+                badgeText = 'Adopted';
+                badgeBg = 'bg-pink-500/90';
+              } else if (isTnr) {
+                badgeText = "TNR'd";
+                badgeBg = 'bg-[var(--empire-gold)]/90';
+              } else if (cat.status === 'adoptable') {
+                badgeText = 'Adoptable';
+              }
+              
               const points = isAdopted || isTnr ? 50 : 10;
 
               return (
@@ -591,8 +629,7 @@ export default function LandingPage() {
                         alt={cat.name || 'Community Cat'}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
-                      <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider text-white ${isAdopted ? 'bg-pink-500/90' : isTnr ? 'bg-[var(--empire-gold)]/90' : 'bg-[var(--life-teal)]/90'
-                        } backdrop-blur-sm shadow-sm`}>
+                      <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider text-white ${badgeBg} backdrop-blur-sm shadow-sm`}>
                         {badgeText}
                       </span>
                     </div>
@@ -783,41 +820,24 @@ export default function LandingPage() {
             </div>
 
             {/* Alert/Status Card */}
-            <div className={`premium-glass-card p-8 flex items-center gap-6 h-[260px] reveal-fade-in delay-300 md:col-span-2 border transition-all duration-300 ${activeAlert.type === 'warning'
-                ? 'border-red-500/20 shadow-[0_4px_24px_rgba(220,38,38,0.04)] hover:shadow-[0_4px_24px_rgba(220,38,38,0.08)]'
-                : activeAlert.type === 'caution'
-                  ? 'border-[var(--empire-gold)]/20 shadow-[0_4px_24px_rgba(242,140,56,0.04)] hover:shadow-[0_4px_24px_rgba(242,140,56,0.08)]'
-                  : 'border-[var(--life-teal)]/20 shadow-[0_4px_24px_rgba(0,106,99,0.04)] hover:shadow-[0_4px_24px_rgba(0,106,99,0.08)]'
-              }`}>
-              <div className={`p-3.5 rounded-2xl flex-shrink-0 flex items-center justify-center w-14 h-14 ${activeAlert.type === 'warning'
-                  ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
-                  : activeAlert.type === 'caution'
-                    ? 'bg-[var(--empire-gold)]/10 text-[var(--empire-gold)] border border-[var(--empire-gold)]/20'
-                    : 'bg-[var(--life-teal)]/10 text-[var(--life-teal)] border border-[var(--life-teal)]/20'
-                }`}>
+            <div className={`premium-glass-card p-8 flex items-center gap-6 h-[260px] reveal-fade-in delay-300 md:col-span-2 border transition-all duration-300 ${alertBorderClass}`}>
+              <div className={`p-3.5 rounded-2xl flex-shrink-0 flex items-center justify-center w-14 h-14 ${alertIconContainerClass}`}>
                 <span className="material-symbols-outlined icon-filled text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  {activeAlert.type === 'warning' ? 'warning' : activeAlert.type === 'caution' ? 'error' : 'check_circle'}
+                  {alertIcon}
                 </span>
               </div>
               <div className="flex-grow space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full animate-pulse ${activeAlert.type === 'warning' ? 'bg-red-600' : activeAlert.type === 'caution' ? 'bg-[var(--empire-gold)]' : 'bg-[var(--life-teal)]'
-                    }`}></span>
-                  <h4 className={`font-body text-[10px] font-bold uppercase tracking-wider ${activeAlert.type === 'warning' ? 'text-red-500' : activeAlert.type === 'caution' ? 'text-[var(--empire-gold)]' : 'text-[var(--life-teal)]'
-                    }`}>
-                    {activeAlert.type === 'warning' ? 'Active Alert' : activeAlert.type === 'caution' ? 'Advisory' : 'Status OK'}
+                  <span className={`w-2 h-2 rounded-full animate-pulse ${alertDotClass}`}></span>
+                  <h4 className={`font-body text-[10px] font-bold uppercase tracking-wider ${alertLabelClass}`}>
+                    {alertLabel}
                   </h4>
                 </div>
                 <p className="font-body text-sm md:text-base text-[var(--text-secondary)] leading-relaxed font-semibold">
                   {activeAlert.message}
                 </p>
                 <div className="flex flex-wrap gap-3 pt-1">
-                  <Link href="/weather" className={`px-4 py-2 rounded-xl font-body text-xs font-bold no-underline transition-all duration-200 hover:shadow-md ${activeAlert.type === 'warning'
-                      ? 'bg-red-600 hover:bg-red-700 text-white'
-                      : activeAlert.type === 'caution'
-                        ? 'bg-[var(--empire-gold)] hover:bg-[var(--empire-gold-dim)] text-white'
-                        : 'bg-[var(--life-teal)] hover:bg-[var(--life-teal)]/95 text-white'
-                    }`}>
+                  <Link href="/weather" className={`px-4 py-2 rounded-xl font-body text-xs font-bold no-underline transition-all duration-200 hover:shadow-md ${alertButtonClass}`}>
                     View Details
                   </Link>
                   <Link href="/weather" className="bg-[var(--bg-elevated)] text-[var(--text-primary)] hover:bg-[var(--bg-border)]/40 border border-[var(--bg-border)] px-4 py-2 rounded-xl font-body text-xs font-bold no-underline transition-colors">

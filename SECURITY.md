@@ -4,7 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| `0.8.1` / `main` (latest) | ✅ Active |
+| `0.8.2` / `main` (latest) | ✅ Active |
+| `0.8.1` | ✅ Supported for 90 days |
 | Any tagged release | ✅ Supported for 90 days |
 | Older releases | ❌ Not supported |
 
@@ -76,6 +77,10 @@ Suggested fix: (optional)
 - Secret scanning in GitHub Actions (`gitleaks`)
 - Dependency audit in CI pipeline
 - No secrets in source code — all via environment variables
+
+## Security Audits
+
+An independent automated security audit was performed via **Aikido Security**. The full report is available in the repository at [security-audit-report.pdf](aikido-security-audit/security-audit-report.pdf).
 
 ## Threat Model
 

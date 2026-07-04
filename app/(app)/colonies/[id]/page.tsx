@@ -89,9 +89,9 @@ export async function generateMetadata({
 
 export default async function ColonyDetailPage({
   params,
-}: {
+}: Readonly<{
   params: Promise<{ id: string }>;
-}) {
+}>) {
   const { id } = await params;
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();

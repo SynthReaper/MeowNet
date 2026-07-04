@@ -28,9 +28,9 @@ export interface CatListItem {
 
 export default async function CatsPage({
   searchParams,
-}: {
+}: Readonly<{
   searchParams: Promise<{ status?: string; q?: string }>;
-}) {
+}>) {
   const { status = 'all', q = '' } = await searchParams;
   const supabase = await createServerClient();
 
@@ -77,10 +77,11 @@ export default async function CatsPage({
         <div className="flex flex-wrap gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
           {Object.entries(STATUS_LABELS).map(([val, label]) => {
             const active = status === val;
+            const queryParam = q ? `&q=${encodeURIComponent(q)}` : '';
             return (
               <Link
                 key={val}
-                href={`/cats?status=${val}${q ? `&q=${encodeURIComponent(q)}` : ''}`}
+                href={`/cats?status=${val}${queryParam}`}
                 className={`font-body text-xs font-semibold px-4 py-2 rounded-full whitespace-nowrap transition-all no-underline ${
                   active
                     ? 'bg-[var(--empire-gold)] text-white shadow-sm'

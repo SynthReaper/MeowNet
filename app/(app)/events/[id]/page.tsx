@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: ev ? `✂️ ${ev.title}` : 'TNR Event' };
 }
 
-export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EventDetailPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
   const supabase = await createServerClient();
 
@@ -77,6 +77,13 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const isPast = eventDate < new Date();
   const spotsLeft = event.capacity - signupCount;
 
+  let statusText = event.status;
+  if (isPast) {
+    statusText = 'Past Operation';
+  } else if (event.status === 'open') {
+    statusText = 'Active Operation';
+  }
+
   return (
     <div className="w-full max-w-3xl mx-auto px-4 py-8 flex flex-col gap-6">
       <div>
@@ -95,7 +102,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                 ? 'bg-red-50 text-[#ba1a1a] border border-red-200' 
                 : 'bg-[#ffdcc5] text-[var(--empire-gold-dim)] border border-[var(--bg-border)]/40'
             }`}>
-              {isPast ? 'Past Operation' : event.status === 'open' ? 'Active Operation' : event.status}
+              {statusText}
             </span>
             <h1 className="font-display text-2xl font-extrabold text-[var(--empire-cream)] mt-3">
               {event.title}

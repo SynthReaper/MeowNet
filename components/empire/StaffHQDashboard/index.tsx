@@ -2,19 +2,19 @@
 // components/empire/StaffHQDashboard/index.tsx — Gamified Staff HQ for admins/moderators
 
 interface StaffStats {
-  catsApproved: number;
-  catsDeleted: number;
-  queriesRaised: number;
-  queriesResolved: number;
-  eventsModerated: number;
-  totalActions: number;
+  readonly catsApproved: number;
+  readonly catsDeleted: number;
+  readonly queriesRaised: number;
+  readonly queriesResolved: number;
+  readonly eventsModerated: number;
+  readonly totalActions: number;
 }
 
 interface StaffHQProps {
-  displayName: string;
-  avatarUrl: string | null;
-  role: 'admin' | 'moderator';
-  stats: StaffStats;
+  readonly displayName: string;
+  readonly avatarUrl: string | null;
+  readonly role: 'admin' | 'moderator';
+  readonly stats: StaffStats;
 }
 
 const GUARDIAN_RANKS = [

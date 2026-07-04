@@ -2,7 +2,7 @@
 // components/auth/PasswordStrength/index.tsx
 
 interface PasswordStrengthProps {
-  password: string;
+  readonly password: string;
 }
 
 function getStrength(pw: string): { score: number; label: string; color: string; checks: boolean[] } {
@@ -10,8 +10,8 @@ function getStrength(pw: string): { score: number; label: string; color: string;
     pw.length >= 8,
     /[A-Z]/.test(pw),
     /[a-z]/.test(pw),
-    /[0-9]/.test(pw),
-    /[^A-Za-z0-9]/.test(pw),
+    /\d/.test(pw),
+    /[^A-Za-z\d]/.test(pw),
   ];
   const score = checks.filter(Boolean).length;
   const levels = [

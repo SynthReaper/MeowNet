@@ -2,7 +2,7 @@
 
 # MeowNet — Hackathon Judge Guide
 
-**#hackthekitty 2026 · v0.8.1**
+**#hackthekitty 2026 · v0.8.2**
 
 *A complete walkthrough for evaluators — no developer setup required.*
 
@@ -15,6 +15,8 @@
 MeowNet is a full-stack urban cat rescue platform. Volunteers log stray cats, coordinate TNR (Trap-Neuter-Return) events, and earn gamification points. Staff moderate via dedicated dashboards. Every piece of sensitive data — GPS coordinates, uploaded photos, user accounts — passes through privacy controls before it is stored.
 
 **Stack:** Next.js 16 + React 19 + TypeScript 5 (strict) + Supabase (PostgreSQL + PostGIS) + Clerk + Python FastAPI (Docker)
+
+**Specifications & Quality:** Social Impact Features specified and modeled using **Kiro AI** (.kiro specifications) • Security audited via **Aikido Security** ([security-audit-report.pdf](../aikido-security-audit/security-audit-report.pdf))
 
 **Live app:** [meownet-sr.vercel.app](https://meownet-sr.vercel.app/)
 
@@ -351,4 +353,4 @@ Use this to guide a structured evaluation:
 
 ---
 
-*MeowNet — #hackthekitty 2026 · v0.8.1 · [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com*
+*MeowNet — #hackthekitty 2026 · v0.8.2 · [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com*

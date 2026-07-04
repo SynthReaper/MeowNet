@@ -8,6 +8,7 @@ import { decryptData, encryptData } from '@/lib/security/encryption';
 import { createClient } from '@/lib/supabase/client';
 
 interface ChatMessage {
+  id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
 }
@@ -140,6 +141,7 @@ export default function HelperWidget() {
       // Initialize welcome message
       setMessages([
         {
+          id: 'init-widget',
           role: 'assistant',
           content: 'Hello! I am your personal cat care helper. How can I assist you with your cats today?',
         },
@@ -285,6 +287,7 @@ export default function HelperWidget() {
         setMessages((prev) => [
           ...prev,
           {
+            id: `log-feedback-${Date.now()}-${Math.random()}`,
             role: 'assistant',
             content: `Successfully logged secure record for ${catToUpdate.name}! Action: "${
               actionPayload.notes || actionPayload.title || 'Vitals'
@@ -306,13 +309,14 @@ export default function HelperWidget() {
     const userText = inputVal.trim();
     setInputVal('');
 
-    const newMessages: ChatMessage[] = [...messages, { role: 'user', content: userText }];
+    const newMessages: ChatMessage[] = [...messages, { id: `user-msg-${Date.now()}-${Math.random()}`, role: 'user', content: userText }];
     setMessages(newMessages);
     setIsLoading(true);
 
     try {
       // Build context prompt
       const systemPrompt: ChatMessage = {
+        id: 'system-prompt',
         role: 'system',
         content: `You are the user's private cat helper on MeowNet.
 Here is the client-side decrypted health and schedule data for their cats:
@@ -340,7 +344,7 @@ Provide helpful, expert, and practical cat care advice based on the data.
 - You can recommend direct actions that the user should log for their cat (like medication reminders, food logs, water intake, or vitals logs). If you do, append a JSON action tag at the very end of your response inside brackets like this: [Action: {"catName": "Luna", "type": "log_activity", "category": "Food", "notes": "Logged 150ml Hydration"}] or [Action: {"catName": "Luna", "type": "log_vitals", "bpm": 140, "rr": 24}] or [Action: {"catName": "Luna", "type": "log_reminder", "title": "Medication Booster", "type": "pill", "date": "2026-07-03"}]. Provide only ONE action per message.`,
       };
 
-      const payloadMessages = [systemPrompt, ...newMessages];
+      const payloadMessages = [systemPrompt, ...newMessages].map(({ role, content }) => ({ role, content }));
 
       const res = await fetch('/api/ai/personal-helper', {
         method: 'POST',
@@ -357,24 +361,24 @@ Provide helpful, expert, and practical cat care advice based on the data.
         await res.text();
         setMessages((prev) => [
           ...prev,
-          { role: 'assistant', content: `Error: Failed to fetch AI response (${res.status}).` },
+          { id: `error-response-${Date.now()}-${Math.random()}`, role: 'assistant', content: `Error: Failed to fetch AI response (${res.status}).` },
         ]);
         return;
       }
 
       const data = await res.json();
       if (data.success && data.text) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: data.text }]);
+        setMessages((prev) => [...prev, { id: `assistant-msg-${Date.now()}-${Math.random()}`, role: 'assistant', content: data.text }]);
       } else {
         setMessages((prev) => [
           ...prev,
-          { role: 'assistant', content: `Error: ${data.error || 'Unknown response format'}` },
+          { id: `error-format-${Date.now()}-${Math.random()}`, role: 'assistant', content: `Error: ${data.error || 'Unknown response format'}` },
         ]);
       }
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'Connection error. Could not contact helper proxy.' },
+        { id: `error-conn-${Date.now()}-${Math.random()}`, role: 'assistant', content: 'Connection error. Could not contact helper proxy.' },
       ]);
     } finally {
       setIsLoading(false);
@@ -532,7 +536,7 @@ Provide helpful, expert, and practical cat care advice based on the data.
 
                   return (
                     <div
-                      key={`widget-msg-${idx}`}
+                      key={msg.id}
                       className={`flex flex-col max-w-[85%] ${isUser ? 'self-end items-end' : 'self-start items-start'}`}
                     >
                       <div

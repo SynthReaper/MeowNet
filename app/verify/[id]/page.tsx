@@ -12,7 +12,7 @@ function verifyCryptoSignature(userId: string, catId: string, clinic: string, da
   return expected === signature;
 }
 
-export default async function PublicVerificationPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PublicVerificationPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
   const admin = createServiceClient();
 
