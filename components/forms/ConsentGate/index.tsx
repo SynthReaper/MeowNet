@@ -24,11 +24,11 @@ export default function ConsentGate({ onAccept, onDecline }: ConsentGateProps) {
             {AI_CONSENT_TEXT}
           </p>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <button type="button" onClick={onAccept} className="btn btn-teal" style={{ fontSize: '0.8rem', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>check</span>
-              <span>Yes, use AI</span>
+            <button type="button" disabled className="btn btn-teal" style={{ fontSize: '0.8rem', padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.25rem', opacity: 0.6, cursor: 'not-allowed' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '1rem' }}>lock</span>
+              <span>Coming soon</span>
             </button>
-            <button type="button" onClick={onDecline} className="btn btn-ghost" style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}>
+            <button type="button" onClick={onDecline} className="btn btn-teal" style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}>
               No, enter manually
             </button>
           </div>

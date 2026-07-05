@@ -5,7 +5,6 @@ import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { logCat } from '@/lib/actions/cats';
 import { HEALTH_FLAG_LABELS, type HealthFlag } from '@/lib/veterinary/triageRules';
-import ConsentGate from '@/components/forms/ConsentGate';
 import { getSafeImageSrc } from '@/lib/security/url';
 
 const STATUS_OPTIONS = [
@@ -25,19 +24,20 @@ export default function LogCatForm() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [showAI, setShowAI] = useState(false);
-  const [consentGranted, setConsentGranted] = useState(false);
   const [selectedFlags, setSelectedFlags] = useState<HealthFlag[]>([]);
   const [locating, setLocating] = useState(false);
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
 
+  const [detectedBreed, setDetectedBreed] = useState('');
+
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setPreviewUrl(URL.createObjectURL(file));
-    setShowAI(true);
+    setDetectedBreed('');
   };
+
 
   const detectLocation = useCallback(() => {
     if (!navigator.geolocation) { setError('Geolocation not supported'); return; }
@@ -73,6 +73,12 @@ export default function LogCatForm() {
         setError('Please enter both latitude and longitude coordinates.');
         return false;
       }
+    } else if (currentStep === 3) {
+      const colorInput = formRef.current?.querySelector('input[name="color"]') as HTMLInputElement;
+      if (!colorInput?.value?.trim()) {
+        setError('Please enter a Primary Color / Pattern (e.g. Orange tabby).');
+        return false;
+      }
     }
     return true;
   };
@@ -90,7 +96,7 @@ export default function LogCatForm() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!validateStep(1) || !validateStep(2)) return;
+    if (!validateStep(1) || !validateStep(2) || !validateStep(3)) return;
     
     setIsPending(true);
     setError(null);
@@ -99,7 +105,7 @@ export default function LogCatForm() {
     formData.set('lat', lat);
     formData.set('lng', lng);
     selectedFlags.forEach((f) => formData.append('health_flags', f));
-    formData.set('consent_recorded', consentGranted ? 'true' : 'false');
+    formData.set('consent_recorded', 'false');
     
     const isFuzzingEnabled = formRef.current?.querySelector('input[name="location_privacy"]') as HTMLInputElement;
     formData.set('location_privacy', isFuzzingEnabled?.checked ? 'area' : 'exact');
@@ -111,7 +117,16 @@ export default function LogCatForm() {
       setSuccess(true);
       setTimeout(() => router.push(`/cats/${result.catId}`), 1500);
     } else {
-      setError(result.error === 'unauthorized' ? 'Please sign in to log cats' : `Error: ${result.error}`);
+      const friendlyErrors: Record<string, string> = {
+        unauthorized:        'Please sign in to log a cat sighting.',
+        photo_required:      'A photo is required — please upload one.',
+        photo_too_large:     'Photo is too large (max 5 MB). Please compress it first.',
+        invalid_image_format:'Unsupported image format. Use JPEG, PNG, or WebP.',
+        upload_failed:       'Photo upload failed. Please try again.',
+        validation_failed:   'Some fields are invalid. Check your inputs and retry.',
+        insert_failed:       'Could not save the sighting. Please try again shortly.',
+      };
+      setError(friendlyErrors[result.error] ?? `Something went wrong — ${result.error}`);
     }
   };
 
@@ -178,37 +193,66 @@ export default function LogCatForm() {
           <h2 className="font-display text-lg text-[var(--empire-gold)] font-bold mb-2">1. Snap a Photo</h2>
           <p className="font-body text-sm text-[var(--empire-cream)]/60 mb-6">Let&apos;s get a good look at this new friend.</p>
           
-          <div className="border-2 border-dashed border-[var(--bg-border)] rounded-2xl bg-[var(--bg-elevated)] min-h-[240px] p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-[var(--bg-border)]/10 transition-colors relative group mb-4">
-            <span className="material-symbols-outlined text-5xl text-[var(--empire-gold)] mb-2 group-hover:scale-105 transition-transform" style={{ fontVariationSettings: "'FILL' 1" }}>
-              photo_camera
-            </span>
-            <span className="font-body text-sm font-semibold text-[var(--empire-cream)]">Click to upload or drag & drop</span>
-            <span className="font-body text-xs text-[var(--empire-cream)]/50 mt-1">JPEG, PNG or WebP format (max 5MB)</span>{' '}
-            
-            <input 
-              type="file" 
-              name="photo" 
-              accept="image/jpeg,image/png,image/webp" 
-              onChange={handlePhotoChange} 
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            />
+          <div className={`${previewUrl ? 'hidden' : 'block'}`}>
+            <div className="border-2 border-dashed border-[var(--bg-border)] rounded-2xl bg-[var(--bg-elevated)] min-h-[240px] p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-[var(--bg-border)]/10 transition-colors relative group mb-4">
+              <span className="material-symbols-outlined text-5xl text-[var(--empire-gold)] mb-2 group-hover:scale-105 transition-transform" style={{ fontVariationSettings: "'FILL' 1" }}>
+                photo_camera
+              </span>
+              <span className="font-body text-sm font-semibold text-[var(--empire-cream)]">Click to upload or drag & drop</span>
+              <span className="font-body text-xs text-[var(--empire-cream)]/50 mt-1">JPEG, PNG or WebP format (max 5MB)</span>{' '}
+              
+              <input 
+                type="file" 
+                name="photo" 
+                accept="image/jpeg,image/png,image/webp" 
+                onChange={handlePhotoChange} 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+            </div>
           </div>
 
           {previewUrl && (
-            <div className="mb-6 rounded-xl overflow-hidden border border-[var(--bg-border)] max-h-[300px]">
-              <img src={getSafeImageSrc(previewUrl)} alt="Cat preview" className="w-full h-full object-cover" />
+            <div className="mb-6 rounded-xl overflow-hidden border border-[var(--bg-border)] max-h-[300px] relative group">
+              <img src={getSafeImageSrc(previewUrl)} alt="Cat preview" className="w-full h-full object-cover w-full" />
+              <button 
+                type="button" 
+                onClick={() => {
+                  setPreviewUrl(null);
+                  const fileInput = formRef.current?.querySelector('input[name="photo"]') as HTMLInputElement;
+                  if (fileInput) {
+                    fileInput.value = '';
+                  }
+                }}
+                className="absolute top-3 right-3 bg-red-600 hover:bg-red-700 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all transform active:scale-95 z-10 hover:scale-110"
+                aria-label="Remove photo"
+              >
+                <span className="material-symbols-outlined text-sm font-bold">close</span>
+              </button>
             </div>
           )}
 
-          <p className="font-body text-xs text-[var(--empire-cream)]/40 mb-6">
-            All EXIF/GPS metadata is automatically stripped server-side to protect the exact location of vulnerable feline colonies.
-          </p>
-
-          {showAI && !consentGranted && (
-            <div className="mb-6">
-              <ConsentGate onAccept={() => setConsentGranted(true)} onDecline={() => { setShowAI(false); setConsentGranted(false); }} />
+          <div className="bg-[var(--bg-elevated)] border border-[var(--bg-border)]/40 rounded-2xl p-4 mb-6 flex flex-col gap-3">
+            <div className="flex items-start gap-2.5">
+              <span className="material-symbols-outlined text-[var(--empire-gold)] text-lg mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>security</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="font-body text-xs font-bold text-[var(--empire-cream)]">Privacy Protection Enabled</span>
+                <span className="font-body text-[11px] text-[var(--empire-cream)]/65 leading-relaxed">
+                  All EXIF/GPS metadata is automatically stripped server-side to protect the exact location of vulnerable feline colonies.
+                </span>
+              </div>
             </div>
-          )}
+            
+            <div className="border-t border-[var(--bg-border)]/30 pt-3 flex items-start gap-2.5">
+              <span className="material-symbols-outlined text-[var(--life-teal)] text-lg mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="font-body text-xs font-bold text-[var(--life-teal)]">AI/ML Breed & Health Classifier</span>
+                <span className="font-body text-[11px] text-[var(--empire-cream)]/65 leading-relaxed">
+                  Automatically estimate breed and identify urgent health triage flags using local computer vision models. <span className="font-bold text-[var(--life-teal)]">(Coming soon)</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
 
           <div className="flex justify-end pt-4 border-t border-[var(--bg-border)]/40">
             <button 
@@ -247,7 +291,7 @@ export default function LogCatForm() {
                   value={lat} 
                   onChange={(e) => setLat(e.target.value)} 
                   placeholder="e.g. 40.7128" 
-                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all font-data mt-2 font-normal normal-case"
+                  className="w-full bg-[var(--input-bg)] border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all font-data mt-2 font-normal normal-case"
                 />
               </label>
             </div>
@@ -260,7 +304,7 @@ export default function LogCatForm() {
                   value={lng} 
                   onChange={(e) => setLng(e.target.value)} 
                   placeholder="e.g. -74.0060" 
-                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all font-data mt-2 font-normal normal-case"
+                  className="w-full bg-[var(--input-bg)] border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all font-data mt-2 font-normal normal-case"
                 />
               </label>
             </div>
@@ -305,31 +349,70 @@ export default function LogCatForm() {
 
         {/* Step 3: Details */}
         <div className={`fade-in ${step === 3 ? 'block' : 'hidden'}`}>
-          <h2 className="font-display text-lg text-[var(--empire-gold)] font-bold mb-2">3. Tell us about them</h2>
+          <div className="flex items-start justify-between gap-4 mb-2">
+            <div>
+              <h2 className="font-display text-lg text-[var(--empire-gold)] font-bold">3. Tell us about them</h2>
+            </div>
+            <div className="relative group">
+              <button 
+                type="button" 
+                disabled 
+                className="flex items-center gap-1.5 px-3 py-1 bg-[var(--bg-elevated)] border border-[var(--bg-border)]/50 text-[var(--empire-cream)]/40 rounded-full font-body text-xs font-semibold select-none cursor-not-allowed transition-all"
+              >
+                <span className="material-symbols-outlined text-xs" style={{ fontSize: '13px', fontVariationSettings: "'FILL' 1" }}>lock</span>
+                <span>Use AI</span>
+                <span className="bg-[var(--bg-border)]/30 text-[9px] text-[var(--empire-cream)]/50 px-1 py-0.5 rounded font-bold uppercase tracking-wider">coming soon</span>
+              </button>
+              
+              {/* Tooltip */}
+              <div className="absolute right-0 top-full mt-2 w-64 p-2.5 bg-[#1c1c18] dark:bg-[#fdf9f3] text-[#fdf9f3] dark:text-[#1c1c18] text-[11px] font-body font-normal rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-20 pointer-events-none leading-relaxed text-left">
+                Use photo to identify breed & health indicators automatically
+                <div className="absolute top-0 right-6 -mt-1 w-2 h-2 bg-[#1c1c18] dark:bg-[#fdf9f3] rotate-45"></div>
+              </div>
+            </div>
+          </div>
           <p className="font-body text-sm text-[var(--empire-cream)]/60 mb-6">Any distinguishing marks, breed characteristics, or behaviors?</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <input type="hidden" name="breed_confidence" value="" />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             <div>
               <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
-                <span>Cat Name (Optional)</span>{' '}
+                <span className="block min-h-[40px] flex items-end pb-1">Cat Name (Optional)</span>
                 <input 
                   type="text" 
                   name="name" 
                   maxLength={100} 
-                  placeholder="e.g. Whiskers, Barnaby" 
-                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
+                  placeholder="e.g. Whiskers" 
+                  className="w-full bg-[var(--input-bg)] border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
                 />
               </label>
             </div>
             <div>
               <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
-                <span>Primary Color / Pattern</span>{' '}
+                <span className="block min-h-[40px] flex items-end pb-1">Primary Color / Pattern</span>
                 <input 
                   type="text" 
                   name="color" 
                   maxLength={100} 
-                  placeholder="e.g. Orange tabby, Tuxedo" 
-                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
+                  placeholder="e.g. Orange tabby" 
+                  className="w-full bg-[var(--input-bg)] border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
+                />
+              </label>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-1">
+              <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
+                <span className="min-h-[40px] flex items-end pb-1 w-full">
+                  <span>Breed Estimate (Optional)</span>
+                </span>
+                <input 
+                  type="text" 
+                  name="breed_estimate" 
+                  maxLength={100} 
+                  value={detectedBreed}
+                  onChange={(e) => setDetectedBreed(e.target.value)}
+                  placeholder="e.g. Tabby" 
+                  className="w-full bg-[var(--input-bg)] border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
                 />
               </label>
             </div>
@@ -338,11 +421,11 @@ export default function LogCatForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
               <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
-                <span>Status Classification</span>{' '}
+                <span className="block min-h-[20px] flex items-end pb-0.5">Status Classification</span>
                 <select 
                   name="status" 
                   required 
-                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
+                  className="w-full bg-[var(--input-bg)] border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
                 >
                   {STATUS_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -354,10 +437,10 @@ export default function LogCatForm() {
             </div>
             <div>
               <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
-                <span>Age Estimate</span>{' '}
+                <span className="block min-h-[20px] flex items-end pb-0.5">Age Estimate</span>
                 <select 
                   name="age_estimate" 
-                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
+                  className="w-full bg-[var(--input-bg)] border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
                 >
                   <option value="">Unknown</option>
                   {AGE_OPTIONS.map((a) => (
@@ -372,19 +455,19 @@ export default function LogCatForm() {
 
           <div className="mb-6">
             <span className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-3">Community Care Indicators</span>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-3">
               {[
                 { name: 'sterilized',   icon: 'content_cut', label: 'Sterilized' },
                 { name: 'vaccinated',   icon: 'vaccines', label: 'Vaccinated' },
                 { name: 'microchipped', icon: 'tag', label: 'Microchipped' },
               ].map((cb) => (
-                <label key={cb.name} className="flex items-center gap-2 cursor-pointer font-body text-sm font-semibold text-[var(--empire-cream)]">
+                <label key={cb.name} className="flex items-center gap-2.5 cursor-pointer px-4 py-2.5 rounded-xl border border-[var(--bg-border)]/40 bg-[var(--bg-elevated)] hover:bg-[var(--bg-border)]/10 font-body text-sm font-semibold text-[var(--empire-cream)] transition-all select-none">
                   <input 
                     type="checkbox" 
                     name={cb.name} 
-                    className="accent-[var(--life-teal)]" 
+                    className="w-4 h-4 rounded border-gray-300 text-[var(--life-teal)] focus:ring-[var(--life-teal)] accent-[var(--life-teal)]" 
                   />
-                  <span className="material-symbols-outlined text-xs text-[var(--empire-cream)]/50">{cb.icon}</span>
+                  <span className="material-symbols-outlined text-sm text-[var(--empire-cream)]/60">{cb.icon}</span>
                   <span>{cb.label}</span>
                 </label>
               ))}
@@ -393,21 +476,21 @@ export default function LogCatForm() {
 
           <div className="mb-6">
             <span className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-3">Triage & Health Indicators (Optional)</span>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {(Object.keys(HEALTH_FLAG_LABELS) as HealthFlag[]).map((flag) => (
                 <label 
                   key={flag} 
-                  className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-all ${
+                  className={`flex items-center gap-3 cursor-pointer p-3 rounded-xl border transition-all select-none ${
                     selectedFlags.includes(flag) 
-                      ? 'bg-red-50 border-red-300 text-[#ba1a1a]' 
-                      : 'bg-[var(--bg-elevated)] border-[var(--bg-border)]/40 text-[var(--empire-cream)]'
+                      ? 'bg-red-500/10 border-red-500/40 text-red-600 dark:text-red-400' 
+                      : 'bg-[var(--bg-elevated)] border-[var(--bg-border)]/40 text-[var(--empire-cream)] hover:bg-[var(--bg-border)]/10'
                   }`}
                 >
                   <input 
                     type="checkbox" 
                     checked={selectedFlags.includes(flag)} 
                     onChange={() => toggleFlag(flag)} 
-                    className="accent-[#ba1a1a]" 
+                    className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 accent-red-600" 
                   />
                   <span className="font-body text-xs font-semibold">{HEALTH_FLAG_LABELS[flag]}</span>
                 </label>
@@ -423,7 +506,7 @@ export default function LogCatForm() {
                 maxLength={2000} 
                 placeholder="e.g. Friendly, has a minor limp on front left paw..." 
                 rows={3}
-                className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all resize-y mt-2 font-normal normal-case"
+                className="w-full bg-[var(--input-bg)] border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all resize-y mt-2 font-normal normal-case"
               />
             </label>
           </div>
@@ -437,7 +520,7 @@ export default function LogCatForm() {
                   name="contact_info" 
                   maxLength={500} 
                   placeholder="Email or phone..." 
-                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
+                  className="w-full bg-[var(--input-bg)] border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
                 />
               </label>
             </div>
@@ -448,7 +531,7 @@ export default function LogCatForm() {
                   type="url" 
                   name="shelter_url" 
                   placeholder="Rescue website..." 
-                  className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
+                  className="w-full bg-[var(--input-bg)] border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
                 />
               </label>
             </div>

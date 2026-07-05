@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
 import { createClient } from '@/lib/supabase/client';
 import type { CatListItem } from '@/app/(app)/cats/page';
+import { getSafeImageSrc } from '@/lib/security/url';
 
 const STATUS_CONFIG: Record<string, { color: string; label: string; icon: string; bg: string }> = {
   stray:      { color: '#ba1a1a', label: 'Stray', icon: 'warning', bg: '#ffdad6' },

@@ -43,6 +43,12 @@ export interface VolunteerSkill {
   readonly verified_by: string | null;
   readonly verified_at: string | null;
   readonly created_at: string;
+  readonly info?: string | null;
+  readonly proof?: string | null;
+  readonly status: 'pending' | 'query_raised' | 'verified' | 'rejected';
+  readonly mod_query?: string | null;
+  readonly volunteer_response?: string | null;
+  readonly profiles?: { display_name: string | null } | null;
 }
 
 export interface VolunteerHours {
@@ -180,15 +186,32 @@ export async function getVolunteerAvailability(userId?: string): Promise<Volunte
 
 // ─── Skills ───────────────────────────────────────────────────────────────────
 
-export async function claimSkill(skillType: SkillType): Promise<ActionResponse> {
+export async function claimSkill(
+  skillType: SkillType,
+  info: string,
+  proof: string
+): Promise<ActionResponse> {
   try {
     const supabase = await createServerClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Unauthorized' };
 
+    const sanitizedInfo = sanitizeText(info || '');
+    const sanitizedProof = sanitizeText(proof || '');
+
+    if (!sanitizedInfo) return { success: false, error: 'Experience details (info) is required.' };
+    if (!sanitizedProof) return { success: false, error: 'Proof/references is required.' };
+
     await supabase
       .from('volunteer_skills' as never)
-      .insert({ user_id: user.id, skill_type: skillType } as never) as unknown as { error: unknown };
+      .insert({
+        user_id: user.id,
+        skill_type: skillType,
+        info: sanitizedInfo,
+        proof: sanitizedProof,
+        status: 'pending',
+        verified: false,
+      } as never) as unknown as { error: unknown };
 
     revalidatePath('/volunteers');
     return { success: true };
@@ -214,6 +237,7 @@ export async function verifySkill(userId: string, skillType: SkillType): Promise
         verified: true,
         verified_by: user.id,
         verified_at: new Date().toISOString(),
+        status: 'verified',
       } as never)
       .eq('user_id', userId)
       .eq('skill_type', skillType) as unknown as { error: unknown };
@@ -222,6 +246,115 @@ export async function verifySkill(userId: string, skillType: SkillType): Promise
     return { success: true };
   } catch {
     return { success: false, error: 'Failed to verify skill' };
+  }
+}
+
+export async function rejectSkill(userId: string, skillType: SkillType): Promise<ActionResponse> {
+  try {
+    if (!isValidUUID(userId)) return { success: false, error: 'Invalid user ID' };
+
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const role = await getCallerRole(supabase, user.id);
+    if (role !== 'moderator' && role !== 'admin') return { success: false, error: 'Unauthorized' };
+
+    await supabase
+      .from('volunteer_skills' as never)
+      .update({
+        status: 'rejected',
+        verified: false,
+      } as never)
+      .eq('user_id', userId)
+      .eq('skill_type', skillType) as unknown as { error: unknown };
+
+    revalidatePath('/volunteers');
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Failed to reject skill' };
+  }
+}
+
+export async function raiseQueryOnSkill(
+  userId: string,
+  skillType: SkillType,
+  queryText: string
+): Promise<ActionResponse> {
+  try {
+    if (!isValidUUID(userId)) return { success: false, error: 'Invalid user ID' };
+
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const role = await getCallerRole(supabase, user.id);
+    if (role !== 'moderator' && role !== 'admin') return { success: false, error: 'Unauthorized' };
+
+    const sanitizedQuery = sanitizeText(queryText || '');
+    if (!sanitizedQuery) return { success: false, error: 'Query text is required.' };
+
+    await supabase
+      .from('volunteer_skills' as never)
+      .update({
+        status: 'query_raised',
+        mod_query: sanitizedQuery,
+      } as never)
+      .eq('user_id', userId)
+      .eq('skill_type', skillType) as unknown as { error: unknown };
+
+    revalidatePath('/volunteers');
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Failed to raise query on skill' };
+  }
+}
+
+export async function respondToSkillQuery(
+  skillType: SkillType,
+  responseText: string
+): Promise<ActionResponse> {
+  try {
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const sanitizedResponse = sanitizeText(responseText || '');
+    if (!sanitizedResponse) return { success: false, error: 'Response text is required.' };
+
+    await supabase
+      .from('volunteer_skills' as never)
+      .update({
+        status: 'pending',
+        volunteer_response: sanitizedResponse,
+      } as never)
+      .eq('user_id', user.id)
+      .eq('skill_type', skillType) as unknown as { error: unknown };
+
+    revalidatePath('/volunteers');
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Failed to respond to query' };
+  }
+}
+
+export async function getPendingSkills(): Promise<any[]> {
+  try {
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const role = await getCallerRole(supabase, user.id);
+    if (role !== 'moderator' && role !== 'admin') return [];
+
+    const { data } = await supabase
+      .from('volunteer_skills' as never)
+      .select('*, profiles:profiles(display_name)')
+      .in('status', ['pending', 'query_raised', 'rejected']) as unknown as { data: any[] | null };
+
+    return data ?? [];
+  } catch {
+    return [];
   }
 }
 

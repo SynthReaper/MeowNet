@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import IncidentTriagePanel from '@/components/moderator/IncidentTriagePanel';
+import { getSafeImageSrc } from '@/lib/security/url';
 import { publishStory, rejectStory } from '@/lib/actions/education';
 import {
   BarChart as RechartsBarChart,
@@ -1605,7 +1606,7 @@ export default function ModeratorDashboardClient({
                     <div className="flex gap-4">
                       {cat.photo_url ? (
                         <img
-                          src={cat.photo_url}
+                          src={getSafeImageSrc(cat.photo_url)}
                           alt={cat.name}
                           className="w-16 h-16 rounded-xl object-cover border border-[var(--bg-border)] bg-[var(--bg-void)] flex-shrink-0"
                         />

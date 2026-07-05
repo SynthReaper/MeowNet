@@ -12,23 +12,25 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 
 const CatCreateSchema = z.object({
-  name: z.string().max(100).optional(),
+  name: z.string().max(100).optional().or(z.literal('')),
   status: z.enum(['stray', 'tnr_needed', 'adoptable', 'adopted', 'fostered']),
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
   location_privacy: z.enum(['exact', 'area']).default('area'),
-  breed_estimate: z.string().max(100).optional(),
-  age_estimate: z.enum(['kitten', 'juvenile', 'adult', 'senior']).optional(),
-  color: z.string().max(100).optional(),
-  health_notes: z.string().max(2000).optional(),
+  breed_estimate: z.string().max(100).optional().or(z.literal('')),
+  breed_confidence: z.preprocess((v) => (v === '' || v == null ? null : v), z.coerce.number().min(0).max(1).nullable().optional()),
+  age_estimate: z.enum(['kitten', 'juvenile', 'adult', 'senior']).optional().or(z.literal('')),
+  color: z.string().max(100).optional().or(z.literal('')),
+  health_notes: z.string().max(2000).optional().or(z.literal('')),
   health_flags: z.array(z.string()).default([]),
   sterilized: z.coerce.boolean().default(false),
   vaccinated: z.coerce.boolean().default(false),
   microchipped: z.coerce.boolean().default(false),
-  contact_info: z.string().max(500).optional(),
+  contact_info: z.string().max(500).optional().or(z.literal('')),
   shelter_url: z.string().url().optional().or(z.literal('')),
   consent_recorded: z.coerce.boolean().default(false),
 });
+
 
 export type LogCatResult =
   | { success: true; catId: string; pointsAwarded: number }
@@ -81,10 +83,11 @@ export async function logCat(formData: FormData): Promise<LogCatResult> {
         location: `POINT(${data.lng} ${data.lat})` as never, // PostGIS WKT
         location_privacy: data.location_privacy,
         name: data.name ? sanitizeText(data.name, 100) : null,
-        breed_estimate: data.breed_estimate ?? null,
+        breed_estimate: data.breed_estimate ? sanitizeText(data.breed_estimate, 100) : null,
+        breed_confidence: typeof data.breed_confidence === 'number' ? data.breed_confidence : null,
         health_notes: data.health_notes ? sanitizeText(data.health_notes) : null,
         health_flags: data.health_flags,
-        age_estimate: data.age_estimate ?? null,
+        age_estimate: data.age_estimate || null,
         color: data.color ? sanitizeText(data.color, 100) : null,
         sterilized: data.sterilized,
         vaccinated: data.vaccinated,
@@ -154,9 +157,23 @@ export async function deleteCat(catId: string): Promise<{ success: boolean; erro
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return { success: false, error: 'unauthorized' };
 
-    // Verify ownership
+    // Verify ownership or staff permissions
     const { data: existingCat } = await supabase.from('cats' as never).select('owner_id').eq('id', catId).single() as { data: { owner_id: string } | null };
-    if (!existingCat || existingCat.owner_id !== user.id) {
+    if (!existingCat) return { success: false, error: 'not_found' };
+
+    let isAuthorized = existingCat.owner_id === user.id;
+    if (!isAuthorized) {
+      const { data: profile } = await supabase
+        .from('profiles' as never)
+        .select('role')
+        .eq('id', user.id)
+        .single() as { data: { role: string | null } | null };
+      if (profile?.role === 'admin' || profile?.role === 'moderator') {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
       return { success: false, error: 'unauthorized' };
     }
 
@@ -199,9 +216,23 @@ export async function updateCat(catId: string, formData: FormData): Promise<{ su
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return { success: false, error: 'unauthorized' };
 
-    // Verify ownership
+    // Verify ownership or staff permissions
     const { data: existingCat } = await supabase.from('cats' as never).select('owner_id, photo_url').eq('id', catId).single() as { data: { owner_id: string; photo_url: string } | null };
-    if (!existingCat || existingCat.owner_id !== user.id) {
+    if (!existingCat) return { success: false, error: 'not_found' };
+
+    let isAuthorized = existingCat.owner_id === user.id;
+    if (!isAuthorized) {
+      const { data: profile } = await supabase
+        .from('profiles' as never)
+        .select('role')
+        .eq('id', user.id)
+        .single() as { data: { role: string | null } | null };
+      if (profile?.role === 'admin' || profile?.role === 'moderator') {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
       return { success: false, error: 'unauthorized' };
     }
 
@@ -232,10 +263,11 @@ export async function updateCat(catId: string, formData: FormData): Promise<{ su
         location: `POINT(${data.lng} ${data.lat})` as never,
         location_privacy: data.location_privacy,
         name: data.name ? sanitizeText(data.name, 100) : null,
-        breed_estimate: data.breed_estimate ?? null,
+        breed_estimate: data.breed_estimate ? sanitizeText(data.breed_estimate, 100) : null,
+        breed_confidence: typeof data.breed_confidence === 'number' ? data.breed_confidence : null,
         health_notes: data.health_notes ? sanitizeText(data.health_notes) : null,
         health_flags: data.health_flags,
-        age_estimate: data.age_estimate ?? null,
+        age_estimate: data.age_estimate || null,
         color: data.color ? sanitizeText(data.color, 100) : null,
         sterilized: data.sterilized,
         vaccinated: data.vaccinated,

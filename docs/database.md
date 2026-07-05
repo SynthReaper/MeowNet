@@ -1,6 +1,6 @@
 # MeowNet Database Documentation
 
-> Last updated: 2026-07-05 · v0.9.0 · Migrations: 0001–0005 (Consolidated + Personal Care + Social Impact + Security Hardening)
+> Last updated: 2026-07-05 · v0.9.0 · Migrations: 0001–0006 + Fixes (Consolidated + Personal Care + Social Impact + Security Hardening + Audit Trigger Fixes + Volunteer Credentials Workflow)
 
 ---
 
@@ -117,6 +117,8 @@ Auth schema (Supabase managed)
 | 0057 | `0057_realtime_replica_identity.sql` | REPLICA IDENTITY FULL configuration for moderator_queries |
 | 0058 | `0058_auto_audit_profiles.sql` | Auto audit triggers for user role changes, suspends, and profile updates |
 | 0059 | `0059_get_user_by_email.sql` | SECURITY DEFINER helper get_user_by_email to bypass internal auth schema constraints |
+| 0060 | `20260705173419_fix_audit_triggers.sql` | Empty boilerplate migration |
+| 0061 | `20260705173420_fix_audit_triggers.sql` | Redefined trigger functions to fallback to system cats admin on nonexistent profiles to prevent foreign key errors |
 
 ---
 
@@ -419,5 +421,16 @@ Used to store user-supplied AI provider keys client-side encrypted.
 Hardens Row-Level Security (RLS) policies on volunteer credentials and logged hours to prevent forging entries:
 - **`volunteer_skills`**: The insert policy enforces that the `verified` field is `false`, and `verified_by` and `verified_at` are `NULL` for normal users during insertion.
 - **`volunteer_hours`**: The loose `FOR ALL` policy is split into separate granular policies. Users can only select their own records, insert unverified hours (`verified_by` and `verified_at` are `NULL`), delete unverified hours, and update unverified hours (without changing verification details).
+
+### Volunteer Credentials Workflow (migration 0006)
+Extends the credentials verification model to support a request-and-review application pipeline:
+- **New Columns**:
+  - `info` `TEXT`: Experience details provided by the volunteer.
+  - `proof` `TEXT`: Links to certificates or clinic references.
+  - `status` `TEXT`: Credential state constraint (`'pending'`, `'query_raised'`, `'verified'`, or `'rejected'`).
+  - `mod_query` `TEXT`: Written clarification request raised by moderators.
+  - `volunteer_response` `TEXT`: Follow-up details submitted by the volunteer.
+- **RLS Update Policy**: Added policy `volunteer_skills_own_update` allowing volunteers to modify their own columns (`info`, `proof`, `volunteer_response`, `status`) to respond to clarification queries when their credentials remain unverified (`verified = false` and `auth.uid() = user_id`).
+
 
 

@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const res = await claimSkill(body.skill_type);
+    const res = await claimSkill(body.skill_type, body.info || '', body.proof || '');
     if (!res.success) return NextResponse.json({ error: res.error }, { status: 400 });
 
     return NextResponse.json({ success: true });

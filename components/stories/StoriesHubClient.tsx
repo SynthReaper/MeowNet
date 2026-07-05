@@ -6,6 +6,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import StoryCard, { Story } from '@/components/stories/StoryCard';
 import StorySubmissionForm from '@/components/stories/StorySubmissionForm';
+import { getSafeImageSrc } from '@/lib/security/url';
 
 interface AdoptedCat {
   readonly id: string;
@@ -106,7 +107,7 @@ export default function StoriesHubClient({ adoptedCats, stories }: Props) {
                   {/* Photo frame */}
                   <div className="h-56 bg-black/40 relative overflow-hidden border-b border-white/5 flex items-center justify-center">
                     {cat.photo_url ? (
-                      <img src={cat.photo_url} alt={cat.name || 'Happy cat'} className="w-full h-full object-cover" />
+                      <img src={getSafeImageSrc(cat.photo_url)} alt={cat.name || 'Happy cat'} className="w-full h-full object-cover" />
                     ) : (
                       <span className="material-symbols-outlined text-5xl text-[var(--empire-gold)]/30">pets</span>
                     )}

@@ -5,6 +5,7 @@ import { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Popup, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { getSafeImageSrc } from '@/lib/security/url';
 
 interface Cat {
   readonly id: string;
@@ -207,7 +208,7 @@ export default function ModeratorHotspotsMap({
                 <div className="flex gap-2 items-start border-b border-zinc-200 dark:border-zinc-700 pb-2">
                   {cat.photo_url ? (
                     <img
-                      src={cat.photo_url}
+                      src={getSafeImageSrc(cat.photo_url)}
                       alt={cat.name}
                       className="w-10 h-10 rounded-lg object-cover border border-zinc-200"
                     />

@@ -10,6 +10,7 @@ import StaffProfileView, { StaffProfile } from '@/components/profile/StaffProfil
 import ModeratorApplicationCard from '@/components/profile/ModeratorApplicationCard';
 import ProfileQueries from '@/components/profile/ProfileQueries';
 import ProfileActivityLogs from '@/components/profile/ProfileActivityLogs';
+import { getSafeImageSrc } from '@/lib/security/url';
 
 export const metadata: Metadata = {
   title: '👤 My Profile',
@@ -267,7 +268,7 @@ export default async function ProfilePage() {
                         className="flex items-center gap-3 p-2.5 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-border)]/10 transition-colors border border-[var(--bg-border)]/10 no-underline group"
                       >
                         <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-[var(--bg-border)]/30 flex-shrink-0">
-                          <img src={cat.photo_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          <img src={getSafeImageSrc(cat.photo_url)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         </div>
                         <div className="flex-grow min-w-0">
                           <div className="font-body text-xs font-bold text-[var(--empire-cream)] truncate">
@@ -321,7 +322,7 @@ export default async function ProfilePage() {
                       >
                         <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-[var(--bg-border)]/30 flex-shrink-0">
                           {cat?.photo_url ? (
-                            <img src={cat.photo_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                            <img src={getSafeImageSrc(cat.photo_url)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-xl bg-[var(--bg-elevated)]">🐱</div>
                           )}

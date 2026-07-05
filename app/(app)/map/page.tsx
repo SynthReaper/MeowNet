@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client';
 import { fuzzCoordinates } from '@/lib/geo/utils';
 import type { CatMarkerData } from '@/components/map/CatMap';
 import FloatingActionButton from '@/components/ui/FloatingActionButton';
+import { getSafeImageSrc } from '@/lib/security/url';
 
 const CatMap = dynamic(() => import('@/components/map/CatMap'), {
   ssr: false,
@@ -257,7 +258,7 @@ export default function MapPage() {
               >
                 <div className="w-10 h-10 rounded-full bg-[var(--bg-border)]/30 overflow-hidden shrink-0 border border-[var(--bg-border)]/40 flex items-center justify-center">
                   {cat.photo_url ? (
-                    <img src={cat.photo_url} alt="" className="w-full h-full object-cover" />
+                    <img src={getSafeImageSrc(cat.photo_url)} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-xl">🐱</span>
                   )}

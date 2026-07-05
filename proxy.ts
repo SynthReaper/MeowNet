@@ -72,9 +72,7 @@ async function handleMaintenanceRedirect(
 
 export default clerkMiddleware(async (auth, request: NextRequest) => {
   let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+    request,
   });
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://placeholder.supabase.co';
@@ -91,9 +89,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request,
           });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)

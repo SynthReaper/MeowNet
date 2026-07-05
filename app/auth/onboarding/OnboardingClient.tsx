@@ -23,7 +23,7 @@ const ROLE_OPTIONS: RoleOption[] = [
     id: 'TNR Expert',
     title: 'TNR Expert',
     description: 'Trap-Neuter-Return coordinator. Handle humane traps, manage clinic runs, and track colony sizes.',
-    icon: 'catching_pokemon',
+    icon: 'pets',
     badgeColor: 'bg-[var(--life-teal)]/10 text-[var(--life-teal)] border-[var(--life-teal)]/20',
     accentClass: 'group-hover:border-[var(--life-teal)] focus-within:border-[var(--life-teal)]',
   },
@@ -198,7 +198,7 @@ export default function OnboardingClient() {
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="relative w-16 h-16 flex items-center justify-center">
             <span className="material-symbols-outlined text-4xl text-[var(--empire-gold)] animate-spin">progress_activity</span>
-            <span className="absolute text-xl">🐾</span>
+            <span className="absolute material-symbols-outlined text-xl text-[var(--empire-gold)] select-none">pets</span>
           </div>
           <h2 className="font-display text-xl font-bold">Setting up your Cat Empire profile</h2>
           <p className="font-body text-xs text-[var(--text-secondary)] max-w-xs leading-relaxed">
@@ -238,15 +238,11 @@ export default function OnboardingClient() {
         {/* Step indicator */}
         <div className="flex justify-between items-center mb-8 border-b border-[var(--bg-border)]/50 pb-5">
           <div className="flex items-center gap-3">
-            <div className="relative w-9 h-9 select-none">
-              {/* Peeking Cat behind */}
-              <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-lg z-0 animate-bounce" style={{ animationDuration: '3s' }}>
-                🐱
-              </span>
+            <div className="w-9 h-9 select-none">
               {/* Main logo image */}
               <img
                 src="/pet-logo.png"
-                className="relative w-9 h-9 object-contain z-10 filter drop-shadow-[0_3px_8px_rgba(0,0,0,0.3)]"
+                className="w-full h-full object-contain filter drop-shadow-[0_3px_8px_rgba(0,0,0,0.3)]"
                 alt="MeowNet Logo"
               />
             </div>
@@ -277,8 +273,9 @@ export default function OnboardingClient() {
         {step === 1 && (
           <div className="flex flex-col gap-5 animate-fade-in">
             <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-[var(--empire-gold)]/10 border border-[var(--empire-gold)]/30 flex items-center justify-center mx-auto mb-4 text-3xl">
-                🐱👑
+              <div className="w-16 h-16 rounded-full bg-[var(--empire-gold)]/10 border border-[var(--empire-gold)]/30 flex items-center justify-center mx-auto mb-4 relative">
+                <span className="material-symbols-outlined text-3xl text-[var(--empire-gold)] select-none">pets</span>
+                <span className="material-symbols-outlined text-lg text-[var(--empire-gold)] absolute -top-1 -right-1 rotate-12 select-none">crown</span>
               </div>
               <h2 className="font-display text-2xl font-bold text-[var(--empire-cream)]">Welcome to the Cat Empire!</h2>
               <p className="font-body text-xs text-[var(--text-secondary)] mt-1.5 leading-relaxed">
@@ -465,7 +462,7 @@ export default function OnboardingClient() {
                       : 'border-[var(--bg-border)]/50'
                   }`}
                 >
-                  <div className={`w-9 h-9 rounded-lg border flex items-center justify-center ${opt.badgeColor} mt-0.5 flex-shrink-0`}>
+                  <div className={`w-9 h-9 rounded-lg border flex items-center justify-center overflow-hidden ${opt.badgeColor} mt-0.5 flex-shrink-0`}>
                     <span className="material-symbols-outlined text-[20px]">{opt.icon}</span>
                   </div>
                   <div>
@@ -505,8 +502,8 @@ export default function OnboardingClient() {
         {/* Step 4: Explore and Complete */}
         {step === 4 && (
           <div className="flex flex-col gap-5 text-center animate-fade-in">
-            <div className="mx-auto w-14 h-14 rounded-full bg-[var(--life-teal)]/10 border border-[var(--life-teal)]/30 flex items-center justify-center text-3xl">
-              🌟
+            <div className="mx-auto w-14 h-14 rounded-full bg-[var(--life-teal)]/10 border border-[var(--life-teal)]/30 flex items-center justify-center">
+              <span className="material-symbols-outlined text-3xl text-[var(--life-teal)] select-none">star</span>
             </div>
             <div>
               <h2 className="font-display text-xl font-bold text-[var(--empire-cream)]">Ready to explore?</h2>

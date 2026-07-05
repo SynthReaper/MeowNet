@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { getSafeImageSrc } from '@/lib/security/url';
 
 interface CatSighting {
   id: string;
@@ -201,7 +202,7 @@ export default function ReportsPage() {
               className="flex items-center gap-4 p-3 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-border)]/15 border border-[var(--bg-border)]/10 transition-all duration-200 no-underline group"
             >
               <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-[var(--bg-border)]/20 flex-shrink-0">
-                <img src={cat.photo_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                <img src={getSafeImageSrc(cat.photo_url)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
               </div>
               <div className="flex-grow min-w-0">
                 <h4 className="font-body text-xs font-bold text-[var(--empire-cream)] group-hover:text-[var(--empire-gold)] transition-colors truncate">

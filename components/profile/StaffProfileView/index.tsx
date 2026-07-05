@@ -7,6 +7,7 @@ import { useState, ComponentProps } from 'react';
 import Link from 'next/link';
 import ProfileCard from '@/components/profile/ProfileCard';
 import DataDeletion from '@/components/profile/DataDeletion';
+import { getSafeImageSrc } from '@/lib/security/url';
 
 export interface StaffProfile {
   id: string;
@@ -387,7 +388,7 @@ function VolunteerTabSection({ profile, email, sightings, pledges, recentPoints,
                     >
                       <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-[var(--bg-border)]/30 flex-shrink-0">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={cat.photo_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <img src={getSafeImageSrc(cat.photo_url)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       </div>
                       <div className="flex-grow min-w-0">
                         <div className="font-body text-xs font-bold text-[var(--empire-cream)] truncate">
@@ -442,7 +443,7 @@ function VolunteerTabSection({ profile, email, sightings, pledges, recentPoints,
                       <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-[var(--bg-border)]/30 flex-shrink-0">
                         {cat?.photo_url ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
-                          <img src={cat.photo_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          <img src={getSafeImageSrc(cat.photo_url)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-[var(--bg-elevated)]">
                             <span className="material-symbols-outlined text-sm text-[var(--empire-cream)]/30">pets</span>

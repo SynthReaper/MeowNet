@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
+import { getSafeImageSrc } from '@/lib/security/url';
 
 interface Profile {
   id: string;
@@ -216,7 +217,7 @@ export default async function PublicProfilePage({ params }: Readonly<{ params: P
                       className="flex items-center gap-3 p-2.5 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-border)]/10 transition-colors border border-[var(--bg-border)]/10 no-underline group"
                     >
                       <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-[var(--bg-border)]/30 flex-shrink-0">
-                        <img src={cat.photo_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        <img src={getSafeImageSrc(cat.photo_url)} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       </div>
                       <div className="flex-grow min-w-0">
                         <div className="font-body text-xs font-bold text-[var(--empire-cream)] truncate">
