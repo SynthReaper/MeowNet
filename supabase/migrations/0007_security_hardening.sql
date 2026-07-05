@@ -326,3 +326,17 @@ CREATE POLICY "Volunteer select own logs" ON public.staff_audit_logs
 -- 11. Revoke execute on points triggers/RPCs
 REVOKE EXECUTE ON FUNCTION public.award_points(UUID, TEXT, INTEGER, UUID, TEXT) FROM public, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.adjust_points(UUID, INTEGER) FROM public, anon, authenticated;
+
+-- 12. Create atomic decrement_supply_quantity RPC
+CREATE OR REPLACE FUNCTION public.decrement_supply_quantity(
+  p_supply_id UUID,
+  p_quantity INTEGER
+) RETURNS VOID SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  UPDATE public.supplies
+  SET quantity = quantity - p_quantity
+  WHERE id = p_supply_id;
+END;
+$$ LANGUAGE plpgsql;
+
+REVOKE EXECUTE ON FUNCTION public.decrement_supply_quantity(UUID, INTEGER) FROM public, anon, authenticated;

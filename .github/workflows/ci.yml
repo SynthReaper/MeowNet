@@ -8,10 +8,14 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
   # --- Job 1: Next.js -----------------------------------------------------------
@@ -20,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      statuses: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,12 +58,26 @@ jobs:
           ML_SERVICE_SECRET: ci_secret_placeholder
           NEXT_PUBLIC_APP_URL: https://meownet-sr.vercel.app
 
+      - name: Report status check
+        if: always()
+        run: |
+          STATE="success"
+          if [ "${{ job.status }}" = "failure" ] || [ "${{ job.status }}" = "cancelled" ]; then
+            STATE="failure"
+          fi
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/statuses/${{ env.COMMIT_SHA }} \
+            -d "{\"state\":\"$STATE\",\"target_url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"description\":\"Next.js status: ${{ job.status }}\",\"context\":\"Next.js — Lint + Types + Build\"}"
+
   # --- Job 2: Python ML ---------------------------------------------------------
   ml:
     name: "Python ML — Install + Syntax Check"
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      statuses: write
     defaults:
       run:
         working-directory: python-ml
@@ -83,12 +102,26 @@ jobs:
       - name: Run tests (if any)
         run: python -m pytest tests/ -v --tb=short 2>/dev/null || echo "No tests directory yet — skipping"
 
+      - name: Report status check
+        if: always()
+        run: |
+          STATE="success"
+          if [ "${{ job.status }}" = "failure" ] || [ "${{ job.status }}" = "cancelled" ]; then
+            STATE="failure"
+          fi
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/statuses/${{ env.COMMIT_SHA }} \
+            -d "{\"state\":\"$STATE\",\"target_url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"description\":\"Python ML status: ${{ job.status }}\",\"context\":\"Python ML — Install + Syntax Check\"}"
+
   # --- Job 3: Secret Scan -------------------------------------------------------
   secret-scan:
     name: "Secret Scan"
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      statuses: write
     steps:
       - name: Checkout (full history)
         uses: actions/checkout@v4
@@ -108,12 +141,26 @@ jobs:
           fi
           echo "No secrets found"
 
+      - name: Report status check
+        if: always()
+        run: |
+          STATE="success"
+          if [ "${{ job.status }}" = "failure" ] || [ "${{ job.status }}" = "cancelled" ]; then
+            STATE="failure"
+          fi
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/statuses/${{ env.COMMIT_SHA }} \
+            -d "{\"state\":\"$STATE\",\"target_url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"description\":\"Secret Scan status: ${{ job.status }}\",\"context\":\"Secret Scan\"}"
+
   # --- Job 4: Docker Build (ML) -------------------------------------------------
   docker-ml:
     name: "Docker — ML Service Build"
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      statuses: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -122,6 +169,19 @@ jobs:
 
       - name: Build ML Docker image
         run: docker build -t meownet-ml:ci ./python-ml
+
+      - name: Report status check
+        if: always()
+        run: |
+          STATE="success"
+          if [ "${{ job.status }}" = "failure" ] || [ "${{ job.status }}" = "cancelled" ]; then
+            STATE="failure"
+          fi
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/statuses/${{ env.COMMIT_SHA }} \
+            -d "{\"state\":\"$STATE\",\"target_url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"description\":\"Docker ML status: ${{ job.status }}\",\"context\":\"Docker — ML Service Build\"}"
 
   # --- Job 5: Docs Consistency --------------------------------------------------
   docs-check:

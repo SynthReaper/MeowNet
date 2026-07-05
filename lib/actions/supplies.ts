@@ -3,7 +3,7 @@
 // MeowNet v0.9.0 Social Impact — #hackthekitty 2026
 
 import { revalidatePath } from 'next/cache';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { sanitizeText } from '@/lib/security/sanitize';
 import { z } from 'zod';
 
@@ -196,8 +196,9 @@ export async function fulfillSupplyRequest(requestId: string): Promise<ActionRes
 
     if (!req || req.status !== 'approved') return { success: false, error: 'Request not approved' };
 
-    // Decrement supply quantity using RPC (atomic)
-    await (supabase as any).rpc('decrement_supply_quantity', {
+    // Decrement supply quantity using RPC (atomic) via service client
+    const serviceClient = createServiceClient();
+    await (serviceClient as any).rpc('decrement_supply_quantity', {
       p_supply_id: req.supply_id,
       p_quantity: req.quantity_requested,
     });
