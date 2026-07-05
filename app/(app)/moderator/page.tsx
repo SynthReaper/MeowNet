@@ -42,7 +42,7 @@ export default async function ModeratorPage() {
   }
 
   // Fetch initial moderation data
-  const [catsRes, eventsRes, queriesRes, profilesRes, auditLogs] = await Promise.all([
+  const [catsRes, eventsRes, queriesRes, profilesRes, auditLogs, incidentsRes, storiesRes] = await Promise.all([
     supabase
       .from('cats' as never)
       .select('id, name, status, breed_estimate, age_estimate, owner_id, created_at, photo_url, is_verified, health_flags, health_notes, sterilized, vaccinated, microchipped, contact_info, bcs_estimate, color, shelter_url, breed_confidence, location')
@@ -57,8 +57,27 @@ export default async function ModeratorPage() {
       .order('created_at', { ascending: false })
       .then(res => res, () => ({ data: [], error: null })),
     profilesQuery,
-    getAuditLogs()
+    getAuditLogs(),
+    supabase
+      .from('incidents' as never)
+      .select('*')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('story_submissions' as never)
+      .select('*, profiles:profiles!story_submissions_author_id_fkey(display_name)')
+      .order('created_at', { ascending: false })
   ]);
+
+  const parsedIncidents = (incidentsRes.data ?? []).map((inc: any) => {
+    const matches = typeof inc.location === 'string'
+      ? inc.location.match(/POINT\(([-\d.]+) ([-\d.]+)\)/)
+      : null;
+    return {
+      ...inc,
+      lat: matches ? Number(matches[2]) : 20,
+      lng: matches ? Number(matches[1]) : 0,
+    };
+  });
 
   return (
     <ModeratorDashboardClient
@@ -67,6 +86,8 @@ export default async function ModeratorPage() {
       initialQueries={(queriesRes?.data ?? []) as any[]}
       initialProfiles={(profilesRes.data ?? []) as any[]}
       initialAuditLogs={auditLogs as any[]}
+      initialIncidents={parsedIncidents}
+      initialStories={(storiesRes.data ?? []) as any[]}
       currentUser={profile ? {
         id: profile.id,
         role: profile.role ?? 'user',

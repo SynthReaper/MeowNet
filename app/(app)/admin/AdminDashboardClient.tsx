@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo, useTransition } from 'react';
 // Removed unused import: Link
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import Link from 'next/link';
 import {
   AreaChart,
   Area,
@@ -3202,6 +3203,34 @@ export default function AdminDashboardClient({
             </div>
           </div>
 
+          {/* SOCIAL IMPACT HUBS */}
+          <div>
+            <span className="text-[9px] font-extrabold uppercase tracking-widest text-[var(--empire-cream)]/30 px-3 mb-1.5 block">Social Impact Hub</span>
+            <div className="flex flex-col gap-0.5">
+              <Link
+                href="/admin/volunteers"
+                className="sidebar-nav-link border-none text-left w-full text-[var(--empire-cream)]/60 hover:text-[var(--empire-gold)] flex items-center gap-2 px-3 py-2 text-xs font-semibold"
+              >
+                <span className="material-symbols-outlined text-base">badge</span>
+                <span>Volunteer Ops Admin</span>
+              </Link>
+              <Link
+                href="/admin/analytics"
+                className="sidebar-nav-link border-none text-left w-full text-[var(--empire-cream)]/60 hover:text-[var(--empire-gold)] flex items-center gap-2 px-3 py-2 text-xs font-semibold"
+              >
+                <span className="material-symbols-outlined text-base">monitoring</span>
+                <span>Impact Analytics</span>
+              </Link>
+              <Link
+                href="/admin/chapters"
+                className="sidebar-nav-link border-none text-left w-full text-[var(--empire-cream)]/60 hover:text-[var(--empire-gold)] flex items-center gap-2 px-3 py-2 text-xs font-semibold"
+              >
+                <span className="material-symbols-outlined text-base">domain</span>
+                <span>Chapters Manager</span>
+              </Link>
+            </div>
+          </div>
+
           {/* COMPLIANCE & SYSTEM */}
           <div>
             <span className="text-[9px] font-extrabold uppercase tracking-widest text-[var(--empire-cream)]/30 px-3 mb-1.5 block">Compliance &amp; System</span>
@@ -3274,7 +3303,7 @@ export default function AdminDashboardClient({
             </span>
             <span>All Channels nominal</span>
           </div>
-          <span className="text-[8px] text-[var(--empire-cream)]/30 font-mono">MeowNet Admin Console v0.8.2</span>
+          <span className="text-[8px] text-[var(--empire-cream)]/30 font-mono">MeowNet Admin Console v0.9.0</span>
         </div>
       </div>
 

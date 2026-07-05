@@ -2,7 +2,7 @@
 
 # MeowNet — Hackathon Judge Guide
 
-**#hackthekitty 2026 · v0.8.2**
+**#hackthekitty 2026 · v0.9.0**
 
 *A complete walkthrough for evaluators — no developer setup required.*
 
@@ -39,12 +39,14 @@ MeowNet runs two parallel authentication systems. Standard Clerk email sign-in m
 
 | Role | Email | Password | Access Level |
 |------|-------|----------|--------------|
-| Standard Volunteer | `judge-user@meownet.org` | `JudgeUser2026!` | Full volunteer features — map, cats, events, empire, community, weather |
-| Sub-Moderator | `judge-submod@meownet.org` | `JudgeSubMod2026!` | All volunteer features + moderator dashboard, query resolution (DB-enforced 20-use limit) |
+| Standard Volunteer | `judge-user@meownet.org` | `JudgeUser2026!` | Full volunteer features — map, cats, events, empire, community, weather, social-impact routes |
+| Sub-Moderator | `judge-submod@meownet.org` | `JudgeSubMod2026!` | All volunteer features + moderator dashboard (amber **MOD** badge), query resolution (DB-enforced 20-use limit) |
 
-> **Admin access** is available on request — contact synthreaperx@gmail.com. The admin dashboard includes system settings, audit logs, user management, and live activity feed.
+> **Admin access** is available on request — contact synthreaperx@gmail.com. The admin dashboard includes system settings, audit logs, user management, live activity feed, and the red-gold **ADMIN** badge with the Admin Command nav group.
 
 > **Auth note:** The sliding toggle at the top of the login card switches between Clerk Social Login and Database Direct. The judge credential cards at the bottom of the Staff Portal select this automatically.
+
+> **Navbar role tiers:** Volunteers see the standard nav. Sub-Moderators see an additional amber-badged **Moderator Ops** group. Admins see a red-gold **Admin Command** group with RBAC-only routes.
 
 ---
 
@@ -202,6 +204,86 @@ Volunteer raises query (status: open)
 
 ---
 
+### 13a. Volunteer Management System (VMS)
+
+**What it does:** Full volunteer coordination hub — interactive availability grids, skill check panels, hours logs, and mentor-matching queues. Admins get an elevated management view at `/admin/volunteers`.
+
+**Try it:** Click **Social Impact → Volunteer Hub** in the navigation.
+
+**Code:** [`app/(app)/volunteers`](../app/(app)/volunteers/)
+
+---
+
+### 13b. Emergency Response Registry
+
+**What it does:** Real-time crisis coordination with a Leaflet incident map, emergency report forms, live LIVE-badged banner notices, and dispatch tools. Incidents appear on the map in real-time via Supabase Realtime.
+
+**Try it:** Click **Social Impact → Emergency Response** — note the pulsing LIVE badge in the navbar.
+
+**Code:** [`app/(app)/emergency`](../app/(app)/emergency/)
+
+---
+
+### 13c. Supply Chain Registry
+
+**What it does:** Live inventory management for food, medicine, and equipment. Grid views show current stock levels with request fulfillment modals and re-order thresholds.
+
+**Try it:** Click **Social Impact → Supply Registry**.
+
+**Code:** [`app/(app)/supplies`](../app/(app)/supplies/)
+
+---
+
+### 13d. Regional Chapters
+
+**What it does:** Circle boundary maps showing each chapter's geographic territory. Volunteers can browse and join/leave chapters. Admins can create and manage chapters at `/admin/chapters`.
+
+**Try it:** Click **Social Impact → Regional Chapters**.
+
+**Code:** [`app/(app)/chapters`](../app/(app)/chapters/)
+
+---
+
+### 13e. Impact Analytics
+
+**What it does:** Population welfare trends, sighting density charts, and Recharts-powered data visualisations aggregated across all volunteer activity.
+
+**Try it:** Click **Social Impact → Impact Analytics**.
+
+**Code:** [`app/(app)/analytics`](../app/(app)/analytics/)
+
+---
+
+### 13f. Educational Academy
+
+**What it does:** Course catalog with graded multiple-choice assessments. Volunteers earn Empire Points on pass. Course completion is tracked per user.
+
+**Try it:** Click **Learn & Connect → Academy**.
+
+**Code:** [`app/(app)/education`](../app/(app)/education/)
+
+---
+
+### 13g. Partners Portal
+
+**What it does:** Verified NGO and veterinary partner registry. Sponsors can register their organisations and join MeowNet's coalition network.
+
+**Try it:** Click **Partners & Research → Partner Network**.
+
+**Code:** [`app/(app)/partners`](../app/(app)/partners/)
+
+---
+
+### 13h. Research Portal
+
+**What it does:** Anonymized population metadata JSON exporter for academic research requests. Data is aggregated at the colony level — no individual cat GPS coordinates are ever exported.
+
+**Try it:** Click **Partners & Research → Research Portal**.
+
+**Code:** [`app/(app)/research`](../app/(app)/research/)
+
+---
+
 ### 10. Maintenance Mode
 
 **What it does:** Admins can enable maintenance mode from the System Settings tab. When active, every non-admin visitor is immediately redirected to a themed `/maintenance` page. Admins bypass the gate and retain full access.
@@ -291,6 +373,15 @@ The breed estimation AI runs in a separate Docker container (Python FastAPI on R
 | Clerk-Supabase bridge | [`components/auth/AuthBridge/index.tsx`](../components/auth/AuthBridge/index.tsx) |
 | Zero-knowledge cockpit | [`components/personal-care/CareCenterDashboard.tsx`](../components/personal-care/CareCenterDashboard.tsx) |
 | AI Direct Action companion | [`components/personal-care/HelperPage.tsx`](../components/personal-care/HelperPage.tsx) · [`components/personal-care/HelperWidget.tsx`](../components/personal-care/HelperWidget.tsx) |
+| Volunteer Hub (VMS) | [`app/(app)/volunteers`](../app/(app)/volunteers/) |
+| Emergency Response Registry | [`app/(app)/emergency`](../app/(app)/emergency/) |
+| Supply Chain Registry | [`app/(app)/supplies`](../app/(app)/supplies/) |
+| Regional Chapters | [`app/(app)/chapters`](../app/(app)/chapters/) |
+| Impact Analytics | [`app/(app)/analytics`](../app/(app)/analytics/) |
+| Educational Academy | [`app/(app)/education`](../app/(app)/education/) |
+| Partner Network | [`app/(app)/partners`](../app/(app)/partners/) |
+| Research Portal | [`app/(app)/research`](../app/(app)/research/) |
+| Role-tiered Navbar | [`components/nav/Navbar/index.tsx`](../components/nav/Navbar/index.tsx) |
 
 ---
 
@@ -336,21 +427,26 @@ Use this to guide a structured evaluation:
 | Area | What to Check | Where |
 |------|--------------|-------|
 | Authentication | Log in via Database Direct (no OTP) | [Staff Portal](https://meownet-sr.vercel.app/auth/moderator-login) |
+| Role badge tiers | Volunteer = no badge, MOD = amber badge, ADMIN = red-gold badge | Navbar — top right corner |
 | Privacy — location | Cat map markers are approximate, not exact | [/map](https://meownet-sr.vercel.app/map) |
 | Privacy — EXIF | Upload a photo with GPS — EXIF is stripped before storage | Cats → Log New Cat |
 | AI integration | Breed estimate with consent gate + vet disclaimer | Cats → Log New Cat |
 | Welfare Score | 0–100 welfare breakdown on any cat profile | Any cat detail page |
-| Gamification | Points, leaderboard, badges, guilds, trivia, bingo | Empire section |
-| Admin power | System settings, user management, audit logs | Admin Dashboard |
+| Gamification | Points, leaderboard, badges, guilds, trivia, bingo | Empire Hub section |
+| Social Impact | Volunteer Hub, Emergency Response, Supply Registry, Chapters, Analytics | Social Impact nav group |
+| Academy | Complete a quiz and verify points are awarded | Learn & Connect → Academy |
+| Admin power | System settings, user management, audit logs | Admin → Admin Command group |
 | Maintenance mode | Toggle ON → non-admin redirect → Toggle OFF | Admin → System Settings |
-| Verification | Generate certificate → copy token → verify at /verify | Profile → Certificate |
-| Community | Chat channels, DMs, GIF search | Community section |
-| Weather | Geolocation-based feline safety grid | Weather section |
-| Private Care Center | Access the zero-knowledge cockpit, add custom attributes, view SVG vitals | Profile → Care Center |
-| AI Copilot Cockpit | Enter keys, trigger AI response actions, commit logs dynamically | Profile → AI Helper |
+| Verification | Generate certificate → copy token → verify at /verify | My Space → My Certificates |
+| Community | Chat channels, DMs, GIF search | Learn & Connect → Community Forum |
+| Weather | Geolocation-based feline safety grid | Field Ops → Weather Watch |
+| Private Care Center | Access the zero-knowledge cockpit, add custom attributes, view SVG vitals | My Space → Care Center |
+| AI Copilot Cockpit | Enter keys, trigger AI response actions, commit logs dynamically | My Space → AI Copilot |
+| Partners & Research | NGO registry and anonymized data export | Partners & Research nav group |
+| Cmd+K search | Type any feature — all 30+ routes searchable | Press Cmd+K / Ctrl+K |
 | Code quality | TypeScript strict, 0 type errors, ESLint clean | Source code |
 | Security | HMAC bridge, RLS, CSP headers, no service keys in client | [docs/security.md](security.md) |
 
 ---
 
-*MeowNet — #hackthekitty 2026 · v0.8.2 · [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com*
+*MeowNet — #hackthekitty 2026 · v0.9.0 · [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com*

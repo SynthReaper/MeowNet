@@ -19,6 +19,8 @@ export const POINT_VALUES = {
   TYCOON_CLAIM: 0,
   TYCOON_UPGRADE: 0,
   MEOW_TRANSLATION: 10,
+  HOURS_LOGGED: 10,
+  QUIZ_PASSED: 50,
 } as const;
 
 export type PointActivity = keyof typeof POINT_VALUES;

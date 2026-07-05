@@ -553,6 +553,26 @@ Provide helpful, expert, and practical cat care advice based on the data.
                   >
                     Unlock Helper
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUnlocked(true);
+                      setApiKey('');
+                      setProvider('gemini');
+                      setModel('gemini-1.5-flash');
+                      setMessages([
+                        {
+                          id: 'init-widget',
+                          role: 'assistant',
+                          content: 'Hello! I am your personal cat care helper (running on MeowNet server defaults). How can I assist you today?',
+                        },
+                      ]);
+                    }}
+                    className="mt-2 text-center text-[10px] text-[var(--empire-gold)] hover:underline cursor-pointer bg-transparent border-none w-full font-semibold"
+                  >
+                    Use Server Defaults (No custom keys)
+                  </button>
                 </form>
               </div>
             ) : (

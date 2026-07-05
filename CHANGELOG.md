@@ -12,9 +12,33 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 - **Autonomous AI Agent Ecosystem (On Hold)**: Multi-agent council comprising Bastet-Agent, Hermes-Agent, Anubis-Agent, Socrates-Agent, Archimedes-Agent, Freya-Agent, and Odin-Agent.
 
 
-## [0.8.2] — 2026-07-04 · Code Quality & SonarQube Compliance Sweep
+## [0.9.0] — 2026-07-05 · Social Impact & Field Coordination Milestone
+
+### Added
+- **Volunteer Management System (VMS) UI**: Interactive availability grids, skill check panels, hours logs, and mentor-matching queues.
+- **Emergency Case Registry (ECR) UI**: Real-time Leaflet incident maps, emergency report forms, live banner notices, and dispatch tools.
+- **Supply Chain Registry UI**: Live inventory grid views, stock management indices, and request fulfillment modals.
+- **Regional Chapters & Coverage**: Circle boundary maps showing regional presence and interactive join/leave cards.
+- **Educational Academy & Quizzes**: Course catalog trackers and graded multiple-choice assessments awarding points on pass.
+- **Impact Chronicles**: Verified success stories grids and author narrative submission forms.
+- **Partners Portal & Research Exporter**: Sponsor registries and anonymized population metadata JSON exporters.
+- **Dashboard Extensions**: Moderator incident triage panels and heavy administrative subviews with visual charts.
+- **Role-Tiered Navbar Overhaul**: Restructured the navbar into 5 semantic nav groups (Field Ops, Social Impact, Learn & Connect, Partners & Research, My Space) plus role-exclusive staff groups — amber `MOD` badge for moderators, red-gold `ADMIN` badge for administrators. All 9 v0.9.0 social-impact routes added to nav + Cmd+K search palette (30+ total routes indexed). Mobile drawer now shows full role title and styled identity card.
+- **Logo Tier Labels**: Admin Console and Staff Portal suffixes appear below the MeowNet logo for staff users, immediately communicating the active power tier.
+- **AI Helper Keyless Bypass**: Added a "Use Server Defaults" bypass option to `VaultUnlock` and `HelperWidget`, allowing users to chat with the AI helper companion using server-side environment keys without setting up or entering a master password.
+
+### Security
+- **Volunteer Hour/Skill Verification Hardening**: Created database migration `0005_harden_volunteer_security.sql` to restrict insertion and updates on `volunteer_skills` and `volunteer_hours` tables, preventing regular users from self-verifying or forging hours logs.
+
 
 ### Fixed
+- **Points Ledger Security**: Hardened hours validation and quiz completions to award points exclusively via the secure `award_points` RPC.
+- **Light Theme Form & Card Styling**: Fixed form fields, inputs, textareas, card containers, tab lists, and inactive status wrappers to use proper CSS variables (`--input-bg`, `--input-bg-elevated`, etc.) instead of hardcoded dark backgrounds (`bg-black/60`, `bg-black/40`, `bg-black/20`). This ensures complete readability, WCAG compliance, and consistent visuals in light mode.
+- **Theme-Aware Leaflet Maps**: Refactored the `IncidentMap` (Emergency case registry) and `ChapterMap` (Regional Chapters coverage) components to dynamically toggle map tiles (voyager in light mode, dark_all in dark mode) based on the active document theme, resolving blacked-out map areas.
+- **Placeholder Accessibility**: Hardened placeholder styling so that helper text remains highly legible in both light and dark themes.
+- **Light Theme Input Accessibility**: Expanded style rules in `globals.css` to properly style date and time picker fields in light mode, and moved placeholder color rules out of nested selectors to ensure consistent text contrast across all inputs in both light and dark themes.
+
+## [0.8.2] — 2026-07-04 · Code Quality & SonarQube Compliance Sweep
 - **Decomposition of Nested Ternaries**: Refactored major nested ternary structures into independent helper rendering methods and dictionary mappings across `CommunityClient.tsx`, `CareCenterDashboard.tsx`, `ModeratorDashboardClient.tsx`, `TicketChatWindow.tsx`, `ProfileActivityLogs.tsx`, `ProfileQueries/index.tsx`, `StaffProfileView/index.tsx`, `ModeratorHotspotsMap.tsx`, and the Supreme Data Management table layout (`renderManagementTable`) in `AdminDashboardClient.tsx`. This successfully resolved SonarQube's nested ternary quality issues, reduced code complexity, and dropped nesting depth.
 - **SonarQube & CodeQL Issue Resolution**: Completed a comprehensive sweep of static analysis findings across all components. Extracted nested functions in `TycoonInterface.tsx` and `weather/page.tsx` into standalone utilities to resolve level-4+ function nesting. Refactored nested ternaries in `TycoonInterface.tsx`, `EmpireCodex/index.tsx`, `AdminGamificationClient/index.tsx`, `FuturisticAuditDashboard.tsx`, and `notices/page.tsx` using local variable assignments. Replaced inline union types in `notices/page.tsx` with explicit type aliases (`BroadcastType`, `UserRole`, and `FilterType`). Resolved all remaining warnings, achieving 100% resolution against static analysis quality gates.
 - **SonarQube Smell Correction**: Cleaned up remaining unused assignments, variables, and state setters (`isDirect`, `cardTitle`, `subtitle`, `filteredAuditLogs`, `setIsSearchingDMUser`, `loadingColonies`). Fixed redundant exception parameter declarations in empty `catch` blocks and named destructured state elements. Corrected nested template literals and nested ternary expressions in `cats/page.tsx` and `events/[id]/page.tsx`. Ensured label-control accessibility pairings in onboarding screen inputs and resolved invalid React styled-jsx custom properties.
@@ -239,7 +263,8 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 
 ---
 
-[Unreleased]: https://github.com/SynthReaper/MeowNet/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/SynthReaper/MeowNet/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/SynthReaper/MeowNet/compare/v0.8.2...v0.9.0
 [0.8.2]: https://github.com/SynthReaper/MeowNet/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/SynthReaper/MeowNet/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/SynthReaper/MeowNet/compare/v0.7.0...v0.8.0

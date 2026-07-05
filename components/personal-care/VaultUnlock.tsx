@@ -9,9 +9,10 @@ import { createClient } from '@/lib/supabase/client';
 
 interface VaultUnlockProps {
   readonly onUnlock: (passphrase: string) => void;
+  readonly onBypass?: () => void;
 }
 
-export default function VaultUnlock({ onUnlock }: VaultUnlockProps) {
+export default function VaultUnlock({ onUnlock, onBypass }: VaultUnlockProps) {
   const [passphrase, setPassphrase] = useState('');
   const [confirmPassphrase, setConfirmPassphrase] = useState('');
   const [isFirstTime, setIsFirstTime] = useState<boolean | null>(null);
@@ -268,6 +269,16 @@ export default function VaultUnlock({ onUnlock }: VaultUnlockProps) {
         >
           {buttonContent}
         </button>
+
+        {onBypass && (
+          <button
+            type="button"
+            onClick={onBypass}
+            className="w-full bg-transparent border border-[var(--dropdown-border)] text-[var(--text-secondary)] font-display text-xs font-bold uppercase tracking-wider py-3 rounded-2xl cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-all mt-1"
+          >
+            Use Server Defaults (No custom keys)
+          </button>
+        )}
       </form>
     </div>
   );

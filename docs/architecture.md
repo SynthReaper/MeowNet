@@ -1,6 +1,6 @@
 # MeowNet Architecture
 
-> Last updated: 2026-07-04 · v0.8.2
+> Last updated: 2026-07-05 · v0.9.0
 
 ## System Overview
 
@@ -93,6 +93,12 @@ Browser
 **Decision:** Personal cat care logs and user-supplied API keys are fully encrypted client-side using `AES-GCM-256` and stored as ciphertext in Supabase.  
 **Rationale:** Users want absolute privacy for personal pets and security for their private API credentials. By encrypting data in-browser via the Web Crypto API using a locally-stored master password, MeowNet ensures database administrators have zero knowledge of the keys or logs. An API proxy route handles endpoint routing in-memory, avoiding browser CORS issues.  
 **Trade-off:** If the user forgets their master password, the data is permanently lost.
+
+### ADR-011 — Social Impact Module + Role-Tiered Navigation
+**Status:** Accepted · **Date:** 2026-07-05  
+**Decision:** Add 9 social-impact route modules (volunteers, emergency, supplies, chapters, analytics, education, partners, research, support) and restructure the Navbar into 5 semantic nav groups with staff-exclusive groups per role tier.  
+**Rationale:** Early navigation grouped unrelated features (community chat next to gamification). As the feature set grew to 30+ routes, a flat structure became unscalable. Semantic grouping — Field Ops, Social Impact, Learn & Connect, Partners & Research, My Space — mirrors real volunteer workflows. Role-tiered groups (Moderator Ops / Admin Command) prevent volunteers from seeing staff-only links while giving staff instant one-click access to power tools.  
+**Implementation:** `ROLE_CONFIG` map provides label, badge text, badge style, and logo suffix per role. Staff nav groups are appended at runtime only when the user's DB role matches. All 9 social-impact routes were already implemented as app directory routes in v0.9.0 but were unreachable without direct URL entry.
 
 ---
 

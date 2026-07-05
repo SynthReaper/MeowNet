@@ -7,6 +7,8 @@ import { useState, useEffect, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import IncidentTriagePanel from '@/components/moderator/IncidentTriagePanel';
+import { publishStory, rejectStory } from '@/lib/actions/education';
 import {
   BarChart as RechartsBarChart,
   Bar,
@@ -125,6 +127,8 @@ interface Props {
   readonly initialQueries: Query[];
   readonly initialProfiles: Profile[];
   readonly initialAuditLogs?: AuditLog[];
+  readonly initialIncidents: any[];
+  readonly initialStories: any[];
   readonly currentUser: {
     readonly id: string;
     readonly role: string;
@@ -216,6 +220,8 @@ export default function ModeratorDashboardClient({
   initialQueries,
   initialProfiles,
   initialAuditLogs,
+  initialIncidents,
+  initialStories,
   currentUser,
 }: Props) {
   const [cats, setCats] = useState<Cat[]>(initialCats);
@@ -223,10 +229,12 @@ export default function ModeratorDashboardClient({
   const [queries, setQueries] = useState<Query[]>(initialQueries);
   const [profiles, setProfiles] = useState<Profile[]>(initialProfiles);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(initialAuditLogs ?? []);
+  const [incidents, setIncidents] = useState<any[]>(initialIncidents);
+  const [stories, setStories] = useState<any[]>(initialStories);
   const router = useRouter();
 
   // Navigation / Tabs
-  const [activeTab, setActiveTab] = useState<'map' | 'cats' | 'events' | 'queries' | 'profiles' | 'audits' | 'live'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'cats' | 'events' | 'queries' | 'profiles' | 'audits' | 'live' | 'incidents' | 'stories'>('map');
 
   const [liveActivities, setLiveActivities] = useState<any[]>([]);
 
@@ -1225,6 +1233,26 @@ export default function ModeratorDashboardClient({
           </button>
 
           <button
+            onClick={() => setActiveTab('incidents')}
+            className={`sidebar-nav-link border-none text-left w-full ${
+              activeTab === 'incidents' ? 'active text-[var(--empire-gold)]' : 'text-[var(--empire-cream)]/60'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">emergency_home</span>
+            <span>Emergency Triage ({incidents.filter(i => i.status === 'open').length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('stories')}
+            className={`sidebar-nav-link border-none text-left w-full ${
+              activeTab === 'stories' ? 'active text-[var(--empire-gold)]' : 'text-[var(--empire-cream)]/60'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">menu_book</span>
+            <span>Stories Queue ({stories.filter(s => s.status === 'submitted').length})</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('audits')}
             className={`sidebar-nav-link border-none text-left w-full ${
               activeTab === 'audits' ? 'active text-[var(--empire-gold)]' : 'text-[var(--empire-cream)]/60'
@@ -1275,6 +1303,8 @@ export default function ModeratorDashboardClient({
               {activeTab === 'profiles' && 'Inspect registered volunteer status, points ledger, and permissions.'}
               {activeTab === 'audits' && 'Operational staff action logging.'}
               {activeTab === 'live' && 'Telemetry feed tracking user locations and updates.'}
+              {activeTab === 'incidents' && 'Triage emergency logs, deploy responders, and coordinate disaster response.'}
+              {activeTab === 'stories' && 'Review submitted success stories and approve them for public listing.'}
             </p>
           </div>
         </header>
@@ -1934,12 +1964,12 @@ export default function ModeratorDashboardClient({
                             </span>
                             {isModToAdmin && (
                               <span className="px-2 py-0.5 bg-rose-500/10 border border-rose-500/25 text-rose-400 text-[9px] font-bold uppercase rounded-md">
-                                🛡️ Moderator to Admin Query
+                                [Mod to Admin] Moderator to Admin Query
                               </span>
                             )}
                             {isShifted && (
                               <span className="px-2 py-0.5 bg-rose-500/15 border border-rose-500/30 text-rose-400 text-[9px] font-bold uppercase rounded-md">
-                                👑 Shifted to Admin
+                                [Shifted] Shifted to Admin
                               </span>
                             )}
                           </div>
@@ -2137,6 +2167,82 @@ export default function ModeratorDashboardClient({
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* INCIDENTS TRIAGE TAB */}
+        {activeTab === 'incidents' && (
+          <IncidentTriagePanel
+            incidents={incidents}
+            volunteers={profiles.map(p => ({ id: p.id, display_name: p.display_name, role: p.role }))}
+            onUpdated={async () => {
+              const res = await fetch('/api/emergency/incidents');
+              const data = await res.json();
+              if (data.incidents) setIncidents(data.incidents);
+            }}
+          />
+        )}
+
+        {/* STORIES QUEUE TAB */}
+        {activeTab === 'stories' && (
+          <div className="flex flex-col gap-6">
+            <div className="flex justify-between items-center border-b border-white/5 pb-2">
+              <h3 className="text-sm font-bold text-[var(--empire-cream)]">Stories Awaiting Moderation</h3>
+              <span className="text-[10px] bg-white/5 text-gray-300 font-mono px-2 py-0.5 rounded-md">
+                {stories.filter(s => s.status === 'submitted').length}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {stories.filter(s => s.status === 'submitted').length === 0 ? (
+                <div className="col-span-full text-center py-12 text-xs text-gray-500 font-mono">
+                  No stories pending moderation.
+                </div>
+              ) : (
+                stories.filter(s => s.status === 'submitted').map((story) => (
+                  <div key={story.id} className="border border-white/10 bg-black/40 rounded-xl p-5 flex flex-col justify-between gap-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-[var(--empire-cream)]">{story.title}</h4>
+                      <span className="text-[10px] text-gray-400 font-mono mt-1 block">Author: {story.profiles?.display_name || 'Volunteer'}</span>
+                      <p className="text-xs text-gray-400 mt-2 line-clamp-4 leading-relaxed">{story.content}</p>
+                    </div>
+
+                    <div className="flex gap-2 border-t border-white/5 pt-3">
+                      <button
+                        onClick={async () => {
+                          const res = await publishStory(story.id);
+                          if (res.success) {
+                            const ref = await fetch('/api/stories');
+                            const d = await ref.json();
+                            setStories(d.stories || []);
+                          } else {
+                            alert(res.error || 'Failed to publish story');
+                          }
+                        }}
+                        className="flex-1 bg-[var(--life-teal)] text-white hover:opacity-90 py-1.5 rounded-lg text-xs font-bold uppercase transition-all cursor-pointer"
+                      >
+                        Publish
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const res = await rejectStory(story.id);
+                          if (res.success) {
+                            const ref = await fetch('/api/stories');
+                            const d = await ref.json();
+                            setStories(d.stories || []);
+                          } else {
+                            alert(res.error || 'Failed to reject story');
+                          }
+                        }}
+                        className="flex-1 bg-red-950/40 border border-red-500/30 text-red-400 hover:bg-red-950/60 py-1.5 rounded-lg text-xs font-bold uppercase transition-all cursor-pointer"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
       </div>

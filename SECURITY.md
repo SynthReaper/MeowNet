@@ -4,8 +4,8 @@
 
 | Version | Supported |
 |---------|-----------|
-| `0.8.2` / `main` (latest) | ✅ Active |
-| `0.8.1` | ✅ Supported for 90 days |
+| `0.9.0` / `main` (latest) | ✅ Active |
+| `0.8.2` | ✅ Supported for 90 days |
 | Any tagged release | ✅ Supported for 90 days |
 | Older releases | ❌ Not supported |
 

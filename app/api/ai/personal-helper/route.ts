@@ -20,13 +20,27 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { apiKey, provider, model, messages } = body as {
-      apiKey: string;
-      provider: 'gemini' | 'openai' | 'anthropic';
-      model: string;
+      apiKey?: string;
+      provider?: 'gemini' | 'openai' | 'anthropic';
+      model?: string;
       messages: ChatMessage[];
     };
 
-    if (!apiKey || !provider || !model || !Array.isArray(messages)) {
+    const activeProvider = provider || 'gemini';
+    const activeModel = model || 'gemini-1.5-flash';
+    let activeApiKey = apiKey || '';
+
+    if (!activeApiKey) {
+      if (activeProvider === 'gemini') {
+        activeApiKey = process.env.GEMINI_API_KEY || '';
+      } else if (activeProvider === 'openai') {
+        activeApiKey = process.env.OPENAI_API_KEY || '';
+      } else if (activeProvider === 'anthropic') {
+        activeApiKey = process.env.ANTHROPIC_API_KEY || '';
+      }
+    }
+
+    if (!activeApiKey || !activeProvider || !activeModel || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'missing_parameters' }, { status: 400 });
     }
 
@@ -37,14 +51,12 @@ export async function POST(req: NextRequest) {
       anthropic: ['claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest']
     };
 
-    if (!ALLOWED_MODELS[provider]?.includes(model)) {
+    if (!ALLOWED_MODELS[activeProvider]?.includes(activeModel)) {
       return NextResponse.json({ error: 'unsupported_model' }, { status: 400 });
     }
 
-    if (provider === 'gemini') {
+    if (activeProvider === 'gemini') {
       // Map OpenAI messages format to Gemini format
-      // Gemini expects: contents: [{ role: 'user' | 'model', parts: [{ text: '...' }] }]
-      // Note: System instruction is passed as a separate parameter in v1beta
       const contents = messages
         .filter((msg) => msg.role !== 'system')
         .map((msg) => {
@@ -59,7 +71,7 @@ export async function POST(req: NextRequest) {
         ? { parts: [{ text: systemInstructionMsg.content }] }
         : undefined;
 
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${activeApiKey}`;
 
       const res = await fetch(geminiUrl, {
         method: 'POST',
@@ -80,17 +92,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, text });
     } 
     
-    if (provider === 'openai') {
+    if (activeProvider === 'openai') {
       const openaiUrl = 'https://api.openai.com/v1/chat/completions';
 
       const res = await fetch(openaiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${activeApiKey}`,
         },
         body: JSON.stringify({
-          model,
+          model: activeModel,
           messages,
         }),
       });
@@ -105,7 +117,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, text });
     } 
     
-    if (provider === 'anthropic') {
+    if (activeProvider === 'anthropic') {
       const anthropicUrl = 'https://api.anthropic.com/v1/messages';
       
       const systemMessage = messages.find((msg) => msg.role === 'system');
@@ -115,11 +127,11 @@ export async function POST(req: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
+          'x-api-key': activeApiKey,
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model,
+          model: activeModel,
           max_tokens: 4096,
           messages: nonSystemMessages,
           system: systemMessage ? systemMessage.content : undefined,
@@ -143,4 +155,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+
 }

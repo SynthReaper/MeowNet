@@ -10,7 +10,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostGIS-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.8.2-blueviolet)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.9.0-blueviolet)](CHANGELOG.md)
 
 *Built for **#hackthekitty 2026** · by [SynthReaper](https://github.com/SynthReaper)*
 
@@ -79,6 +79,15 @@ MeowNet is a full-stack, privacy-first web platform that turns urban cat rescue 
 | **Meow Translator** | Mood-classifier ML endpoint for cat vocalisation analysis | `app/api/ai/meow` |
 | **Personal Care Center** | Zero-knowledge cockpit tracking physical metrics, treatments, nutrition, sleep, behavior, and custom registry metadata | `app/(app)/profile/care-center` |
 | **Personal AI Helper** | Interactive Direct Action AI Copilot parsing response templates to suggest log entries and alert thresholds | `app/(app)/personal-helper` |
+| **Volunteer Hub (VMS)** | Availability grids, skill panels, hours logs, and mentor-matching queues | `app/(app)/volunteers` |
+| **Emergency Response** | Realtime Leaflet crisis map, incident dispatch, live LIVE-badge notices | `app/(app)/emergency` |
+| **Supply Registry** | Inventory grid, stock tracking, request fulfillment modals | `app/(app)/supplies` |
+| **Regional Chapters** | Territory boundary maps, chapter join/leave, admin management | `app/(app)/chapters` |
+| **Impact Analytics** | Welfare trend charts, sighting density, population Recharts dashboards | `app/(app)/analytics` |
+| **Educational Academy** | Courses, graded quizzes awarding Empire Points on pass | `app/(app)/education` |
+| **Partner Network** | Verified NGO and vet partner registry | `app/(app)/partners` |
+| **Research Portal** | Anonymized population metadata JSON exporter for academic requests | `app/(app)/research` |
+| **Role-Tiered Navbar** | 5 nav groups + staff groups with amber MOD / red-gold ADMIN badge tiers | `components/nav/Navbar` |
 
 ---
 
@@ -123,7 +132,7 @@ Browser
   |
   +-- Supabase (PostgreSQL + PostGIS)
   |     +-- Auth            -- email/password + Google/GitHub + direct creds
-  |     +-- Database        -- cats, events, profiles, gamification (3 migrations)
+  |     +-- Database        -- cats, events, profiles, gamification (5 migrations)
   |     +-- Storage         -- Cat photos (EXIF stripped before upload)
   |     +-- Realtime        -- Live cat map + community chat + guilds
   |     +-- system_settings -- Dynamic key-value configuration store
@@ -160,6 +169,15 @@ MeowNet/
 |   |   +-- safety/         # Colony safety guides
 |   |   +-- stories/        # Cat success stories
 |   |   +-- weather/        # Feline weather safety watch
+|   |   +-- volunteers/     # Volunteer Management System (VMS)
+|   |   +-- emergency/      # Emergency Case Registry + incident map
+|   |   +-- supplies/       # Supply Chain Registry
+|   |   +-- chapters/       # Regional chapters + territory maps
+|   |   +-- analytics/      # Impact analytics & welfare trends
+|   |   +-- education/      # Educational Academy + quizzes
+|   |   +-- partners/       # Partner NGO & vet registry
+|   |   +-- research/       # Research data exporter
+|   |   +-- support/        # Volunteer support query submission
 |   +-- api/
 |   |   +-- ai/breed/       # ML breed estimation proxy
 |   |   +-- ai/meow/        # ML meow mood classification proxy
@@ -190,7 +208,7 @@ MeowNet/
 |   +-- docker-compose.yml
 |   +-- main.py
 +-- supabase/
-|   +-- migrations/         # 0001-0003 migrations (including personal care tables)
+|   +-- migrations/         # 0001-0005 migrations (including personal care and security tables)
 |   +-- seed.sql
 +-- proxy.ts                # Next.js middleware (auth guard + maintenance gate)
 ```
@@ -229,7 +247,7 @@ MeowNet/
 git clone https://github.com/SynthReaper/MeowNet.git && cd MeowNet
 npm install
 cp .env.example .env.local          # Fill in your Supabase + Clerk keys
-npx supabase db push                 # Apply migrations (0001-0002)
+npx supabase db push                 # Apply migrations (0001-0005)
 npm run dev                          # Start at localhost:3000
 ```
 
@@ -281,4 +299,4 @@ Created for **#hackthekitty 2026** by [SynthReaper](https://github.com/SynthReap
 
 ---
 
-**Author:** [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com · **Version:** 0.8.2 · **License:** [MIT](LICENSE)
+**Author:** [SynthReaper](https://github.com/SynthReaper) · synthreaperx@gmail.com · **Version:** 0.9.0 · **License:** [MIT](LICENSE)

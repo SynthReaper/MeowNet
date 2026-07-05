@@ -1,6 +1,6 @@
 # MeowNet Database Documentation
 
-> Last updated: 2026-07-04 · v0.8.2 · Migrations: 0001–0003 (Consolidated + Personal Care)
+> Last updated: 2026-07-05 · v0.9.0 · Migrations: 0001–0005 (Consolidated + Personal Care + Social Impact + Security Hardening)
 
 ---
 
@@ -411,4 +411,13 @@ Used to store user-supplied AI provider keys client-side encrypted.
 - **`created_at` / `updated_at`** `TIMESTAMPTZ`
 
 **Security Constraints:** RLS is enabled. Only the owner (`auth.uid() = user_id`) has SELECT, INSERT, UPDATE, or DELETE access.
+
+
+## Security Hardening (v0.9.0)
+
+### Hardened Volunteer Security (migration 0005)
+Hardens Row-Level Security (RLS) policies on volunteer credentials and logged hours to prevent forging entries:
+- **`volunteer_skills`**: The insert policy enforces that the `verified` field is `false`, and `verified_by` and `verified_at` are `NULL` for normal users during insertion.
+- **`volunteer_hours`**: The loose `FOR ALL` policy is split into separate granular policies. Users can only select their own records, insert unverified hours (`verified_by` and `verified_at` are `NULL`), delete unverified hours, and update unverified hours (without changing verification details).
+
 

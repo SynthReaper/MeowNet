@@ -221,6 +221,14 @@ export default function HelperPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleBypass = () => {
+    setPassphrase('server_defaults');
+    setApiKey('');
+    setProvider('gemini');
+    setModel('gemini-1.5-flash');
+    setMessages(getInitMessages('gemini', false));
+  };
+
   // Once unlocked with passphrase, load keys and cats
   const handleUnlock = async (phrase: string) => {
     setPassphrase(phrase);
@@ -316,7 +324,7 @@ export default function HelperPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!inputVal.trim() || isSending || !apiKey) return;
+      if (!inputVal.trim() || isSending) return;
   
       const userText = inputVal.trim();
       setInputVal('');
@@ -563,7 +571,7 @@ Provide helpful, expert, and practical cat care advice based on the data.
 if (!passphrase) {
     return (
       <div className="flex-grow w-full max-w-7xl mx-auto px-4 md:px-12 py-16 flex flex-col items-center justify-center">
-        <VaultUnlock onUnlock={handleUnlock} />
+        <VaultUnlock onUnlock={handleUnlock} onBypass={handleBypass} />
       </div>
     );
   }
@@ -726,8 +734,8 @@ if (!passphrase) {
               type="text"
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
-              placeholder={apiKey ? 'Ask your private helper a question…' : 'Enter your key in settings to message...'}
-              disabled={isSending || !apiKey}
+              placeholder="Ask your personal helper a question…"
+              disabled={isSending}
               className="flex-grow font-body text-xs px-4 py-3 rounded-2xl border outline-none focus:border-[var(--empire-gold)] transition-all"
               style={{
                 background: 'var(--bg-elevated)',
@@ -737,7 +745,7 @@ if (!passphrase) {
             />
             <button
               type="submit"
-              disabled={isSending || !inputVal.trim() || !apiKey}
+              disabled={isSending || !inputVal.trim()}
               className="text-white hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed px-4 py-3 rounded-2xl flex items-center justify-center transition-all cursor-pointer font-display text-xs font-bold uppercase tracking-wider border-none"
               style={{
                 background: 'linear-gradient(135deg, var(--empire-gold), #f97316)'

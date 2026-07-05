@@ -1,6 +1,6 @@
 # MeowNet Security Documentation
 
-> Last updated: 2026-07-04 · v0.8.2
+> Last updated: 2026-07-05 · v0.9.0
 
 ---
 
@@ -28,7 +28,7 @@ Server          Auth check on every API route + Server Action
                 No secrets in client bundle
                 External APIs proxied server-side only
 ─────────────────────────────────────────────────────
-Database        Row-Level Security on every table (3 migrations)
+Database        Row-Level Security on every table (5 migrations)
                 SECURITY DEFINER for privileged ops
                 Location fuzzing trigger (BEFORE INSERT)
                 Role escalation prevention trigger
@@ -291,7 +291,24 @@ Expanded the EXIF tags validation engine (`lib/security/exif.ts`) to permit WebP
 
 ---
 
+## Volunteer Security Hardening (v0.9.0)
+
+The following security architecture enhancements were added in version 0.9.0:
+
+### 1. Granular RLS Policies for Volunteer Hours
+To prevent users from self-verifying or editing verification details of hours logged, the database RLS policy configuration for the `volunteer_hours` table was refactored:
+- Replaced the loose `FOR ALL` policy with granular `SELECT`, `INSERT`, `UPDATE`, and `DELETE` policies.
+- Insertion and updates are constrained via `WITH CHECK` clauses that enforce `verified_by` and `verified_at` columns must be `NULL` for normal users.
+- Regular users can only update or delete their own logs if they are not yet verified (`verified_by IS NULL`).
+
+### 2. Constraints on Skill Credentials Claims
+To prevent users from bypassing moderator validation by inserting pre-verified credentials:
+- Enforced that insertion of records in the `volunteer_skills` table requires `verified = false`, `verified_by IS NULL`, and `verified_at IS NULL` for normal users.
+
+---
+
 ## Security Audits
+
 
 An independent automated security audit was performed via Aikido Security. The full report is available in the repository at [security-audit-report.pdf](../aikido-security-audit/security-audit-report.pdf).
 

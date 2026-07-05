@@ -212,20 +212,19 @@ function DmMessagesList({
   handleStartEditDM,
   handleDelete,
 }: Readonly<DmMessagesListProps>) {
-  let lastSenderId: string | null = null;
-  let lastTime: number | null = null;
-  
   return (
     <>
-      {filteredDmMessages.map((dm) => {
+      {filteredDmMessages.map((dm, idx) => {
         const isOwn = dm.sender_id === currentUser?.id;
         const dmTime = new Date(dm.created_at).getTime();
+        
+        const prevDm = idx > 0 ? filteredDmMessages[idx - 1] : null;
+        const prevDmTime = prevDm ? new Date(prevDm.created_at).getTime() : null;
         const isSameGroup =
-          lastSenderId === dm.sender_id &&
-          lastTime !== null &&
-          dmTime - lastTime < 5 * 60 * 1000;
-        lastSenderId = dm.sender_id;
-        lastTime = dmTime;
+          prevDm !== null &&
+          prevDm.sender_id === dm.sender_id &&
+          prevDmTime !== null &&
+          dmTime - prevDmTime < 5 * 60 * 1000;
 
         const elapsed = Date.now() - new Date(dm.created_at).getTime();
         const canEdit = isOwn && elapsed < 15 * 60 * 1000;

@@ -1,4 +1,4 @@
-/* Codebase by SynthReaper — MeowNet */
+/* Codebase by SynthReaper — MeowNet — v0.9.0 */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600&family=Quicksand:wght@600;700&family=DM+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
@@ -58,6 +58,14 @@
   --shadow-active: 0 8px 24px rgba(242, 140, 56, 0.15), 0 0 0 1px var(--empire-gold);
   --shadow-glow:   0 0 40px rgba(0, 106, 99, 0.1);
 
+  /* Input surfaces — always readable in both themes */
+  --input-bg:           rgba(255, 255, 255, 0.9);
+  --input-bg-elevated:  rgba(248, 243, 237, 0.95);
+  --input-border:       rgba(0, 0, 0, 0.10);
+  --input-placeholder:  rgba(28, 28, 24, 0.38);
+  --card-dark-bg:       rgba(0, 0, 0, 0.04);
+  --card-dark-border:   rgba(0, 0, 0, 0.07);
+
   /* Spacing */
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -93,6 +101,14 @@
   --text-primary:    #fdf9f3;
   --text-secondary:  rgba(253, 249, 243, 0.72);
   --text-muted:      rgba(253, 249, 243, 0.5);
+
+  /* Input surfaces — dark overrides */
+  --input-bg:           rgba(0, 0, 0, 0.45);
+  --input-bg-elevated:  rgba(0, 0, 0, 0.60);
+  --input-border:       rgba(255, 255, 255, 0.10);
+  --input-placeholder:  rgba(253, 249, 243, 0.32);
+  --card-dark-bg:       rgba(0, 0, 0, 0.35);
+  --card-dark-border:   rgba(255, 255, 255, 0.06);
 
   /* Status overrides */
   --status-adoptable: #4dd0e1;
@@ -887,7 +903,7 @@ body:has(#map-page-root) footer {
 }
 
 /* ============================================================
-   MeowNet v0.8.2 — Premium Cybernetic Dashboard Design System
+   MeowNet v0.9.0 — Premium Cybernetic Dashboard Design System
    ============================================================ */
 
 @keyframes dashboardFadeIn {
@@ -1145,4 +1161,105 @@ body:has(#map-page-root) footer {
   border: 1px solid rgba(0, 106, 99, 0.25) !important;
   box-shadow: 0 0 15px rgba(0, 106, 99, 0.05), inset 0 0 10px rgba(0, 106, 99, 0.03) !important;
 }
+
+/* ============================================================
+   Light Mode Theme Adapters for Dark-first components
+   ============================================================ */
+html:not([data-theme="dark"]) {
+  /* Override bg-black/60 and bg-black/50 (e.g. form inputs) to adapt to light theme inputs */
+  .bg-black\/60,
+  [class*="bg-black/60"],
+  .bg-black\/50,
+  [class*="bg-black/50"] {
+    background-color: var(--input-bg) !important;
+  }
+
+  /* Override bg-black/40 (e.g. lists, select fields, code boxes, wrapper panels) */
+  .bg-black\/40,
+  [class*="bg-black/40"] {
+    background-color: var(--card-dark-bg) !important;
+  }
+
+  /* Override bg-black/20 (e.g. card blocks, column containers, list elements) */
+  .bg-black\/20,
+  [class*="bg-black/20"] {
+    background-color: var(--card-dark-bg) !important;
+  }
+
+  /* Override bg-white/5 for icons and list button placeholders */
+  .bg-white\/5,
+  [class*="bg-white/5"] {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+
+  /* Override bg-white/10 / hover:bg-white/15 button states in light mode */
+  .bg-white\/10,
+  [class*="bg-white/10"] {
+    background-color: rgba(0, 0, 0, 0.06) !important;
+    color: var(--text-primary) !important;
+  }
+  .bg-white\/15,
+  [class*="bg-white/15"],
+  .hover\:bg-white\/15:hover,
+  [class*="hover:bg-white/15"]:hover {
+    background-color: rgba(0, 0, 0, 0.09) !important;
+  }
+  .bg-white\/20,
+  [class*="bg-white/20"] {
+    background-color: rgba(0, 0, 0, 0.12) !important;
+  }
+
+  /* Override border-white/10 */
+  .border-white\/10,
+  [class*="border-white/10"] {
+    border-color: var(--input-border) !important;
+  }
+
+  /* Override border-white/5 */
+  .border-white\/5,
+  [class*="border-white/5"] {
+    border-color: var(--input-border) !important;
+  }
+
+  /* Text color corrections for elements inside dark-first cards */
+  .text-gray-400,
+  [class*="text-gray-400"] {
+    color: var(--text-secondary) !important;
+  }
+  .text-zinc-300,
+  [class*="text-zinc-300"] {
+    color: var(--text-secondary) !important;
+  }
+  .text-zinc-400,
+  [class*="text-zinc-400"] {
+    color: var(--text-secondary) !important;
+  }
+
+  /* Input fields & select styling */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  input[type="date"],
+  input[type="time"],
+  textarea,
+  select {
+    background-color: var(--input-bg) !important;
+    border-color: var(--input-border) !important;
+    color: var(--text-primary) !important;
+    color-scheme: light dark;
+  }
+}
+
+/* Global placeholders styling — resolved via theme variables to prevent browser rendering issues */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: var(--input-placeholder) !important;
+  opacity: 0.85 !important;
+}
+
 

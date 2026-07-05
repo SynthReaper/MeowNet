@@ -1,17 +1,38 @@
 {
   "project": "MeowNet",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "steering": {
     "directory": ".kiro/steering",
-    "strict_mode": true
+    "strict_mode": true,
+    "files": [
+      "product.md",
+      "structure.md",
+      "tech.md",
+      "social-impact.md"
+    ]
   },
   "spec_mode": {
     "directory": ".kiro/specs"
   },
   "hooks": {
+    "pre_build": [
+      "npm run type-check",
+      "npm run lint"
+    ],
     "pre_commit": [
       "npm run type-check",
       "npm run lint"
+    ],
+    "post_task": [
+      "npm run type-check"
+    ]
+  },
+  "generated": {
+    "directory": ".kiro/generated",
+    "files": [
+      "schema-preview.md",
+      "component-tree.md",
+      "api-surface.md"
     ]
   }
 }

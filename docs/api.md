@@ -1,6 +1,6 @@
 # MeowNet API Reference
 
-> Last updated: 2026-07-04 · v0.8.2
+> Last updated: 2026-07-05 · v0.9.0
 
 All API routes live under `app/api/`. Server Actions (in `lib/actions/`) are covered separately.
 

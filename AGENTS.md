@@ -1,7 +1,7 @@
 # Agent Instructions — MeowNet
 
 > **Author:** SynthReaper · synthreaperx@gmail.com · https://github.com/SynthReaper
-> **Project:** MeowNet — #hackthekitty 2026 · v0.8.2
+> **Project:** MeowNet — #hackthekitty 2026 · v0.9.0
 
 ---
 
@@ -45,6 +45,15 @@ app/(app)/               -> Auth-gated routes (force-dynamic)
   safety/                -> Colony safety guides
   stories/               -> Cat success stories
   weather/               -> Feline Weather Safety Watch
+  volunteers/            -> Volunteer Management System (VMS) — availability, skills, mentoring
+  emergency/             -> Emergency Case Registry — incident map, dispatch, crisis response
+  supplies/              -> Supply Chain Registry — inventory grid, stock management, requests
+  chapters/              -> Regional Chapters — territory boundary maps, join/leave
+  analytics/             -> Impact Analytics — welfare trends, Recharts dashboards
+  education/             -> Educational Academy — courses, graded quizzes, Empire Points on pass
+  partners/              -> Partner Network — NGO & vet registry, coalition management
+  research/              -> Research Portal — anonymized population metadata JSON exporter
+  support/               -> Volunteer support query submission (raises to moderator queue)
 
 app/auth/                -> Login, signup, callback (force-dynamic)
   login/                 -> Clerk social login (no direct-db option for volunteers)
@@ -358,4 +367,4 @@ app/(app)/admin/AdminDashboardClient.tsx -> console watermark
 - **Email:** synthreaperx@gmail.com
 - **GitHub:** https://github.com/SynthReaper
 - **Project:** https://github.com/SynthReaper/MeowNet
-- **Version:** 0.8.2
+- **Version:** 0.9.0
