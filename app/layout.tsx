@@ -2,6 +2,7 @@
 import type { Metadata } from 'next';
 import { ClerkProvider } from "@clerk/nextjs";
 import Script from 'next/script';
+import { Analytics } from '@vercel/analytics/next';
 import AuthBridge from '@/components/auth/AuthBridge';
 import Broadcasts from '@/components/ui/Broadcasts';
 import './globals.css';
@@ -105,6 +106,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <AuthBridge />
           <Broadcasts />
           {children}
+          <Analytics />
         </ClerkProvider>
       </body>
     </html>
