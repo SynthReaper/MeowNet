@@ -101,6 +101,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
     );
   }
 
+  const buttonLabel = mode === 'login' ? 'Sign In to Empire' : 'Create Empire Account';
+
   return (
     <div>
       {/* OAuth buttons */}
@@ -230,7 +232,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
               <span>Please wait…</span>
             </span>
           ) : (
-            mode === 'login' ? 'Sign In to Empire' : 'Create Empire Account'
+            buttonLabel
           )}
         </button>
       </form>

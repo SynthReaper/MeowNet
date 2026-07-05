@@ -48,7 +48,7 @@ export default function SafetyQueriesClient({ initialQueries, userId }: Props) {
         } else {
           setError(res.error || 'Failed to submit query.');
         }
-      } catch (err) {
+      } catch {
         setError('A network error occurred.');
       }
     });

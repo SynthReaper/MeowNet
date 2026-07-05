@@ -1898,6 +1898,572 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
     return list;
   }, [emojiSearch]);
 
+  const getChannelIcon = (slug: string, defaultIcon: string) => {
+    switch (slug) {
+      case 'general': return 'forum';
+      case 'adoption-stories': return 'favorite';
+      case 'volunteer-hub': return 'groups';
+      case 'urgent-medical': return 'medical_services';
+      default: return defaultIcon;
+    }
+  };
+
+  const getChannelStatus = (slug: string) => {
+    const memberCount = globalProfiles.length || 6;
+    switch (slug) {
+      case 'general':
+        return `${memberCount} members online • Active`;
+      case 'volunteer-hub':
+        return `${memberCount} online volunteers • Real-time dispatch`;
+      case 'adoption-stories':
+        return `${Math.max(2, Math.ceil(memberCount * 0.4))} members online • Sharing stories`;
+      case 'urgent-medical':
+        return `${Math.max(1, Math.ceil(memberCount * 0.15))} members online • Critical coordination`;
+      default:
+        return `${memberCount} members online • Active Now`;
+    }
+  };
+
+  const renderMessageArea = () => {
+    if (activeDMUser) {
+      return (
+        <>
+          {activeDMUser && !approvedDMs[activeDMUser.id] && (
+            <div className="mb-4 p-4.5 rounded-2xl border border-[#eb8424]/30 bg-[#fdf9f3] max-w-md mx-auto w-full flex flex-col gap-2.5 shadow-sm select-none animate-fade-in text-left">
+              <div className="flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[#eb8424] text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>chat_bubble_outline</span>
+                <span className="font-display text-[10px] font-bold text-[#eb8424] uppercase tracking-wider">Incoming Chat Request</span>
+              </div>
+              <p className="font-body text-xs text-[#5c4a3c] leading-relaxed">
+                <strong>{activeDMUser.display_name}</strong> wishes to start a private chat with you. Approve the request to start private messaging.
+              </p>
+              <div className="flex justify-end mt-1">
+                <button
+                  type="button"
+                  onClick={() => handleApproveDM(activeDMUser.id)}
+                  className="px-3.5 py-1.5 bg-[#eb8424] hover:bg-[#d66c0e] text-white font-bold text-xs rounded-xl transition-all cursor-pointer border-none shadow-sm flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-xs">done</span>
+                  <span>Approve Request</span>
+                </button>
+              </div>
+            </div>
+          )}
+          {filteredDmMessages.length === 0 ? (
+            <div className="flex-grow flex flex-col items-center justify-center py-20 text-center select-none">
+              <span className="material-symbols-outlined text-5xl text-[var(--empire-gold)]/30 mb-2">forum</span>
+              <h2 className="font-display text-base font-bold text-[var(--empire-cream)]/50">
+                {searchQuery.trim() ? 'No matching messages' : 'Start a conversation'}
+              </h2>
+              <p className="font-body text-xs text-[var(--empire-cream)]/35 mt-1">
+                {searchQuery.trim() ? 'Try adjusting your search query.' : 'Direct messages are private and real-time.'}
+              </p>
+            </div>
+          ) : (
+            <DmMessagesList
+              filteredDmMessages={filteredDmMessages}
+              currentUser={currentUser}
+              activeDMUser={activeDMUser}
+              hoveredMsg={hoveredMsg}
+              setHoveredMsg={setHoveredMsg}
+              handleStartEditDM={(id, text) => {
+                setEditingMessageId(id);
+                setEditText(text);
+              }}
+              handleDelete={handleDelete}
+            />
+          )}
+        </>
+      );
+    }
+
+    if (activeChannel) {
+      if (channelMessages.length === 0) {
+        return (
+          <div className="flex-grow flex flex-col items-center justify-center py-20 text-center select-none">
+            <span className="material-symbols-outlined text-5xl text-[var(--empire-gold)]/30 mb-2">forum</span>
+            <h2 className="font-display text-base font-bold text-[var(--empire-cream)]/50">No messages yet</h2>
+            <p className="font-body text-xs text-[var(--empire-cream)]/35 mt-1">Be the first to say something in #{activeChannel.name}!</p>
+          </div>
+        );
+      }
+      return (
+        <ChannelMessagesList
+          channelMessages={channelMessages}
+          currentUser={currentUser}
+          hoveredMsg={hoveredMsg}
+          setHoveredMsg={setHoveredMsg}
+          reactions={reactions}
+          isStaff={isStaff}
+          editingMessageId={editingMessageId}
+          editText={editText}
+          setEditText={setEditText}
+          actionPending={actionPending}
+          handleCancelEdit={handleCancelEdit}
+          handleSaveEdit={handleSaveEdit}
+          handleReact={handleReact}
+          handleFlag={handleFlag}
+          handleStartEdit={handleStartEdit}
+          handleReportMessage={handleReportMessage}
+          handleStartDeleteMessage={handleDelete}
+          setSelectedProfileId={setSelectedProfileId}
+          isSignedIn={isSignedIn}
+          setReplyToMessage={setReplyToMessage}
+          messages={messages}
+        />
+      );
+    }
+
+    return (
+      <div className="flex-grow flex flex-col items-center justify-center p-8 text-center select-none">
+        <span className="material-symbols-outlined text-5xl text-[#eb8424]/25 mb-3">forum</span>
+        <h2 className="font-display text-base font-bold text-[#5c4a3c]/60">Welcome to MeowNet Chat</h2>
+        <p className="font-body text-xs text-[#6b5a4d]/50 mt-1 max-w-sm">
+          Select one of the rescue channels on the sidebar, or search by User ID to start a secure private conversation.
+        </p>
+      </div>
+    );
+  };
+
+  const renderInputMessagePanel = () => {
+    if (!isSignedIn) {
+      return (
+        <div className="flex items-center justify-between gap-3 bg-[#fdf9f3]/60 border border-[#dbc2b2]/45 rounded-2xl px-5 py-3.5 max-w-4xl mx-auto">
+          <span className="material-symbols-outlined text-[#eb8424] text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
+          <div className="flex-1 font-body text-xs text-[#5c4a3c]/60">
+            <Link href="/auth/login" className="text-[#eb8424] font-extrabold no-underline hover:underline">Sign in</Link>
+            {' '}or{' '}
+            <Link href="/auth/signup" className="text-[#eb8424] font-extrabold no-underline hover:underline">create an account</Link>
+            {' '}to join the conversation.
+          </div>
+          <Link
+            href="/auth/signup"
+            className="shrink-0 bg-[#eb8424] text-white text-xs font-bold px-4 py-2 rounded-xl no-underline hover:bg-[#d66c0e] transition-all shadow-sm"
+          >
+            Join Empire
+          </Link>
+        </div>
+      );
+    }
+
+    if (!activeChannel && !activeDMUser) {
+      return (
+        <div className="text-center py-2 text-xs font-body text-[#6b5a4d]/40 font-bold select-none">
+          Select a channel or conversation to start chatting.
+        </div>
+      );
+    }
+
+    if (activeDMUser && !approvedDMs[activeDMUser.id]) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-2.5 bg-[#fdf9f3]/50 border border-dashed border-[#dbc2b2]/45 rounded-2xl py-6 px-6 max-w-xl mx-auto w-full text-center select-none shadow-sm">
+          <span className="material-symbols-outlined text-[#eb8424] text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
+          <p className="font-body text-xs font-bold text-[#5c4a3c] leading-relaxed">
+            DM Request Pending. Please approve the chat request above to start private conversations.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <form onSubmit={handlePost} className="flex flex-col gap-2 max-w-4xl mx-auto">
+        {replyToMessage && (
+          <div className="flex items-center justify-between px-3 py-1.5 bg-[#eb8424]/5 border-l-2 border-[#eb8424] rounded-r-lg text-xs mb-2">
+            <div className="flex items-center gap-1.5 text-[#6b5a4d]/85">
+              <span className="material-symbols-outlined text-sm">reply</span>
+              <span>Replying to <strong>{replyToMessage.display_name}</strong>:</span>
+              <span className="truncate max-w-[200px] italic">&quot;{replyToMessage.message}&quot;</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setReplyToMessage(null)}
+              className="text-[#6b5a4d]/40 hover:text-red-400 p-0.5 cursor-pointer bg-transparent border-0 flex items-center"
+            >
+              <span className="material-symbols-outlined text-sm">close</span>
+            </button>
+          </div>
+        )}
+        
+        {isStaff && (
+          <div className="flex gap-2 mb-1.5 select-none items-center pl-3">
+            <span className="text-[10px] font-bold text-[#6b5a4d]/50 uppercase tracking-wider">Alert Broadcast:</span>
+            <button
+              type="button"
+              onClick={() => setActiveAlertPrefix(activeAlertPrefix === 'hvac' ? 'none' : 'hvac')}
+              className={`text-[9px] px-2.5 py-1 rounded-full font-bold transition-all border cursor-pointer ${
+                activeAlertPrefix === 'hvac'
+                  ? 'bg-red-50 text-red-600 border-red-200 shadow-sm'
+                  : 'bg-transparent text-[#6b5a4d]/60 border-[#dbc2b2]/40 hover:bg-[#dbc2b2]/10'
+              }`}
+            >
+              ⚠️ HVAC Alert
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveAlertPrefix(activeAlertPrefix === 'dispatch' ? 'none' : 'dispatch')}
+              className={`text-[9px] px-2.5 py-1 rounded-full font-bold transition-all border cursor-pointer ${
+                activeAlertPrefix === 'dispatch'
+                  ? 'bg-[#eafaf9] text-[#006a63] border-[#ccefe3] shadow-sm'
+                  : 'bg-transparent text-[#6b5a4d]/60 border-[#dbc2b2]/40 hover:bg-[#dbc2b2]/10'
+              }`}
+            >
+              📍 Dispatch Alert
+            </button>
+          </div>
+        )}
+
+        {/* Main Input Pill Box */}
+        <div className="flex items-center gap-2 bg-[#fdf9f3]/60 border border-[#dbc2b2]/45 rounded-[32px] pl-2.5 pr-1.5 py-1.5 focus-within:border-[#eb8424] focus-within:bg-white transition-all shadow-inner">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            className="hidden"
+            accept="image/*,video/*,application/pdf"
+          />
+          
+          {/* Attachments Menu Button */}
+          <div className="relative shrink-0 flex items-center">
+            <button
+              onClick={() => setIsAttachmentMenuOpen(!isAttachmentMenuOpen)}
+              type="button"
+              title="Attach files, location, polls, events"
+              className={`h-8 w-8 rounded-full hover:bg-[#dbc2b2]/20 flex items-center justify-center transition-colors cursor-pointer border-none bg-transparent shrink-0 ${
+                isAttachmentMenuOpen ? 'text-[#eb8424] bg-[#dbc2b2]/10' : 'text-[#6b5a4d]/60'
+              }`}
+            >
+              <span className="material-symbols-outlined text-xl">{isAttachmentMenuOpen ? 'close' : 'add'}</span>
+            </button>
+
+            {isAttachmentMenuOpen && (
+              <div className="absolute bottom-10 left-0 bg-white border border-[#dbc2b2]/45 rounded-2xl shadow-xl p-2.5 w-52 flex flex-col gap-1 z-50 animate-fade-in">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAttachmentMenuOpen(false);
+                    fileInputRef.current?.click();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-[#dbc2b2]/10 text-left rounded-xl transition-all cursor-pointer font-body text-xs font-bold text-[#5c4a3c]"
+                >
+                  <span className="material-symbols-outlined text-base text-[#6b5a4d]">image</span>
+                  <span>Photo, Video or PDF</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAttachmentMenuOpen(false);
+                    handleShareLocation();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-[#dbc2b2]/10 text-left rounded-xl transition-all cursor-pointer font-body text-xs font-bold text-[#5c4a3c]"
+                >
+                  <span className="material-symbols-outlined text-base text-[#eb8424]" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
+                  <span>Share Location</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAttachmentMenuOpen(false);
+                    setIsPollModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-[#dbc2b2]/10 text-left rounded-xl transition-all cursor-pointer font-body text-xs font-bold text-[#5c4a3c]"
+                >
+                  <span className="material-symbols-outlined text-base text-[#eb8424]">poll</span>
+                  <span>Create Poll</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsAttachmentMenuOpen(false);
+                    const title = prompt('Enter Event Title:', 'Colony Cleanup Day') || 'Colony Cleanup Day';
+                    const url = prompt('Enter Event URL or path:', '/events') || '/events';
+                    const formatted = `[📎 File Attachment: ${title}](${url})`;
+                    await sendFormattedMessage(formatted);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-[#dbc2b2]/10 text-left rounded-xl transition-all cursor-pointer font-body text-xs font-bold text-[#5c4a3c]"
+                >
+                  <span className="material-symbols-outlined text-base text-[#006a63]">calendar_today</span>
+                  <span>Share Event Link</span>
+                </button>
+                {isStaff && (
+                  <>
+                    <div className="border-t border-[#dbc2b2]/35 my-1" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAttachmentMenuOpen(false);
+                        setActiveAlertPrefix(activeAlertPrefix === 'hvac' ? 'none' : 'hvac');
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 hover:bg-[#dbc2b2]/10 text-left rounded-xl transition-all cursor-pointer font-body text-xs font-bold ${
+                        activeAlertPrefix === 'hvac' ? 'text-red-600 bg-red-50' : 'text-[#6b5a4d]'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-base">warning</span>
+                      <span>Broadcast HVAC Alert</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAttachmentMenuOpen(false);
+                        setActiveAlertPrefix(activeAlertPrefix === 'dispatch' ? 'none' : 'dispatch');
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 hover:bg-[#dbc2b2]/10 text-left rounded-xl transition-all cursor-pointer font-body text-xs font-bold ${
+                        activeAlertPrefix === 'dispatch' ? 'text-[#006a63] bg-[#eafaf9]' : 'text-[#6b5a4d]'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-base">emergency_share</span>
+                      <span>Broadcast Dispatch</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Emoji Button */}
+          <button
+            onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
+            type="button"
+            title="Emojis & GIFs"
+            className={`h-8 w-8 rounded-full hover:bg-[#dbc2b2]/20 flex items-center justify-center transition-colors cursor-pointer border-none bg-transparent shrink-0 ${isEmojiPickerOpen ? 'text-[#eb8424] bg-[#dbc2b2]/10' : 'text-[#6b5a4d]/60'}`}
+          >
+            <span className="material-symbols-outlined text-xl">sentiment_satisfied</span>
+          </button>
+
+          {/* Main Textarea */}
+          <textarea
+            ref={inputRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={getInputPlaceholder(activeDMUser, activeChannel)}
+            rows={1}
+            maxLength={2000}
+            disabled={isPending || isUploadingMedia}
+            className="flex-1 resize-none bg-transparent border-none outline-none font-body text-xs sm:text-sm text-[#5c4a3c] dark:text-[var(--text-primary)] placeholder-[#6b5a4d]/45 dark:placeholder-[var(--text-muted)] leading-normal py-1.5 px-1 min-h-[22px] max-h-[120px] disabled:opacity-50"
+            style={{ scrollbarWidth: 'none' }}
+          />
+          
+          {/* Round Send Button */}
+          <button
+            type="submit"
+            disabled={isPending || isUploadingMedia || (!text.trim() && !attachedFile)}
+            className="shrink-0 w-8.5 h-8.5 rounded-full bg-[#944a00] hover:bg-[#eb8424] text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-sm"
+            title="Send Message"
+          >
+            {isPending || isUploadingMedia ? (
+              <span className="material-symbols-outlined text-xs animate-spin">progress_activity</span>
+            ) : (
+              <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
+            )}
+          </button>
+        </div>
+
+        <div className="flex items-center justify-center px-1 select-none">
+          <span className="font-body text-[9px] text-[#6b5a4d]/40 font-bold uppercase tracking-wider">
+            Shift + Enter to add a new line
+          </span>
+        </div>
+      </form>
+    );
+  };
+
+  const renderSidebarPanel = () => {
+    if (activeDMUser) {
+      return (
+        <div className="flex flex-col gap-4">
+          <h3 className="font-display text-xs font-bold uppercase tracking-wider text-[#6b5a4d]/50 mb-1 border-b border-[#dbc2b2]/30 pb-2">
+            User Profile
+          </h3>
+          
+          <div className="flex flex-col items-center text-center gap-2">
+            <div className="w-16 h-16 rounded-2xl overflow-hidden border border-[#dbc2b2]/50 bg-white flex items-center justify-center shadow-md">
+              {activeDMUser.avatar_url ? (
+                <img src={activeDMUser.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl font-bold text-[#eb8424]">
+                  {activeDMUser.display_name?.[0]?.toUpperCase() ?? '?'}
+                </span>
+              )}
+            </div>
+            <div className="min-w-0 w-full">
+              <h4 className="font-display text-sm font-bold text-[#5c4a3c] truncate flex items-center justify-center gap-1">
+                {activeDMUser.display_name}
+                <RoleBadge role={activeDMUser.role} />
+              </h4>
+              <p className="font-body text-[10px] text-[#6b5a4d]/50 capitalize mt-0.5">{activeDMUser.role || 'Volunteer'}</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1 bg-white p-2.5 rounded-xl border border-[#dbc2b2]/30 shadow-sm">
+            <span className="font-body text-[8px] font-bold text-[#6b5a4d]/40 uppercase tracking-wide">User ID</span>
+            <div className="flex items-center justify-between text-[9px] font-mono text-[#5c4a3c]/60">
+              <span className="truncate flex-1 pr-1">{activeDMUser.id}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(activeDMUser.id);
+                  showToast('success', 'User ID copied!');
+                }}
+                className="material-symbols-outlined text-[10px] text-[#eb8424] hover:text-[#d66c0e] bg-transparent border-none cursor-pointer p-0"
+                title="Copy User ID"
+              >
+                content_copy
+              </button>
+            </div>
+          </div>
+
+          {(() => {
+            const matchedProfile = globalProfiles.find(p => p.id === activeDMUser.id);
+            if (!matchedProfile) return null;
+            return (
+              <div className="flex flex-col gap-3.5">
+                {matchedProfile.bio && (
+                  <div className="bg-white p-2.5 rounded-xl border border-[#dbc2b2]/30 shadow-sm">
+                    <span className="font-body text-[8px] font-bold text-[#6b5a4d]/40 uppercase tracking-wide">Bio</span>
+                    <p className="font-body text-[11px] text-[#5c4a3c]/80 italic mt-1 leading-normal">
+                      &quot;{matchedProfile.bio}&quot;
+                    </p>
+                  </div>
+                )}
+                {matchedProfile.preferred_role && (
+                  <div>
+                    <span className="font-body text-[8px] font-bold text-[#6b5a4d]/40 uppercase tracking-wide block">Rescue Focus</span>
+                    <span className="font-body text-xs text-[#5c4a3c]/85 mt-0.5 block font-semibold">{matchedProfile.preferred_role}</span>
+                  </div>
+                )}
+                {matchedProfile.location_neighborhood && (
+                  <div>
+                    <span className="font-body text-[8px] font-bold text-[#6b5a4d]/40 uppercase tracking-wide block">Neighborhood</span>
+                    <span className="font-body text-xs text-[#5c4a3c]/85 mt-0.5 block font-semibold">{matchedProfile.location_neighborhood}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      );
+    }
+
+    if (activeChannel?.is_private) {
+      return (
+        <div className="flex flex-col gap-4">
+          {activeChannel.invite_code && (
+            <div className="bg-[#fdfbf7] border border-[#dbc2b2]/45 rounded-2xl p-4 flex flex-col gap-1.5 shadow-sm">
+              <span className="font-body text-[9px] font-bold text-[#6b5a4d]/55 uppercase tracking-wider block">Invite Code</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-sm font-bold text-[#eb8424] tracking-wider select-all">
+                  {activeChannel.invite_code}
+                </span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(activeChannel.invite_code || '');
+                    showToast('success', 'Invite code copied to clipboard!');
+                  }}
+                  className="w-7 h-7 rounded-full hover:bg-[#dbc2b2]/20 flex items-center justify-center text-[#6b5a4d] hover:text-[#eb8424] transition-colors cursor-pointer border-0 bg-transparent shrink-0"
+                  type="button"
+                  title="Copy Invite Code"
+                >
+                  <span className="material-symbols-outlined text-base">content_copy</span>
+                </button>
+              </div>
+              <p className="font-body text-[10px] text-[#6b5a4d]/60 leading-relaxed mt-0.5">
+                Share this code with volunteers to invite them to this private group.
+              </p>
+            </div>
+          )}
+          <h3 className="font-display text-xs font-bold uppercase tracking-wider text-[#6b5a4d]/50 border-b border-[#dbc2b2]/30 pb-2 flex items-center justify-between">
+            <span>Group Members</span>
+            <span className="bg-[#eb8424]/10 text-[#eb8424] text-[9px] px-1.5 py-0.5 rounded-full font-bold">
+              {activeChannelMembers.length}
+            </span>
+          </h3>
+          
+          <div className="flex flex-col gap-2">
+            {activeChannelMembers.map((member) => (
+              <button
+                key={member.id}
+                onClick={() => setSelectedProfileId(member.id)}
+                className="w-full flex items-center gap-2 py-1 px-1 rounded-lg hover:bg-white/50 text-left border-none bg-transparent cursor-pointer"
+              >
+                <div className="w-6 h-6 rounded-full overflow-hidden bg-[#dbc2b2]/35 flex-shrink-0 flex items-center justify-center border border-[#dbc2b2]/50">
+                  {member.avatar_url ? (
+                    <img src={member.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[10px] font-bold text-[#eb8424]">
+                      {member.display_name?.[0]?.toUpperCase() ?? '?'}
+                    </span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-body text-xs font-bold text-[#5c4a3c] truncate flex items-center gap-1">
+                    {member.display_name || 'Anonymous'}
+                    <RoleBadge role={member.role} />
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-4">
+        <h3 className="font-display text-xs font-bold uppercase tracking-wider text-[#6b5a4d]/50 border-b border-[#dbc2b2]/30 pb-2">
+          Volunteers Online
+        </h3>
+        
+        {globalProfiles.filter(p => p.role === 'admin').length > 0 && (
+          <div className="flex flex-col gap-2">
+            <span className="font-body text-[9px] font-bold text-amber-500 uppercase tracking-wider">
+              Administrators — {globalProfiles.filter(p => p.role === 'admin').length}
+            </span>
+            {globalProfiles.filter(p => p.role === 'admin').map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setSelectedProfileId(p.id)}
+                className="w-full flex items-center gap-2 py-1 px-1 rounded-lg hover:bg-white/50 text-left border-none bg-transparent cursor-pointer"
+              >
+                <div className="w-6 h-6 rounded-full overflow-hidden bg-[#dbc2b2]/35 flex-shrink-0 flex items-center justify-center border border-[#dbc2b2]/50">
+                  {p.avatar_url ? (
+                    <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[10px] font-bold text-[#eb8424]">{p.display_name?.[0]?.toUpperCase() ?? '?'}</span>
+                  )}
+                </div>
+                <span className="font-body text-xs font-bold text-amber-600 truncate">{p.display_name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {globalProfiles.filter(p => p.role === 'moderator').length > 0 && (
+          <div className="flex flex-col gap-2">
+            <span className="font-body text-[9px] font-bold text-rose-500 uppercase tracking-wider">
+              Moderators — {globalProfiles.filter(p => p.role === 'moderator').length}
+            </span>
+            {globalProfiles.filter(p => p.role === 'moderator').map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setSelectedProfileId(p.id)}
+                className="w-full flex items-center gap-2 py-1 px-1 rounded-lg hover:bg-white/50 text-left border-none bg-transparent cursor-pointer"
+              >
+                <div className="w-6 h-6 rounded-full overflow-hidden bg-[#dbc2b2]/35 flex-shrink-0 flex items-center justify-center border border-[#dbc2b2]/50">
+                  {p.avatar_url ? (
+                    <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[10px] font-bold text-[#eb8424]">{p.display_name?.[0]?.toUpperCase() ?? '?'}</span>
+                  )}
+                </div>
+                <span className="font-body text-xs font-bold text-rose-600 truncate">{p.display_name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div id="community-page-root" className="flex h-[calc(100vh-64px)] w-full overflow-hidden bg-[var(--bg-surface)]">
       {/* Toast notifications */}
@@ -2242,10 +2808,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
             ) : activeChannel ? (
               <>
                 <span className="material-symbols-outlined text-xl text-[#eb8424]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  activeChannel.slug === 'general' ? 'forum' : 
-                   (activeChannel.slug === 'adoption-stories' ? 'favorite' :
-                   (activeChannel.slug === 'volunteer-hub' ? 'groups' :
-                   (activeChannel.slug === 'urgent-medical' ? 'medical_services' : activeChannel.icon)))
+                  {getChannelIcon(activeChannel.slug, activeChannel.icon)}
                 </span>
                 <div>
                   <h1 className="font-display text-sm font-extrabold text-[#5c4a3c] dark:text-[var(--text-primary)] leading-tight">
@@ -2254,11 +2817,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="w-2 h-2 rounded-full bg-[#10b981] shrink-0" />
                     <span className="font-body text-[10px] text-[#5c4a3c]/50 dark:text-[var(--text-muted)] font-bold uppercase tracking-wider">
-                      activeChannel.slug === 'general' ? `${globalProfiles.length || 6} members online • Active` :
-                       (activeChannel.slug === 'volunteer-hub' ? `${globalProfiles.length || 6} online volunteers • Real-time dispatch` :
-                       (activeChannel.slug === 'adoption-stories' ? `${Math.max(2, Math.ceil(globalProfiles.length * 0.4))} members online • Sharing stories` :
-                       (activeChannel.slug === 'urgent-medical' ? `${Math.max(1, Math.ceil(globalProfiles.length * 0.15))} members online • Critical coordination` :
-                       `${globalProfiles.length || 6} members online • Active Now`)))
+                      {getChannelStatus(activeChannel.slug)}
                     </span>
                   </div>
                 </div>
@@ -2332,97 +2891,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
             </div>
           )}
 
-          {activeDMUser ? (
-            // DMs rendering
-            <>
-              {activeDMUser && !approvedDMs[activeDMUser.id] && (
-                <div className="mb-4 p-4.5 rounded-2xl border border-[#eb8424]/30 bg-[#fdf9f3] max-w-md mx-auto w-full flex flex-col gap-2.5 shadow-sm select-none animate-fade-in text-left">
-                  <div className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[#eb8424] text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>chat_bubble_outline</span>
-                    <span className="font-display text-[10px] font-bold text-[#eb8424] uppercase tracking-wider">Incoming Chat Request</span>
-                  </div>
-                  <p className="font-body text-xs text-[#5c4a3c] leading-relaxed">
-                    <strong>{activeDMUser.display_name}</strong> wishes to start a private chat with you. Approve the request to start private messaging.
-                  </p>
-                  <div className="flex justify-end mt-1">
-                    <button
-                      type="button"
-                      onClick={() => handleApproveDM(activeDMUser.id)}
-                      className="px-3.5 py-1.5 bg-[#eb8424] hover:bg-[#d66c0e] text-white font-bold text-xs rounded-xl transition-all cursor-pointer border-none shadow-sm flex items-center gap-1"
-                    >
-                      <span className="material-symbols-outlined text-xs">done</span>
-                      <span>Approve Request</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-              {filteredDmMessages.length === 0 ? (
-                <div className="flex-grow flex flex-col items-center justify-center py-20 text-center select-none">
-                  <span className="material-symbols-outlined text-5xl text-[var(--empire-gold)]/30 mb-2">forum</span>
-                  <h2 className="font-display text-base font-bold text-[var(--empire-cream)]/50">
-                    {searchQuery.trim() ? 'No matching messages' : 'Start a conversation'}
-                  </h2>
-                  <p className="font-body text-xs text-[var(--empire-cream)]/35 mt-1">
-                    {searchQuery.trim() ? 'Try adjusting your search query.' : 'Direct messages are private and real-time.'}
-                  </p>
-                </div>
-              ) : (
-                <DmMessagesList
-                  filteredDmMessages={filteredDmMessages}
-                  currentUser={currentUser}
-                  activeDMUser={activeDMUser}
-                  hoveredMsg={hoveredMsg}
-                  setHoveredMsg={setHoveredMsg}
-                  handleStartEditDM={(id, text) => {
-                    setEditingMessageId(id);
-                    setEditText(text);
-                  }}
-                  handleDelete={handleDelete}
-                />
-              )}
-            </>
-          ) : activeChannel ? (
-            // Channel Feed Messages rendering
-            channelMessages.length === 0 ? (
-              <div className="flex-grow flex flex-col items-center justify-center py-20 text-center select-none">
-                <span className="material-symbols-outlined text-5xl text-[var(--empire-gold)]/30 mb-2">forum</span>
-                <h2 className="font-display text-base font-bold text-[var(--empire-cream)]/50">No messages yet</h2>
-                <p className="font-body text-xs text-[var(--empire-cream)]/35 mt-1">Be the first to say something in #{activeChannel.name}!</p>
-              </div>
-            ) : (
-              <ChannelMessagesList
-                channelMessages={channelMessages}
-                currentUser={currentUser}
-                hoveredMsg={hoveredMsg}
-                setHoveredMsg={setHoveredMsg}
-                reactions={reactions}
-                isStaff={isStaff}
-                editingMessageId={editingMessageId}
-                editText={editText}
-                setEditText={setEditText}
-                actionPending={actionPending}
-                handleCancelEdit={handleCancelEdit}
-                handleSaveEdit={handleSaveEdit}
-                handleReact={handleReact}
-                handleFlag={handleFlag}
-                handleStartEdit={handleStartEdit}
-                handleReportMessage={handleReportMessage}
-                handleStartDeleteMessage={handleDelete}
-                setSelectedProfileId={setSelectedProfileId}
-                isSignedIn={isSignedIn}
-                setReplyToMessage={setReplyToMessage}
-                messages={messages}
-              />
-            )
-          ) : (
-            <div className="flex-grow flex flex-col items-center justify-center p-8 text-center select-none">
-              <span className="material-symbols-outlined text-5xl text-[#eb8424]/25 mb-3">forum</span>
-              <h2 className="font-display text-base font-bold text-[#5c4a3c]/60">Welcome to MeowNet Chat</h2>
-              <p className="font-body text-xs text-[#6b5a4d]/50 mt-1 max-w-sm">
-                Select one of the rescue channels on the sidebar, or search by User ID to start a secure private conversation.
-              </p>
-            </div>
-          )}
+          {renderMessageArea()}
           <div ref={chatEndRef} />
         </div>
 
@@ -2548,237 +3017,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
 
         {/* Input Message panel */}
         <div className="shrink-0 border-t border-[#dbc2b2]/35 px-5 lg:px-6 py-4 bg-white z-10 select-none">
-          {isSignedIn ? (
-            (activeChannel || activeDMUser) ? (
-              activeDMUser && !approvedDMs[activeDMUser.id] ? (
-                <div className="flex flex-col items-center justify-center gap-2.5 bg-[#fdf9f3]/50 border border-dashed border-[#dbc2b2]/45 rounded-2xl py-6 px-6 max-w-xl mx-auto w-full text-center select-none shadow-sm">
-                  <span className="material-symbols-outlined text-[#eb8424] text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
-                  <p className="font-body text-xs font-bold text-[#5c4a3c] leading-relaxed">
-                    DM Request Pending. Please approve the chat request above to start private conversations.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handlePost} className="flex flex-col gap-2 max-w-4xl mx-auto">
-                  {replyToMessage && (
-                    <div className="flex items-center justify-between px-3 py-1.5 bg-[#eb8424]/5 border-l-2 border-[#eb8424] rounded-r-lg text-xs mb-2">
-                      <div className="flex items-center gap-1.5 text-[#6b5a4d]/85">
-                        <span className="material-symbols-outlined text-sm">reply</span>
-                        <span>Replying to <strong>{replyToMessage.display_name}</strong>:</span>
-                        <span className="truncate max-w-[200px] italic">&quot;{replyToMessage.message}&quot;</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setReplyToMessage(null)}
-                        className="text-[#6b5a4d]/40 hover:text-red-400 p-0.5 cursor-pointer bg-transparent border-0 flex items-center"
-                      >
-                        <span className="material-symbols-outlined text-sm">close</span>
-                      </button>
-                    </div>
-                  )}
-                  
-                  {isStaff && (
-                    <div className="flex gap-2 mb-1.5 select-none items-center pl-3">
-                      <span className="text-[10px] font-bold text-[#6b5a4d]/50 uppercase tracking-wider">Alert Broadcast:</span>
-                      <button
-                        type="button"
-                        onClick={() => setActiveAlertPrefix(activeAlertPrefix === 'hvac' ? 'none' : 'hvac')}
-                        className={`text-[9px] px-2.5 py-1 rounded-full font-bold transition-all border cursor-pointer ${
-                          activeAlertPrefix === 'hvac'
-                            ? 'bg-red-50 text-red-600 border-red-200 shadow-sm'
-                            : 'bg-transparent text-[#6b5a4d]/60 border-[#dbc2b2]/40 hover:bg-[#dbc2b2]/10'
-                        }`}
-                      >
-                        ⚠️ HVAC Alert
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActiveAlertPrefix(activeAlertPrefix === 'dispatch' ? 'none' : 'dispatch')}
-                        className={`text-[9px] px-2.5 py-1 rounded-full font-bold transition-all border cursor-pointer ${
-                          activeAlertPrefix === 'dispatch'
-                            ? 'bg-[#eafaf9] text-[#006a63] border-[#ccefe3] shadow-sm'
-                            : 'bg-transparent text-[#6b5a4d]/60 border-[#dbc2b2]/40 hover:bg-[#dbc2b2]/10'
-                        }`}
-                      >
-                        📍 Dispatch Alert
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Main Input Pill Box */}
-                  <div className="flex items-center gap-2 bg-[#fdf9f3]/60 border border-[#dbc2b2]/45 rounded-[32px] pl-2.5 pr-1.5 py-1.5 focus-within:border-[#eb8424] focus-within:bg-white transition-all shadow-inner">
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      accept="image/*,video/*,application/pdf"
-                    />
-                    
-                    {/* Attachments Menu Button */}
-                    <div className="relative shrink-0 flex items-center">
-                      <button
-                        onClick={() => setIsAttachmentMenuOpen(!isAttachmentMenuOpen)}
-                        type="button"
-                        title="Attach files, location, polls, events"
-                        className={`h-8 w-8 rounded-full hover:bg-[#dbc2b2]/20 flex items-center justify-center transition-colors cursor-pointer border-none bg-transparent shrink-0 ${
-                          isAttachmentMenuOpen ? 'text-[#eb8424] bg-[#dbc2b2]/10' : 'text-[#6b5a4d]/60'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-xl">{isAttachmentMenuOpen ? 'close' : 'add'}</span>
-                      </button>
-
-                      {isAttachmentMenuOpen && (
-                        <div className="absolute bottom-10 left-0 bg-white border border-[#dbc2b2]/45 rounded-2xl shadow-xl p-2.5 w-52 flex flex-col gap-1 z-50 animate-fade-in">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsAttachmentMenuOpen(false);
-                              fileInputRef.current?.click();
-                            }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-[#dbc2b2]/10 text-left rounded-xl transition-all cursor-pointer font-body text-xs font-bold text-[#5c4a3c]"
-                          >
-                            <span className="material-symbols-outlined text-base text-[#6b5a4d]">image</span>
-                            <span>Photo, Video or PDF</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsAttachmentMenuOpen(false);
-                              handleShareLocation();
-                            }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-[#dbc2b2]/10 text-left rounded-xl transition-all cursor-pointer font-body text-xs font-bold text-[#5c4a3c]"
-                          >
-                            <span className="material-symbols-outlined text-base text-[#eb8424]" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
-                            <span>Share Location</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsAttachmentMenuOpen(false);
-                              setIsPollModalOpen(true);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-[#dbc2b2]/10 text-left rounded-xl transition-all cursor-pointer font-body text-xs font-bold text-[#5c4a3c]"
-                          >
-                            <span className="material-symbols-outlined text-base text-[#eb8424]">poll</span>
-                            <span>Create Poll</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              setIsAttachmentMenuOpen(false);
-                              const title = prompt('Enter Event Title:', 'Colony Cleanup Day') || 'Colony Cleanup Day';
-                              const url = prompt('Enter Event URL or path:', '/events') || '/events';
-                              const formatted = `[📎 File Attachment: ${title}](${url})`;
-                              await sendFormattedMessage(formatted);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-[#dbc2b2]/10 text-left rounded-xl transition-all cursor-pointer font-body text-xs font-bold text-[#5c4a3c]"
-                          >
-                            <span className="material-symbols-outlined text-base text-[#006a63]">calendar_today</span>
-                            <span>Share Event Link</span>
-                          </button>
-                          {isStaff && (
-                            <>
-                              <div className="border-t border-[#dbc2b2]/35 my-1" />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setIsAttachmentMenuOpen(false);
-                                  setActiveAlertPrefix(activeAlertPrefix === 'hvac' ? 'none' : 'hvac');
-                                }}
-                                className={`w-full flex items-center gap-2.5 px-3 py-2 hover:bg-[#dbc2b2]/10 text-left rounded-xl transition-all cursor-pointer font-body text-xs font-bold ${
-                                  activeAlertPrefix === 'hvac' ? 'text-red-600 bg-red-50' : 'text-[#6b5a4d]'
-                                }`}
-                              >
-                                <span className="material-symbols-outlined text-base">warning</span>
-                                <span>Broadcast HVAC Alert</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setIsAttachmentMenuOpen(false);
-                                  setActiveAlertPrefix(activeAlertPrefix === 'dispatch' ? 'none' : 'dispatch');
-                                }}
-                                className={`w-full flex items-center gap-2.5 px-3 py-2 hover:bg-[#dbc2b2]/10 text-left rounded-xl transition-all cursor-pointer font-body text-xs font-bold ${
-                                  activeAlertPrefix === 'dispatch' ? 'text-[#006a63] bg-[#eafaf9]' : 'text-[#6b5a4d]'
-                                }`}
-                              >
-                                <span className="material-symbols-outlined text-base">emergency_share</span>
-                                <span>Broadcast Dispatch</span>
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Emoji Button */}
-                    <button
-                      onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)}
-                      type="button"
-                      title="Emojis & GIFs"
-                      className={`h-8 w-8 rounded-full hover:bg-[#dbc2b2]/20 flex items-center justify-center transition-colors cursor-pointer border-none bg-transparent shrink-0 ${isEmojiPickerOpen ? 'text-[#eb8424] bg-[#dbc2b2]/10' : 'text-[#6b5a4d]/60'}`}
-                    >
-                      <span className="material-symbols-outlined text-xl">sentiment_satisfied</span>
-                    </button>
-
-                    {/* Main Textarea */}
-                    <textarea
-                      ref={inputRef}
-                      value={text}
-                      onChange={(e) => setText(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder={getInputPlaceholder(activeDMUser, activeChannel)}
-                      rows={1}
-                      maxLength={2000}
-                      disabled={isPending || isUploadingMedia}
-                      className="flex-1 resize-none bg-transparent border-none outline-none font-body text-xs sm:text-sm text-[#5c4a3c] dark:text-[var(--text-primary)] placeholder-[#6b5a4d]/45 dark:placeholder-[var(--text-muted)] leading-normal py-1.5 px-1 min-h-[22px] max-h-[120px] disabled:opacity-50"
-                      style={{ scrollbarWidth: 'none' }}
-                    />
-                    
-                    {/* Round Send Button */}
-                    <button
-                      type="submit"
-                      disabled={isPending || isUploadingMedia || (!text.trim() && !attachedFile)}
-                      className="shrink-0 w-8.5 h-8.5 rounded-full bg-[#944a00] hover:bg-[#eb8424] text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-sm"
-                      title="Send Message"
-                    >
-                      {isPending || isUploadingMedia ? (
-                        <span className="material-symbols-outlined text-xs animate-spin">progress_activity</span>
-                      ) : (
-                        <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
-                      )}
-                    </button>
-                  </div>
-
-                <div className="flex items-center justify-center px-1 select-none">
-                  <span className="font-body text-[9px] text-[#6b5a4d]/40 font-bold uppercase tracking-wider">
-                    Shift + Enter to add a new line
-                  </span>
-                </div>
-              </form>
-            )
-          ) : (
-            <div className="text-center py-2 text-xs font-body text-[#6b5a4d]/40 font-bold select-none">
-              Select a channel or conversation to start chatting.
-            </div>
-          )
-        ) : (
-            <div className="flex items-center justify-between gap-3 bg-[#fdf9f3]/60 border border-[#dbc2b2]/45 rounded-2xl px-5 py-3.5 max-w-4xl mx-auto">
-              <span className="material-symbols-outlined text-[#eb8424] text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
-              <div className="flex-1 font-body text-xs text-[#5c4a3c]/60">
-                <Link href="/auth/login" className="text-[#eb8424] font-extrabold no-underline hover:underline">Sign in</Link>
-                {' '}or{' '}
-                <Link href="/auth/signup" className="text-[#eb8424] font-extrabold no-underline hover:underline">create an account</Link>
-                {' '}to join the conversation.
-              </div>
-              <Link
-                href="/auth/signup"
-                className="shrink-0 bg-[#eb8424] text-white text-xs font-bold px-4 py-2 rounded-xl no-underline hover:bg-[#d66c0e] transition-all shadow-sm"
-              >
-                Join Empire
-              </Link>
-            </div>
-          )}
+          {renderInputMessagePanel()}
         </div>
       </div>
 
@@ -2786,222 +3025,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
       <aside className="w-60 shrink-0 bg-[#f7f0e8]/30 border-l border-[#dbc2b2]/45 hidden xl:flex flex-col overflow-y-auto p-4 select-none">
         
         {/* Case 1: Active DM Recipient Profile Detail Card */}
-        {activeDMUser ? (
-          <div className="flex flex-col gap-4">
-            <h3 className="font-display text-xs font-bold uppercase tracking-wider text-[#6b5a4d]/50 mb-1 border-b border-[#dbc2b2]/30 pb-2">
-              User Profile
-            </h3>
-            
-            {/* Detailed profile viewer */}
-            <div className="flex flex-col items-center text-center gap-2">
-              <div className="w-16 h-16 rounded-2xl overflow-hidden border border-[#dbc2b2]/50 bg-white flex items-center justify-center shadow-md">
-                {activeDMUser.avatar_url ? (
-                  <img src={activeDMUser.avatar_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-2xl font-bold text-[#eb8424]">
-                    {activeDMUser.display_name?.[0]?.toUpperCase() ?? '?'}
-                  </span>
-                )}
-              </div>
-              <div className="min-w-0 w-full">
-                <h4 className="font-display text-sm font-bold text-[#5c4a3c] truncate flex items-center justify-center gap-1">
-                  {activeDMUser.display_name}
-                  <RoleBadge role={activeDMUser.role} />
-                </h4>
-                <p className="font-body text-[10px] text-[#6b5a4d]/50 capitalize mt-0.5">{activeDMUser.role || 'Volunteer'}</p>
-              </div>
-            </div>
-
-            {/* User ID block */}
-            <div className="flex flex-col gap-1 bg-white p-2.5 rounded-xl border border-[#dbc2b2]/30 shadow-sm">
-              <span className="font-body text-[8px] font-bold text-[#6b5a4d]/40 uppercase tracking-wide">User ID</span>
-              <div className="flex items-center justify-between text-[9px] font-mono text-[#5c4a3c]/60">
-                <span className="truncate flex-1 pr-1">{activeDMUser.id}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(activeDMUser.id);
-                    showToast('success', 'User ID copied!');
-                  }}
-                  className="material-symbols-outlined text-[10px] text-[#eb8424] hover:text-[#d66c0e] bg-transparent border-none cursor-pointer p-0"
-                  title="Copy User ID"
-                >
-                  content_copy
-                </button>
-              </div>
-            </div>
-
-            {/* Inspect user additional profile info fetched dynamically from globalProfiles cache */}
-            {(() => {
-              const matchedProfile = globalProfiles.find(p => p.id === activeDMUser.id);
-              if (!matchedProfile) return null;
-              return (
-                <div className="flex flex-col gap-3.5">
-                  {matchedProfile.bio && (
-                    <div className="bg-white p-2.5 rounded-xl border border-[#dbc2b2]/30 shadow-sm">
-                      <span className="font-body text-[8px] font-bold text-[#6b5a4d]/40 uppercase tracking-wide">Bio</span>
-                      <p className="font-body text-[11px] text-[#5c4a3c]/80 italic mt-1 leading-normal">
-                        &quot;{matchedProfile.bio}&quot;
-                      </p>
-                    </div>
-                  )}
-                  {matchedProfile.preferred_role && (
-                    <div>
-                      <span className="font-body text-[8px] font-bold text-[#6b5a4d]/40 uppercase tracking-wide block">Rescue Focus</span>
-                      <span className="font-body text-xs text-[#5c4a3c]/85 mt-0.5 block font-semibold">{matchedProfile.preferred_role}</span>
-                    </div>
-                  )}
-                  {matchedProfile.location_neighborhood && (
-                    <div>
-                      <span className="font-body text-[8px] font-bold text-[#6b5a4d]/40 uppercase tracking-wide block">Neighborhood</span>
-                      <span className="font-body text-xs text-[#5c4a3c]/85 mt-0.5 block font-semibold">{matchedProfile.location_neighborhood}</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-        ) : activeChannel?.is_private ? (
-          /* Case 2: Private Channel Member List */
-          <div className="flex flex-col gap-4">
-            {activeChannel.invite_code && (
-              <div className="bg-[#fdfbf7] border border-[#dbc2b2]/45 rounded-2xl p-4 flex flex-col gap-1.5 shadow-sm">
-                <span className="font-body text-[9px] font-bold text-[#6b5a4d]/55 uppercase tracking-wider block">Invite Code</span>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-mono text-sm font-bold text-[#eb8424] tracking-wider select-all">
-                    {activeChannel.invite_code}
-                  </span>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(activeChannel.invite_code || '');
-                      showToast('success', 'Invite code copied to clipboard!');
-                    }}
-                    className="w-7 h-7 rounded-full hover:bg-[#dbc2b2]/20 flex items-center justify-center text-[#6b5a4d] hover:text-[#eb8424] transition-colors cursor-pointer border-0 bg-transparent shrink-0"
-                    type="button"
-                    title="Copy Invite Code"
-                  >
-                    <span className="material-symbols-outlined text-base">content_copy</span>
-                  </button>
-                </div>
-                <p className="font-body text-[10px] text-[#6b5a4d]/60 leading-relaxed mt-0.5">
-                  Share this code with volunteers to invite them to this private group.
-                </p>
-              </div>
-            )}
-            <h3 className="font-display text-xs font-bold uppercase tracking-wider text-[#6b5a4d]/50 border-b border-[#dbc2b2]/30 pb-2 flex items-center justify-between">
-              <span>Group Members</span>
-              <span className="bg-[#eb8424]/10 text-[#eb8424] text-[9px] px-1.5 py-0.5 rounded-full font-bold">
-                {activeChannelMembers.length}
-              </span>
-            </h3>
-            
-            <div className="flex flex-col gap-2">
-              {activeChannelMembers.map((member) => (
-                <button
-                  key={member.id}
-                  onClick={() => setSelectedProfileId(member.id)}
-                  className="w-full flex items-center gap-2 py-1 px-1 rounded-lg hover:bg-white/50 text-left border-none bg-transparent cursor-pointer"
-                >
-                  <div className="w-6 h-6 rounded-full overflow-hidden bg-[#dbc2b2]/35 flex-shrink-0 flex items-center justify-center border border-[#dbc2b2]/50">
-                    {member.avatar_url ? (
-                      <img src={member.avatar_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-[10px] font-bold text-[#eb8424]">
-                        {member.display_name?.[0]?.toUpperCase() ?? '?'}
-                      </span>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-body text-xs font-bold text-[#5c4a3c] truncate flex items-center gap-1">
-                      {member.display_name || 'Anonymous'}
-                      <RoleBadge role={member.role} />
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          /* Case 3: Public Channel Active Volunteers List */
-          <div className="flex flex-col gap-4">
-            <h3 className="font-display text-xs font-bold uppercase tracking-wider text-[#6b5a4d]/50 border-b border-[#dbc2b2]/30 pb-2">
-              Volunteers Online
-            </h3>
-            
-            {/* Admins */}
-            {globalProfiles.filter(p => p.role === 'admin').length > 0 && (
-              <div className="flex flex-col gap-2">
-                <span className="font-body text-[9px] font-bold text-amber-500 uppercase tracking-wider">
-                  Administrators — {globalProfiles.filter(p => p.role === 'admin').length}
-                </span>
-                {globalProfiles.filter(p => p.role === 'admin').map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => setSelectedProfileId(p.id)}
-                    className="w-full flex items-center gap-2 py-1 px-1 rounded-lg hover:bg-white/50 text-left border-none bg-transparent cursor-pointer"
-                  >
-                    <div className="w-6 h-6 rounded-full overflow-hidden bg-[#dbc2b2]/35 flex-shrink-0 flex items-center justify-center border border-[#dbc2b2]/50">
-                      {p.avatar_url ? (
-                        <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-[10px] font-bold text-[#eb8424]">{p.display_name?.[0]?.toUpperCase() ?? '?'}</span>
-                      )}
-                    </div>
-                    <span className="font-body text-xs font-bold text-amber-600 truncate">{p.display_name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Mods */}
-            {globalProfiles.filter(p => p.role === 'moderator').length > 0 && (
-              <div className="flex flex-col gap-2">
-                <span className="font-body text-[9px] font-bold text-rose-500 uppercase tracking-wider">
-                  Moderators — {globalProfiles.filter(p => p.role === 'moderator').length}
-                </span>
-                {globalProfiles.filter(p => p.role === 'moderator').map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => setSelectedProfileId(p.id)}
-                    className="w-full flex items-center gap-2 py-1 px-1 rounded-lg hover:bg-white/50 text-left border-none bg-transparent cursor-pointer"
-                  >
-                    <div className="w-6 h-6 rounded-full overflow-hidden bg-[#dbc2b2]/35 flex-shrink-0 flex items-center justify-center border border-[#dbc2b2]/50">
-                      {p.avatar_url ? (
-                        <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-[10px] font-bold text-[#eb8424]">{p.display_name?.[0]?.toUpperCase() ?? '?'}</span>
-                      )}
-                    </div>
-                    <span className="font-body text-xs font-bold text-rose-600 truncate">{p.display_name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Volunteers */}
-            <div className="flex flex-col gap-2">
-              <span className="font-body text-[9px] font-bold text-[#6b5a4d]/40 uppercase tracking-wider">
-                Volunteers — {globalProfiles.filter(p => p.role !== 'admin' && p.role !== 'moderator').length}
-              </span>
-              {globalProfiles.filter(p => p.role !== 'admin' && p.role !== 'moderator').map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setSelectedProfileId(p.id)}
-                  className="w-full flex items-center gap-2 py-1 px-1 rounded-lg hover:bg-white/50 text-left border-none bg-transparent cursor-pointer"
-                >
-                  <div className="w-6 h-6 rounded-full overflow-hidden bg-[#dbc2b2]/35 flex-shrink-0 flex items-center justify-center border border-[#dbc2b2]/50">
-                    {p.avatar_url ? (
-                      <img src={p.avatar_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-[10px] font-bold text-[#eb8424]">{p.display_name?.[0]?.toUpperCase() ?? '?'}</span>
-                    )}
-                  </div>
-                  <span className="font-body text-xs font-semibold text-[#5c4a3c] truncate">{p.display_name || 'Anonymous'}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+          {renderSidebarPanel()}
       </aside>
 
       {/* ── Create Poll Modal ── */}

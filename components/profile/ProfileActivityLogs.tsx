@@ -57,37 +57,35 @@ export default function ProfileActivityLogs({ recentPoints, auditLogs }: Props) 
         </div>
       );
     }
+  } else if (auditLogs.length === 0) {
+    tabContent = (
+      <p className="font-body text-xs text-[var(--empire-cream)]/50 py-4 italic text-center">
+        No system audit entries recorded.
+      </p>
+    );
   } else {
-    if (auditLogs.length === 0) {
-      tabContent = (
-        <p className="font-body text-xs text-[var(--empire-cream)]/50 py-4 italic text-center">
-          No system audit entries recorded.
-        </p>
-      );
-    } else {
-      tabContent = (
-        <div className="flex flex-col max-h-[350px] overflow-y-auto pr-1 gap-2">
-          {auditLogs.map((log) => (
-            <div 
-              key={`${log.created_at}-${log.action}`} 
-              className="p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/15 flex flex-col gap-1.5"
-            >
-              <div className="flex justify-between items-start gap-4">
-                <span className="px-2 py-0.5 rounded bg-orange-950/20 border border-orange-850/40 text-[var(--empire-gold)] text-[8px] font-black uppercase tracking-wider">
-                  {log.action.replace(/_/g, ' ')}
-                </span>
-                <span className="font-data text-[9px] text-[var(--empire-cream)]/35 font-semibold">
-                  {new Date(log.created_at).toLocaleString()}
-                </span>
-              </div>
-              <p className="font-body text-[11px] text-[var(--empire-cream)]/75 leading-relaxed">
-                {log.details || 'System event recorded successfully.'}
-              </p>
+    tabContent = (
+      <div className="flex flex-col max-h-[350px] overflow-y-auto pr-1 gap-2">
+        {auditLogs.map((log) => (
+          <div 
+            key={`${log.created_at}-${log.action}`} 
+            className="p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/15 flex flex-col gap-1.5"
+          >
+            <div className="flex justify-between items-start gap-4">
+              <span className="px-2 py-0.5 rounded bg-orange-950/20 border border-orange-850/40 text-[var(--empire-gold)] text-[8px] font-black uppercase tracking-wider">
+                {log.action.replace(/_/g, ' ')}
+              </span>
+              <span className="font-data text-[9px] text-[var(--empire-cream)]/35 font-semibold">
+                {new Date(log.created_at).toLocaleString()}
+              </span>
             </div>
-          ))}
-        </div>
-      );
-    }
+            <p className="font-body text-[11px] text-[var(--empire-cream)]/75 leading-relaxed">
+              {log.details || 'System event recorded successfully.'}
+            </p>
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (

@@ -460,7 +460,7 @@ export default function ModeratorDashboardClient({
         } else {
           showNotification('error', 'Profile not found.');
         }
-      } catch (err) {
+      } catch {
         showNotification('error', 'Error loading profile.');
       } finally {
         setLoadingActivity(false);

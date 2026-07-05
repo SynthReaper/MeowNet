@@ -177,6 +177,91 @@ export default function ReportsPage() {
     return () => clearInterval(t);
   }, [catFacts]);
 
+  const renderSightingLogs = () => {
+    if (loadingDb) {
+      return (
+        <div className="flex items-center justify-center p-8">
+          <div className="w-6 h-6 rounded-full border-2 border-[var(--empire-gold)] border-t-transparent animate-spin" />
+        </div>
+      );
+    }
+    if (cats.length === 0) {
+      return (
+        <p className="font-body text-xs text-[var(--empire-cream)]/50 py-2">No cats logged in the community database.</p>
+      );
+    }
+    return (
+      <div className="flex flex-col gap-3">
+        {cats.map((cat) => {
+          const status = STATUS_CONFIG[cat.status] ?? { color: '#887365', label: cat.status, bg: 'rgba(0,0,0,0.05)' };
+          return (
+            <Link
+              key={cat.id}
+              href={`/cats/${cat.id}`}
+              className="flex items-center gap-4 p-3 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-border)]/15 border border-[var(--bg-border)]/10 transition-all duration-200 no-underline group"
+            >
+              <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-[var(--bg-border)]/20 flex-shrink-0">
+                <img src={cat.photo_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              </div>
+              <div className="flex-grow min-w-0">
+                <h4 className="font-body text-xs font-bold text-[var(--empire-cream)] group-hover:text-[var(--empire-gold)] transition-colors truncate">
+                  {cat.name ?? 'Unnamed Cat'}
+                </h4>
+                <p className="font-body text-[10px] text-[var(--empire-cream)]/40 mt-0.5">
+                  Logged on {new Date(cat.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              <span
+                className="px-2.5 py-0.5 rounded-full font-body text-[9px] font-bold uppercase tracking-wider flex-shrink-0"
+                style={{ backgroundColor: status.bg, color: status.color }}
+              >
+                {status.label}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderTnrOperations = () => {
+    if (loadingDb) {
+      return (
+        <div className="flex items-center justify-center p-6">
+          <div className="w-5 h-5 rounded-full border-2 border-[var(--life-teal)] border-t-transparent animate-spin" />
+        </div>
+      );
+    }
+    if (events.length === 0) {
+      return (
+        <p className="font-body text-xs text-[var(--empire-cream)]/50 py-2">No upcoming TNR events scheduled.</p>
+      );
+    }
+    return (
+      <div className="flex flex-col gap-3">
+        {events.map((event) => (
+          <Link
+            key={event.id}
+            href={`/events/${event.id}`}
+            className="p-3 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-border)]/15 border border-[var(--bg-border)]/10 transition-all flex gap-3 no-underline group"
+          >
+            <div className="w-10 h-10 rounded-lg bg-[var(--life-teal)]/10 text-[var(--life-teal)] flex items-center justify-center flex-shrink-0 font-body text-xs font-bold">
+              TNR
+            </div>
+            <div className="flex-grow min-w-0 flex flex-col justify-center">
+              <h4 className="font-body text-xs font-bold text-[var(--empire-cream)] group-hover:text-[var(--empire-gold)] transition-colors truncate">
+                {event.title}
+              </h4>
+              <span className="font-body text-[9px] text-[var(--empire-cream)]/40 mt-0.5">
+                {new Date(event.event_time).toLocaleDateString()} at {new Date(event.event_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-12 py-8 flex flex-col gap-8">
       {/* Page Header */}
@@ -312,44 +397,7 @@ export default function ReportsPage() {
               </Link>
             </div>
 
-            {loadingDb ? (
-              <div className="flex items-center justify-center p-8">
-                <div className="w-6 h-6 rounded-full border-2 border-[var(--empire-gold)] border-t-transparent animate-spin" />
-              </div>
-            ) : cats.length === 0 ? (
-              <p className="font-body text-xs text-[var(--empire-cream)]/50 py-2">No cats logged in the community database.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {cats.map((cat) => {
-                  const status = STATUS_CONFIG[cat.status] ?? { color: '#887365', label: cat.status, bg: 'rgba(0,0,0,0.05)' };
-                  return (
-                    <Link
-                      key={cat.id}
-                      href={`/cats/${cat.id}`}
-                      className="flex items-center gap-4 p-3 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-border)]/15 border border-[var(--bg-border)]/10 transition-all duration-200 no-underline group"
-                    >
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-[var(--bg-border)]/20 flex-shrink-0">
-                        <img src={cat.photo_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      </div>
-                      <div className="flex-grow min-w-0">
-                        <h4 className="font-body text-xs font-bold text-[var(--empire-cream)] group-hover:text-[var(--empire-gold)] transition-colors truncate">
-                          {cat.name ?? 'Unnamed Cat'}
-                        </h4>
-                        <p className="font-body text-[10px] text-[var(--empire-cream)]/40 mt-0.5">
-                          Logged on {new Date(cat.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <span
-                        className="px-2.5 py-0.5 rounded-full font-body text-[9px] font-bold uppercase tracking-wider flex-shrink-0"
-                        style={{ backgroundColor: status.bg, color: status.color }}
-                      >
-                        {status.label}
-                      </span>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
+            {renderSightingLogs()}
           </div>
         </div>
 
@@ -455,35 +503,7 @@ export default function ReportsPage() {
               </Link>
             </div>
 
-            {loadingDb ? (
-              <div className="flex items-center justify-center p-6">
-                <div className="w-5 h-5 rounded-full border-2 border-[var(--life-teal)] border-t-transparent animate-spin" />
-              </div>
-            ) : events.length === 0 ? (
-              <p className="font-body text-xs text-[var(--empire-cream)]/50 py-2">No upcoming TNR events scheduled.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {events.map((event) => (
-                  <Link
-                    key={event.id}
-                    href={`/events/${event.id}`}
-                    className="p-3 rounded-xl bg-[var(--bg-elevated)] hover:bg-[var(--bg-border)]/15 border border-[var(--bg-border)]/10 transition-all flex gap-3 no-underline group"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-[var(--life-teal)]/10 text-[var(--life-teal)] flex items-center justify-center flex-shrink-0 font-body text-xs font-bold">
-                      TNR
-                    </div>
-                    <div className="flex-grow min-w-0 flex flex-col justify-center">
-                      <h4 className="font-body text-xs font-bold text-[var(--empire-cream)] group-hover:text-[var(--empire-gold)] transition-colors truncate">
-                        {event.title}
-                      </h4>
-                      <span className="font-body text-[9px] text-[var(--empire-cream)]/40 mt-0.5">
-                        {new Date(event.event_time).toLocaleDateString()} at {new Date(event.event_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
+            {renderTnrOperations()}
           </div>
         </div>
       </div>

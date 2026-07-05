@@ -197,6 +197,8 @@ const getEventStatusLabelClass = (status: string) => {
   return 'bg-red-500/10 text-red-400 border border-red-500/20';
 };
 
+type DashboardUserRole = 'user' | 'moderator' | 'admin';
+
 export interface Profile {
   id: string;
   display_name: string | null;
@@ -654,6 +656,40 @@ export default function AdminDashboardClient({
                     const isExpanded = expandedAppId === app.id;
                     const activity = appActivity[app.id];
                     const isLoadingThis = loadingAppActivity === app.id;
+
+                    const renderExpandedActivity = () => {
+                      if (isLoadingThis) {
+                        return <div className="py-4 text-center text-xs text-[var(--empire-cream)]/40">Loading activity…</div>;
+                      }
+                      if (!activity) {
+                        return (
+                          <div className="py-4 text-center text-xs text-[var(--empire-cream)]/40">
+                            No activity data available.
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                          <div className="bg-[var(--bg-elevated)] p-3 rounded-xl border border-[var(--bg-border)]/15 text-center">
+                            <div className="font-data text-xl font-black text-[var(--life-teal)]">{activity.cats?.length ?? 0}</div>
+                            <div className="text-[9px] uppercase font-bold text-[var(--empire-cream)]/40 mt-0.5">Cats Logged</div>
+                          </div>
+                          <div className="bg-[var(--bg-elevated)] p-3 rounded-xl border border-[var(--bg-border)]/15 text-center">
+                            <div className="font-data text-xl font-black text-[var(--empire-gold)]">{activity.organizedEvents?.length ?? 0}</div>
+                            <div className="text-[9px] uppercase font-bold text-[var(--empire-cream)]/40 mt-0.5">Events Organized</div>
+                          </div>
+                          <div className="bg-[var(--bg-elevated)] p-3 rounded-xl border border-[var(--bg-border)]/15 text-center">
+                            <div className="font-data text-xl font-black text-[#ab2c5d]">{activity.signups?.length ?? 0}</div>
+                            <div className="text-[9px] uppercase font-bold text-[var(--empire-cream)]/40 mt-0.5">Events Joined</div>
+                          </div>
+                          <div className="bg-[var(--bg-elevated)] p-3 rounded-xl border border-[var(--bg-border)]/15 text-center">
+                            <div className="font-data text-xl font-black text-zinc-400">{activity.auditLogs?.length ?? 0}</div>
+                            <div className="text-[9px] uppercase font-bold text-[var(--empire-cream)]/40 mt-0.5">Audit Entries</div>
+                          </div>
+                        </div>
+                      );
+                    };
+
                     return (
                       <div
                         key={app.id}
@@ -746,32 +782,7 @@ export default function AdminDashboardClient({
                               <span className="material-symbols-outlined text-sm">history</span>
                               Previous Activity Record
                             </div>
-                            {isLoadingThis ? (
-                              <div className="py-4 text-center text-xs text-[var(--empire-cream)]/40">Loading activity…</div>
-                            ) : activity ? (
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                                <div className="bg-[var(--bg-elevated)] p-3 rounded-xl border border-[var(--bg-border)]/15 text-center">
-                                  <div className="font-data text-xl font-black text-[var(--life-teal)]">{activity.cats?.length ?? 0}</div>
-                                  <div className="text-[9px] uppercase font-bold text-[var(--empire-cream)]/40 mt-0.5">Cats Logged</div>
-                                </div>
-                                <div className="bg-[var(--bg-elevated)] p-3 rounded-xl border border-[var(--bg-border)]/15 text-center">
-                                  <div className="font-data text-xl font-black text-[var(--empire-gold)]">{activity.organizedEvents?.length ?? 0}</div>
-                                  <div className="text-[9px] uppercase font-bold text-[var(--empire-cream)]/40 mt-0.5">Events Organized</div>
-                                </div>
-                                <div className="bg-[var(--bg-elevated)] p-3 rounded-xl border border-[var(--bg-border)]/15 text-center">
-                                  <div className="font-data text-xl font-black text-[#ab2c5d]">{activity.signups?.length ?? 0}</div>
-                                  <div className="text-[9px] uppercase font-bold text-[var(--empire-cream)]/40 mt-0.5">Events Joined</div>
-                                </div>
-                                <div className="bg-[var(--bg-elevated)] p-3 rounded-xl border border-[var(--bg-border)]/15 text-center">
-                                  <div className="font-data text-xl font-black text-zinc-400">{activity.auditLogs?.length ?? 0}</div>
-                                  <div className="text-[9px] uppercase font-bold text-[var(--empire-cream)]/40 mt-0.5">Audit Entries</div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="py-4 text-center text-xs text-[var(--empire-cream)]/40">
-                                No activity data available.
-                              </div>
-                            )}
+                            {renderExpandedActivity()}
                           </div>
                         )}
                       </div>
@@ -1733,6 +1744,194 @@ export default function AdminDashboardClient({
   };
 
   const renderManagementTab = () => {
+    const renderDatabaseTable = () => {
+      if (loadingManageData) {
+        return (
+          <div className="py-20 text-center text-[var(--empire-cream)]/40 font-body text-xs flex flex-col items-center justify-center gap-2">
+            <span className="material-symbols-outlined text-2xl animate-spin text-[var(--empire-gold)]">progress_activity</span>
+            <span>Querying database records...</span>
+          </div>
+        );
+      }
+
+      if (activeManageEntity === 'cats') {
+        return (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-[var(--bg-border)]/40 text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
+                  <th className="py-3 px-4">Photo</th>
+                  <th className="py-3 px-4">Name</th>
+                  <th className="py-3 px-4">Breed</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Medical</th>
+                  <th className="py-3 px-4">Date Logged</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {catsList.map((cat) => (
+                  <tr key={cat.id} className="border-b border-[var(--bg-border)]/20 hover:bg-[var(--bg-elevated)]/10">
+                    <td className="py-3 px-4">
+                      {cat.photo_url ? (
+                        <img src={cat.photo_url} alt={cat.name} className="w-8 h-8 rounded-lg object-cover border border-[var(--bg-border)]/50" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)]/60 flex items-center justify-center text-[var(--empire-cream)]/45">
+                          <span className="material-symbols-outlined text-sm">pets</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">{cat.name || 'Unnamed'}</td>
+                    <td className="py-3 px-4 font-body text-xs text-[var(--empire-cream)]/70">{cat.breed_estimate || 'Unknown'}</td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[9px] font-bold uppercase tracking-wider ${getCatStatusClass(cat.status)}`}>{cat.status}</span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex gap-1">
+                        {cat.sterilized && <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/20 font-bold uppercase">Sterilized</span>}
+                        {cat.vaccinated && <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 font-bold uppercase">Vax</span>}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/65">{formatUTCDate(cat.created_at)}</td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEditCatClick(cat)}
+                          className="px-2 py-1 rounded bg-[var(--bg-elevated)] hover:bg-[var(--bg-border)] border border-[var(--bg-border)]/50 text-[10px] font-bold text-[var(--empire-cream)] cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCat(cat.id)}
+                          className="px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-[10px] font-bold text-red-400 cursor-pointer"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      }
+
+      if (activeManageEntity === 'colonies') {
+        return (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-[var(--bg-border)]/40 text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
+                  <th className="py-3 px-4">Colony Name</th>
+                  <th className="py-3 px-4">Caretaker ID</th>
+                  <th className="py-3 px-4">Location</th>
+                  <th className="py-3 px-4">Date Formed</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {coloniesList.map((colony) => (
+                  <tr key={colony.id} className="border-b border-[var(--bg-border)]/20 hover:bg-[var(--bg-elevated)]/10">
+                    <td className="py-3 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">{colony.name}</td>
+                    <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/60">{colony.caretaker_id || 'None'}</td>
+                    <td className="py-3 px-4 font-body text-xs text-[var(--empire-cream)]/75">
+                      {colony.location ? (
+                        <span className="font-data text-[10px]">fuzzed coordinates</span>
+                      ) : (
+                        'No coordinates'
+                      )}
+                    </td>
+                    <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/65">{formatUTCDate(colony.created_at)}</td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        onClick={() => handleDeleteColony(colony.id)}
+                        className="px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-[10px] font-bold text-red-400 cursor-pointer"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      }
+
+      if (activeManageEntity === 'events') {
+        return (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-[var(--bg-border)]/40 text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
+                  <th className="py-3 px-4">Campaign Title</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Capacity</th>
+                  <th className="py-3 px-4">Event Date</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {eventsList.map((ev) => (
+                  <tr key={ev.id} className="border-b border-[var(--bg-border)]/20 hover:bg-[var(--bg-elevated)]/10">
+                    <td className="py-3 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">{ev.title}</td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[9px] font-bold uppercase tracking-wider ${getEventStatusClass(ev.status)}`}>{ev.status}</span>
+                    </td>
+                    <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/70">{ev.capacity} volunteers max</td>
+                    <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/65">{formatUTCDate(ev.event_time)}</td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        onClick={() => handleDeleteEvent(ev.id)}
+                        className="px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-[10px] font-bold text-red-400 cursor-pointer"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      }
+
+      return (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-[var(--bg-border)]/40 text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
+                <th className="py-3 px-4">Guild Name</th>
+                <th className="py-3 px-4">Category</th>
+                <th className="py-3 px-4">Minimum Points</th>
+                <th className="py-3 px-4">Date Formed</th>
+                <th className="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {guildsList.map((guild) => (
+                <tr key={guild.id} className="border-b border-[var(--bg-border)]/20 hover:bg-[var(--bg-elevated)]/10">
+                  <td className="py-3 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">{guild.name}</td>
+                  <td className="py-3 px-4 font-body text-xs text-[var(--empire-cream)]/70 capitalize">{guild.category}</td>
+                  <td className="py-3 px-4 font-data text-xs text-emerald-400">{guild.min_points_required} pts required</td>
+                  <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/65">{formatUTCDate(guild.created_at)}</td>
+                  <td className="py-3 px-4 text-right">
+                    <button
+                      onClick={() => handleDeleteGuild(guild.id)}
+                      className="px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-[10px] font-bold text-red-400 cursor-pointer"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    };
+
     return (
       <div className="flex flex-col gap-6">
               <div className="border-b border-[var(--bg-border)]/25 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1772,175 +1971,7 @@ export default function AdminDashboardClient({
                 </div>
               )}
 
-              {loadingManageData ? (
-                <div className="py-20 text-center text-[var(--empire-cream)]/40 font-body text-xs flex flex-col items-center justify-center gap-2">
-                  <span className="material-symbols-outlined text-2xl animate-spin text-[var(--empire-gold)]">progress_activity</span>
-                  <span>Querying database records...</span>
-                </div>
-              ) : activeManageEntity === 'cats' ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[var(--bg-border)]/40 text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
-                        <th className="py-3 px-4">Photo</th>
-                        <th className="py-3 px-4">Name</th>
-                        <th className="py-3 px-4">Breed</th>
-                        <th className="py-3 px-4">Status</th>
-                        <th className="py-3 px-4">Medical</th>
-                        <th className="py-3 px-4">Date Logged</th>
-                        <th className="py-3 px-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {catsList.map((cat) => (
-                        <tr key={cat.id} className="border-b border-[var(--bg-border)]/20 hover:bg-[var(--bg-elevated)]/10">
-                          <td className="py-3 px-4">
-                            {cat.photo_url ? (
-                              <img src={cat.photo_url} alt={cat.name} className="w-8 h-8 rounded-lg object-cover border border-[var(--bg-border)]/50" />
-                            ) : (
-                              <div className="w-8 h-8 rounded-lg bg-[var(--bg-elevated)]/60 flex items-center justify-center text-[var(--empire-cream)]/45">
-                                <span className="material-symbols-outlined text-sm">pets</span>
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">{cat.name || 'Unnamed'}</td>
-                          <td className="py-3 px-4 font-body text-xs text-[var(--empire-cream)]/70">{cat.breed_estimate || 'Unknown'}</td>
-                          <td className="py-3 px-4">
-                            <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[9px] font-bold uppercase tracking-wider ${getCatStatusClass(cat.status)}`}>{cat.status}</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex gap-1">
-                              {cat.sterilized && <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-400 border border-purple-500/20 font-bold uppercase">Sterilized</span>}
-                              {cat.vaccinated && <span className="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 font-bold uppercase">Vax</span>}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/65">{formatUTCDate(cat.created_at)}</td>
-                          <td className="py-3 px-4 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => handleEditCatClick(cat)}
-                                className="px-2 py-1 rounded bg-[var(--bg-elevated)] hover:bg-[var(--bg-border)] border border-[var(--bg-border)]/50 text-[10px] font-bold text-[var(--empire-cream)] cursor-pointer"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCat(cat.id)}
-                                className="px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-[10px] font-bold text-red-400 cursor-pointer"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : activeManageEntity === 'colonies' ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[var(--bg-border)]/40 text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
-                        <th className="py-3 px-4">Colony Name</th>
-                        <th className="py-3 px-4">Caretaker ID</th>
-                        <th className="py-3 px-4">Location</th>
-                        <th className="py-3 px-4">Date Formed</th>
-                        <th className="py-3 px-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {coloniesList.map((colony) => (
-                        <tr key={colony.id} className="border-b border-[var(--bg-border)]/20 hover:bg-[var(--bg-elevated)]/10">
-                          <td className="py-3 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">{colony.name}</td>
-                          <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/60">{colony.caretaker_id || 'None'}</td>
-                          <td className="py-3 px-4 font-body text-xs text-[var(--empire-cream)]/75">
-                            {colony.location ? (
-                              <span className="font-data text-[10px]">fuzzed coordinates</span>
-                            ) : (
-                              'No coordinates'
-                            )}
-                          </td>
-                          <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/65">{formatUTCDate(colony.created_at)}</td>
-                          <td className="py-3 px-4 text-right">
-                            <button
-                              onClick={() => handleDeleteColony(colony.id)}
-                              className="px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-[10px] font-bold text-red-400 cursor-pointer"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : activeManageEntity === 'events' ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[var(--bg-border)]/40 text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
-                        <th className="py-3 px-4">Campaign Title</th>
-                        <th className="py-3 px-4">Status</th>
-                        <th className="py-3 px-4">Capacity</th>
-                        <th className="py-3 px-4">Event Date</th>
-                        <th className="py-3 px-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {eventsList.map((ev) => (
-                        <tr key={ev.id} className="border-b border-[var(--bg-border)]/20 hover:bg-[var(--bg-elevated)]/10">
-                          <td className="py-3 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">{ev.title}</td>
-                          <td className="py-3 px-4">
-                            <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[9px] font-bold uppercase tracking-wider ${getEventStatusClass(ev.status)}`}>{ev.status}</span>
-                          </td>
-                          <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/70">{ev.capacity} volunteers max</td>
-                          <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/65">{formatUTCDate(ev.event_time)}</td>
-                          <td className="py-3 px-4 text-right">
-                            <button
-                              onClick={() => handleDeleteEvent(ev.id)}
-                              className="px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-[10px] font-bold text-red-400 cursor-pointer"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-[var(--bg-border)]/40 text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
-                        <th className="py-3 px-4">Guild Name</th>
-                        <th className="py-3 px-4">Category</th>
-                        <th className="py-3 px-4">Minimum Points</th>
-                        <th className="py-3 px-4">Date Formed</th>
-                        <th className="py-3 px-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {guildsList.map((guild) => (
-                        <tr key={guild.id} className="border-b border-[var(--bg-border)]/20 hover:bg-[var(--bg-elevated)]/10">
-                          <td className="py-3 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">{guild.name}</td>
-                          <td className="py-3 px-4 font-body text-xs text-[var(--empire-cream)]/70 capitalize">{guild.category}</td>
-                          <td className="py-3 px-4 font-data text-xs text-emerald-400">{guild.min_points_required} pts required</td>
-                          <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/65">{formatUTCDate(guild.created_at)}</td>
-                          <td className="py-3 px-4 text-right">
-                            <button
-                              onClick={() => handleDeleteGuild(guild.id)}
-                              className="px-2 py-1 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-[10px] font-bold text-red-400 cursor-pointer"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              {renderDatabaseTable()}
             </div>
     );
   };
@@ -2456,7 +2487,7 @@ export default function AdminDashboardClient({
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [newName, setNewName] = useState('');
-  const [newRole, setNewRole] = useState<'user' | 'moderator' | 'admin'>('user');
+  const [newRole, setNewRole] = useState<DashboardUserRole>('user');
   const [newExpiryHours, setNewExpiryHours] = useState<number>(0);
   const [newPassword, setNewPassword] = useState('');
   const [newExpiryType, setNewExpiryType] = useState<'none' | 'custom' | 'hours'>('none');
@@ -2644,7 +2675,7 @@ export default function AdminDashboardClient({
     });
   };
 
-  const handleRoleChange = async (userId: string, newRole: 'user' | 'moderator' | 'admin') => {
+  const handleRoleChange = async (userId: string, newRole: DashboardUserRole) => {
     setUpdatingUserId(userId);
     try {
       const res = await updateUserRole(userId, newRole);

@@ -8,6 +8,7 @@ import { createNotice, updateNotice, deleteNotice, getNotices } from '@/lib/acti
 
 type BroadcastType = 'info' | 'warning' | 'error' | 'success';
 type UserRole = 'user' | 'moderator' | 'admin';
+type DbUserRole = 'user' | 'admin' | 'moderator' | null;
 type FilterType = 'all' | 'broadcast' | 'popup' | 'standard';
 
 interface Notice {
@@ -84,7 +85,7 @@ export default function NoticesPage() {
           .from('profiles' as never)
           .select('role')
           .eq('id', clerkUser.id)
-          .single() as unknown as Promise<{ data: { role: 'user' | 'admin' | 'moderator' | null } | null; error: unknown }>);
+          .single() as unknown as Promise<{ data: { role: DbUserRole } | null; error: unknown }>);
         if (data) {
           setRole(data.role);
           return;
@@ -98,7 +99,7 @@ export default function NoticesPage() {
           .from('profiles' as never)
           .select('role')
           .eq('id', user.id)
-          .single() as unknown as Promise<{ data: { role: 'user' | 'admin' | 'moderator' | null } | null; error: unknown }>);
+          .single() as unknown as Promise<{ data: { role: DbUserRole } | null; error: unknown }>);
         if (data) setRole(data.role);
         else setRole(null);
       } else {

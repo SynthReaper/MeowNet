@@ -33,6 +33,40 @@ async function handleAvatarUpload(
   return { success: true, url: publicUrl };
 }
 
+function buildProfileUpdates(formData: FormData, avatarUrl: string | null): Record<string, string | null> {
+  const textFields = ['displayName', 'bio', 'preferredRole', 'locationNeighborhood', 'contactPhone'] as const;
+  const dbFieldNames: Record<string, string> = {
+    displayName: 'display_name',
+    bio: 'bio',
+    preferredRole: 'preferred_role',
+    locationNeighborhood: 'location_neighborhood',
+    contactPhone: 'contact_phone'
+  };
+  const maxLengths: Record<string, number> = {
+    displayName: 100,
+    bio: 500,
+    preferredRole: 100,
+    locationNeighborhood: 100,
+    contactPhone: 20
+  };
+
+  const updates: Record<string, string | null> = {};
+  if (avatarUrl !== null) {
+    updates.avatar_url = sanitizeText(avatarUrl.trim(), 1000);
+  }
+
+  for (const f of textFields) {
+    const val = formData.get(f) as string | null;
+    if (val !== null) {
+      const trimmed = val.trim();
+      const dbField = dbFieldNames[f];
+      const maxLen = maxLengths[f];
+      updates[dbField] = trimmed ? sanitizeText(trimmed, maxLen) : null;
+    }
+  }
+  return updates;
+}
+
 export async function updateProfile(formData: FormData): Promise<UpdateProfileResult> {
   try {
     const supabase = await createServerClient();
@@ -48,36 +82,7 @@ export async function updateProfile(formData: FormData): Promise<UpdateProfileRe
       avatarUrl = uploadRes.url || null;
     }
 
-    const textFields = ['displayName', 'bio', 'preferredRole', 'locationNeighborhood', 'contactPhone'] as const;
-    const dbFieldNames: Record<string, string> = {
-      displayName: 'display_name',
-      bio: 'bio',
-      preferredRole: 'preferred_role',
-      locationNeighborhood: 'location_neighborhood',
-      contactPhone: 'contact_phone'
-    };
-    const maxLengths: Record<string, number> = {
-      displayName: 100,
-      bio: 500,
-      preferredRole: 100,
-      locationNeighborhood: 100,
-      contactPhone: 20
-    };
-
-    const updates: Record<string, string | null> = {};
-    if (avatarUrl !== null) {
-      updates.avatar_url = sanitizeText(avatarUrl.trim(), 1000);
-    }
-
-    for (const f of textFields) {
-      const val = formData.get(f) as string | null;
-      if (val !== null) {
-        const trimmed = val.trim();
-        const dbField = dbFieldNames[f];
-        const maxLen = maxLengths[f];
-        updates[dbField] = trimmed ? sanitizeText(trimmed, maxLen) : null;
-      }
-    }
+    const updates = buildProfileUpdates(formData, avatarUrl);
 
     const { error } = await supabase
       .from('profiles' as never)

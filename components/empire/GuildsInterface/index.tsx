@@ -278,6 +278,112 @@ export default function GuildsInterface({
     return 0;
   });
 
+  const renderActionButton = (guild: Guild, isMember: boolean, userHasEnough: boolean, minPoints: number, updating: boolean) => {
+    if (isMember) {
+      return (
+        <button
+          onClick={() => handleLeave(guild.id)}
+          disabled={updating || isUpdating !== null}
+          className="px-4 py-2 border border-red-500/20 hover:bg-red-500/10 text-red-500 rounded-xl font-display text-xs font-bold tracking-wide transition-all cursor-pointer"
+        >
+          {updating ? 'Leaving...' : 'Leave'}
+        </button>
+      );
+    }
+    if (!userHasEnough) {
+      return (
+        <span className="text-[10px] font-extrabold text-red-500 bg-red-500/10 px-3 py-2 rounded-xl flex items-center gap-1 border border-red-500/20">
+          <span className="material-symbols-outlined text-xs font-bold">lock</span>
+          <span>Requires {minPoints} pts</span>
+        </span>
+      );
+    }
+    return (
+      <button
+        onClick={() => handleJoin(guild.id)}
+        disabled={updating || isUpdating !== null}
+        className="px-4 py-2 bg-[var(--life-teal)] hover:bg-[#6edcd0] text-white rounded-xl font-display text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm hover:shadow"
+      >
+        {updating ? 'Joining...' : 'Join Guild'}
+      </button>
+    );
+  };
+
+  const renderActiveQuests = () => {
+    if (!currentGuildId) {
+      return (
+        <div className="text-center py-6 flex flex-col items-center gap-3">
+          <span className="material-symbols-outlined text-3xl opacity-30 text-[var(--text-muted)]">info</span>
+          <p className="font-body text-xs text-[var(--text-secondary)] font-semibold leading-relaxed">
+            Join a regional guild to participate and collaborate on neighborhood rescue quests!
+          </p>
+        </div>
+      );
+    }
+    if (quests.length === 0) {
+      return (
+        <div className="text-center py-6 flex flex-col items-center gap-2">
+          <span className="material-symbols-outlined text-3xl text-[var(--life-teal)]" style={{ fontVariationSettings: "'FILL' 1" }}>task_alt</span>
+          <p className="font-body text-xs text-[var(--text-secondary)] font-semibold">
+            No active quests for {activeGuild?.name || 'this guild'}. All clear!
+          </p>
+        </div>
+      );
+    }
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="p-3 bg-[var(--bg-elevated)] border border-[var(--bg-border)]/20 rounded-xl flex justify-between items-center">
+          <span className="font-body text-xs font-bold text-[var(--text-secondary)]">Your Balance:</span>
+          <span className="font-display text-xs font-black text-[var(--empire-gold)]">{userPoints} pts</span>
+        </div>
+
+        {quests.map((quest) => {
+          const completed = quest.is_completed;
+          const percent = Math.min((quest.current_points / quest.target_points) * 100, 100);
+          const questUpdating = isUpdating === quest.id;
+
+          return (
+            <div key={quest.id} className="p-4 rounded-xl border border-[var(--bg-border)]/30 bg-[var(--bg-elevated)]/40 flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2 min-w-0">
+                <div className="min-w-0">
+                  <h4 className="font-body text-xs font-bold text-[var(--text-primary)] truncate">{quest.title}</h4>
+                  <p className="font-body text-[10px] text-[var(--text-secondary)] line-clamp-2 mt-0.5">{quest.description}</p>
+                </div>
+                {completed && (
+                  <span className="material-symbols-outlined text-[var(--life-teal)] font-bold text-lg flex-shrink-0">task_alt</span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <div className="flex justify-between items-center text-[9px] font-bold text-[var(--text-muted)] uppercase">
+                  <span>Progress</span>
+                  <span>{quest.current_points} / {quest.target_points} pts</span>
+                </div>
+                <div className="w-full h-1.5 bg-[var(--bg-surface)] rounded-full overflow-hidden border border-[var(--bg-border)]/20">
+                  <div
+                    className="h-full bg-[var(--life-teal)] rounded-full transition-all duration-300"
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+              </div>
+
+              {!completed && (
+                <button
+                  onClick={() => handleContribute(quest.id, 10)}
+                  disabled={questUpdating || userPoints < 10}
+                  className="w-full py-2 bg-gradient-to-r from-[var(--empire-gold)] to-orange-500 hover:shadow text-white rounded-lg font-display text-[10px] font-extrabold tracking-wide uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined text-xs">volunteer_activism</span>
+                  <span>{questUpdating ? 'Contributing...' : 'Contribute 10 XP'}</span>
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   const activeGuild = guilds.find(g => g.id === currentGuildId);
 
   return (
@@ -427,28 +533,7 @@ export default function GuildsInterface({
                   </div>
 
                   <div className="flex-shrink-0 flex items-center gap-2">
-                    {isMember ? (
-                      <button
-                        onClick={() => handleLeave(guild.id)}
-                        disabled={updating || isUpdating !== null}
-                        className="px-4 py-2 border border-red-500/20 hover:bg-red-500/10 text-red-500 rounded-xl font-display text-xs font-bold tracking-wide transition-all cursor-pointer"
-                      >
-                        {updating ? 'Leaving...' : 'Leave'}
-                      </button>
-                    ) : !userHasEnough ? (
-                      <span className="text-[10px] font-extrabold text-red-500 bg-red-500/10 px-3 py-2 rounded-xl flex items-center gap-1 border border-red-500/20">
-                        <span className="material-symbols-outlined text-xs font-bold">lock</span>
-                        <span>Requires {minPoints} pts</span>
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleJoin(guild.id)}
-                        disabled={updating || isUpdating !== null}
-                        className="px-4 py-2 bg-[var(--life-teal)] hover:bg-[#6edcd0] text-white rounded-xl font-display text-xs font-bold tracking-wide transition-all cursor-pointer shadow-sm hover:shadow"
-                      >
-                        {updating ? 'Joining...' : 'Join Guild'}
-                      </button>
-                    )}
+                    {renderActionButton(guild, isMember, userHasEnough, minPoints, updating)}
                   </div>
                 </div>
               );
@@ -466,72 +551,7 @@ export default function GuildsInterface({
             <span>Cooperative Quests</span>
           </h3>
 
-          {!currentGuildId ? (
-            <div className="text-center py-6 flex flex-col items-center gap-3">
-              <span className="material-symbols-outlined text-3xl opacity-30 text-[var(--text-muted)]">info</span>
-              <p className="font-body text-xs text-[var(--text-secondary)] font-semibold leading-relaxed">
-                Join a regional guild to participate and collaborate on neighborhood rescue quests!
-              </p>
-            </div>
-          ) : quests.length === 0 ? (
-            <div className="text-center py-6 flex flex-col items-center gap-2">
-              <span className="material-symbols-outlined text-3xl text-[var(--life-teal)]" style={{ fontVariationSettings: "'FILL' 1" }}>task_alt</span>
-              <p className="font-body text-xs text-[var(--text-secondary)] font-semibold">
-                No active quests for {activeGuild?.name || 'this guild'}. All clear!
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              <div className="p-3 bg-[var(--bg-elevated)] border border-[var(--bg-border)]/20 rounded-xl flex justify-between items-center">
-                <span className="font-body text-xs font-bold text-[var(--text-secondary)]">Your Balance:</span>
-                <span className="font-display text-xs font-black text-[var(--empire-gold)]">{userPoints} pts</span>
-              </div>
-
-              {quests.map((quest) => {
-                const completed = quest.is_completed;
-                const percent = Math.min((quest.current_points / quest.target_points) * 100, 100);
-                const updating = isUpdating === quest.id;
-
-                return (
-                  <div key={quest.id} className="p-4 rounded-xl border border-[var(--bg-border)]/30 bg-[var(--bg-elevated)]/40 flex flex-col gap-3">
-                    <div className="flex items-start justify-between gap-2 min-w-0">
-                      <div className="min-w-0">
-                        <h4 className="font-body text-xs font-bold text-[var(--text-primary)] truncate">{quest.title}</h4>
-                        <p className="font-body text-[10px] text-[var(--text-secondary)] line-clamp-2 mt-0.5">{quest.description}</p>
-                      </div>
-                      {completed && (
-                        <span className="material-symbols-outlined text-[var(--life-teal)] font-bold text-lg flex-shrink-0">task_alt</span>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex justify-between items-center text-[9px] font-bold text-[var(--text-muted)] uppercase">
-                        <span>Progress</span>
-                        <span>{quest.current_points} / {quest.target_points} pts</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-[var(--bg-surface)] rounded-full overflow-hidden border border-[var(--bg-border)]/20">
-                        <div
-                          className="h-full bg-[var(--life-teal)] rounded-full transition-all duration-300"
-                          style={{ width: `${percent}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {!completed && (
-                      <button
-                        onClick={() => handleContribute(quest.id, 10)}
-                        disabled={updating || userPoints < 10}
-                        className="w-full py-2 bg-gradient-to-r from-[var(--empire-gold)] to-orange-500 hover:shadow text-white rounded-lg font-display text-[10px] font-extrabold tracking-wide uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-                      >
-                        <span className="material-symbols-outlined text-xs">volunteer_activism</span>
-                        <span>{updating ? 'Contributing...' : 'Contribute 10 XP'}</span>
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {renderActiveQuests()}
         </div>
 
         {/* Create Your Own Rescue Guild */}
