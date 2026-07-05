@@ -19,7 +19,7 @@ Browser         EXIF stripping (sharp WASM)
 Server          Auth check on every API route + Server Action
                 Role re-read from DB (no client-trusted claims)
                 Zod schema validation on cats / colonies / events / notices
-                sanitizeText() — 3-pass HTML strip + entity encoding
+                sanitizeText() — linear O(N) HTML tag strip + entity encoding (ReDoS immune)
                 sanitizeUrl() — http/https protocol allowlist
                 MIME type allowlist on community uploads + AI breed route
                 UUID format guard on all admin delete/update actions
@@ -86,7 +86,7 @@ Infrastructure  CSP, HSTS, X-Frame-Options headers
 | AI API Key exposed to server/db | Keys are client-side encrypted; proxy route executes calls in-memory only. |
 | Private cat vital log leakage | Private logs stored fully client-side encrypted; decrypted locally in-browser only. |
 | User data cross-contamination | RLS `WHERE user_id = auth.uid()` on all user data tables. |
-| HTML tag injection through text fields | `sanitizeText()` applies 3-pass regex strip then HTML-encodes `< > & " ' \`` — nested/malformed tags neutralised. |
+| HTML tag injection through text fields | `sanitizeText()` applies 3-pass linear O(N) scan strip then HTML-encodes `< > & " ' \`` — nested/malformed tags neutralised. |
 | Crafted `model` param in AI proxy triggers SSRF | Server-side allowlist on `POST /api/ai/personal-helper` rejects any model string not in the approved set before URL construction. |
 | Vault passphrase exposed in plaintext `localStorage` | Passphrase cached as AES-GCM-256 ciphertext (`meownet_vault_token`) keyed to the Supabase `user.id`. Cleartext `meownet_vault_key` is migrated and deleted on first load. |
 
@@ -253,21 +253,24 @@ const ALLOWED_IMAGE_MIME = new Set(['image/jpeg', 'image/png', 'image/webp', 'im
 if (!ALLOWED_IMAGE_MIME.has(photo.type)) return NextResponse.json({ error: 'invalid_file_type' }, { status: 415 });
 ```
 
-### 5. Three-Pass HTML Strip in `sanitizeText`
+### 5. ReDoS-Safe Linear O(N) Tag Strip in `sanitizeText`
 
 **File:** `lib/security/sanitize.ts`
 
-Upgraded from a single-pass regex to a three-pass strip. This closes the nested/malformed tag injection vector:
+To neutralize nested or malformed tag injections safely without introducing Regular Expression Denial of Service (ReDoS) vulnerabilities (resolving CodeQL alert #42), the tag stripper is implemented as a non-regex linear-time O(N) scan:
+- Scans characters sequentially. When a `<` character is found, it locates the closing `>` character. If found, it skips the entire tag. If no closing `>` remains in the rest of the string, it stops scanning to avoid O(N^2) rescan overhead.
+- Repeats for three passes to handle nested sequences like `<<script>script>` cleanly:
 
 ```
-// Single-pass result (vulnerable):
-"<<script>script>alert(1)<</script>/script>" → "<script>alert(1)</script>"
+// Single-pass result (safe):
+"<<script>script>alert(1)<</script>/script>" → "script>alert(1)"
 
 // Three-pass result (safe):
 "<<script>script>alert(1)<</script>/script>" → "alert(1)"
 ```
 
 Entity encoding covers all six high-risk characters: `< > & " ' \``.
+
 
 ---
 

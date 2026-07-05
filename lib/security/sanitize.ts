@@ -21,9 +21,36 @@ export function sanitizeText(input: string, maxLength = 2000): string {
   };
 
   let result = input;
+
+  // Non-regex, linear O(N) tag stripper. Stops scanning forward for closing '>'
+  // once it determines no more closing '>' exist, avoiding O(N^2) scans.
+  function stripTags(str: string): string {
+    let clean = '';
+    let i = 0;
+    while (i < str.length) {
+      if (str[i] === '<') {
+        let j = i + 1;
+        while (j < str.length && str[j] !== '>') {
+          j++;
+        }
+        if (j < str.length) {
+          i = j + 1;
+          continue;
+        } else {
+          // No closing '>' left in the remainder of the string.
+          clean += str.slice(i);
+          break;
+        }
+      }
+      clean += str[i];
+      i++;
+    }
+    return clean;
+  }
+
   // Three-pass strip — handles nested/malformed tag injection
   for (let i = 0; i < 3; i++) {
-    result = result.replace(/<[^>]*>/g, '');
+    result = stripTags(result);
   }
 
   // Encode the six most dangerous characters
@@ -31,6 +58,7 @@ export function sanitizeText(input: string, maxLength = 2000): string {
 
   return result.trim().slice(0, maxLength);
 }
+
 
 /**
  * Returns an empty string for any URL whose protocol is not http or https.

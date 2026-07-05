@@ -6,7 +6,11 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 
 ## [Unreleased]
 
+### Fixed
+- **ReDoS Vulnerability in Text Sanitization**: Refactored the `sanitizeText` utility in `lib/security/sanitize.ts` to replace the polynomial regular expression `/<[^>]*>/g` with a linear-time O(N) tag-stripping scan, eliminating the potential for Regular Expression Denial of Service (ReDoS) on user-supplied input.
+
 ### Planned (Future Expansion)
+
 - **Winter Weather Micro-Shelter Allocator**: Hypothermia warning indicators, location allocation suggestions, and insulative R-value trackings.
 - **AI Feline Facial & Acoustic Translation (On Hold)**: Facial vector embeddings for duplicate merging, and meow acoustics state classifier translation.
 - **Autonomous AI Agent Ecosystem (On Hold)**: Multi-agent council comprising Bastet-Agent, Hermes-Agent, Anubis-Agent, Socrates-Agent, Archimedes-Agent, Freya-Agent, and Odin-Agent.
