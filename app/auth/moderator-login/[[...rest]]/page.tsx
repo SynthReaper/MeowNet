@@ -19,7 +19,7 @@ export default async function ModeratorLoginPage({
   searchParams: Promise<Record<string, string>>;
 }>) {
   const { userId } = await auth();
-  const params = await searchParams;
+  
 
   // If already authenticated, check role and redirect dynamically
   if (userId) {

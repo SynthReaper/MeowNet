@@ -61,7 +61,7 @@ export default async function EventsPage() {
         </div>
       </section>
 
-      {error ? (
+      {error && (
         <div className="flex flex-col gap-6">
           <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-2xl font-body text-xs flex items-center gap-2">
             <span className="material-symbols-outlined text-base">cloud_off</span>
@@ -79,7 +79,8 @@ export default async function EventsPage() {
             ))}
           </div>
         </div>
-      ) : events.length === 0 ? (
+      )}
+      {!error && events.length === 0 && (
         <div className="bg-white rounded-2xl p-12 shadow-ambient border border-[var(--bg-border)] text-center max-w-md mx-auto my-12">
           <div className="text-4xl mb-4">🐾</div>
           <h2 className="font-display text-xl text-[var(--empire-cream)] font-bold mb-2">No Upcoming Events</h2>
@@ -92,7 +93,8 @@ export default async function EventsPage() {
             <span>Create First Event</span>
           </Link>
         </div>
-      ) : (
+      )}
+      {!error && events.length > 0 && (
         <section className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Featured Event (Spans 8 cols on lg) */}
           <div className="lg:col-span-8 bg-white rounded-2xl p-6 md:p-8 shadow-ambient border border-[var(--bg-border)] flex flex-col gap-6 relative overflow-hidden group hover:shadow-[0_8px_24px_rgba(242,140,56,0.12)] transition-shadow">

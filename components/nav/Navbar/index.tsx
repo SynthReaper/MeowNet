@@ -124,7 +124,7 @@ export default function Navbar() {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
 
   const [supabaseUser, setSupabaseUser] = useState<any>(null);
-  const [isSupabaseLoaded, setIsSupabaseLoaded] = useState(false);
+  
   const [userDisplayName, setUserDisplayName] = useState<string>('Volunteer');
 
   const isUserLoggedIn = isSignedIn || !!supabaseUser;
@@ -169,7 +169,7 @@ export default function Navbar() {
     const supabase = createClient();
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSupabaseUser(session?.user ?? null);
-      setIsSupabaseLoaded(true);
+      
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -652,7 +652,10 @@ export default function Navbar() {
 
                 {isNotifOpen && (
                   <div
+                    role="menu"
+                    tabIndex={-1}
                     onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
                     className="absolute right-0 mt-2.5 w-80 rounded-2xl z-50 overflow-hidden flex flex-col max-h-[380px]"
                     style={{
                       background: 'var(--dropdown-bg)',
@@ -935,16 +938,18 @@ export default function Navbar() {
 
       {/* Command Search Modal Overlay */}
       {isSearchOpen && (
-        <div
-          className="fixed inset-0 z-[10000] bg-black/65 backdrop-blur-sm flex items-start justify-center pt-[12vh] px-4"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setIsSearchOpen(false)}
-          onKeyDown={(e) => { if (e.key === 'Escape') setIsSearchOpen(false); }}
-        >
+        <div className="fixed inset-0 z-[10000] flex items-start justify-center pt-[12vh] px-4">
+          <button
+            type="button"
+            aria-hidden="true"
+            tabIndex={-1}
+            className="absolute inset-0 bg-black/65 backdrop-blur-sm border-none cursor-default"
+            onClick={() => setIsSearchOpen(false)}
+          />
           <div
-            className="relative w-full max-w-lg rounded-2xl flex flex-col overflow-hidden max-h-[70vh]"
-            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            className="relative w-full max-w-lg rounded-2xl flex flex-col overflow-hidden max-h-[70vh] z-10"
             style={{
               background: 'var(--dropdown-bg)',
               backdropFilter: 'blur(20px)',
@@ -995,7 +1000,8 @@ export default function Navbar() {
                     const isLocked = !isUserLoggedIn && !isGuestAllowed;
 
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={item.href}
                         onClick={() => {
                           setIsSearchOpen(false);
@@ -1006,7 +1012,7 @@ export default function Navbar() {
                           }
                         }}
                         onMouseEnter={() => setSearchSelectedIndex(idx)}
-                        className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all"
+                        className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-all border-none bg-transparent w-full text-left font-inherit"
                         style={isSelected ? {
                           background: 'linear-gradient(135deg,rgba(217,119,6,0.12),rgba(249,115,22,0.07))',
                           color: 'var(--empire-gold)'
@@ -1027,7 +1033,7 @@ export default function Navbar() {
                         {isSelected && !isLocked && (
                           <span className="material-symbols-outlined text-xs ml-auto" style={{ color: 'var(--empire-gold)' }}>keyboard_return</span>
                         )}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>

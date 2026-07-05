@@ -48,6 +48,85 @@ export default async function StoriesPage() {
 
   const cats = data ?? [];
 
+
+  let directoryContent;
+  if (error) {
+    directoryContent = (
+      <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-2xl font-body text-xs flex items-center gap-2">
+        <span className="material-symbols-outlined text-base">cloud_off</span>
+        <span>Failed to sync success stories. Please verify your connection or try again.</span>
+      </div>
+    );
+  } else if (cats.length === 0) {
+    directoryContent = (
+      <div className="bg-white rounded-2xl border border-[var(--bg-border)]/40 p-16 text-center shadow-ambient flex flex-col items-center justify-center gap-3">
+        <span className="material-symbols-outlined text-4xl text-[var(--empire-gold)]/40">pets</span>
+        <h3 className="font-display text-base font-bold text-[var(--empire-cream)]">Awaiting happy stories</h3>
+        <p className="font-body text-xs text-[var(--empire-cream)]/60 max-w-sm">
+          No cat sightings have been marked as adopted yet. Keep up the rescue and volunteer work!
+        </p>
+        <Link
+          href="/cats"
+          className="mt-2 text-xs font-bold text-[var(--empire-gold)] hover:underline flex items-center gap-1"
+        >
+          Browse Stray Cats <span className="material-symbols-outlined text-xs">arrow_forward</span>
+        </Link>
+      </div>
+    );
+  } else {
+    directoryContent = (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {cats.map((cat) => (
+          <div
+            key={cat.id}
+            className="story-card flex flex-col h-full bg-white border border-[var(--bg-border)] rounded-2xl shadow-ambient hover:shadow-active transition-all"
+          >
+            {/* Story Card Image */}
+            <div className="relative aspect-video rounded-t-2xl overflow-hidden bg-zinc-800">
+              {cat.photo_url ? (
+                <img
+                  src={cat.photo_url}
+                  alt={cat.name || 'Adopted Cat'}
+                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-zinc-600 bg-zinc-900 font-bold">
+                  🐾 NO PHOTO
+                </div>
+              )}
+            </div>
+
+            {/* Content info */}
+            <div className="p-5 flex flex-col gap-3 flex-grow justify-between">
+              <div className="flex flex-col gap-1.5">
+                <div className="flex justify-between items-center gap-2">
+                  <h3 className="font-display text-sm font-extrabold text-[var(--empire-cream)] truncate">
+                    {cat.name || 'Happy Feline'}
+                  </h3>
+                  <span className="bg-emerald-500/10 text-emerald-600 text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide border border-emerald-500/20">
+                    {cat.status}
+                  </span>
+                </div>
+                <p className="font-body text-[10px] text-[var(--empire-cream)]/50 leading-relaxed font-semibold">
+                  {cat.breed_estimate || 'Mixed Breed'} · {cat.age_estimate || 'Unknown Age'}
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-[var(--bg-border)]/20 mt-1 flex justify-between items-center font-body text-[9px] text-[var(--empire-cream)]/40 font-semibold">
+                <span className="truncate max-w-[120px]">
+                  Adopted: {formatFriendlyDate(cat.updated_at)}
+                </span>
+                <span>
+                  Rescue Team: {cat.profiles?.display_name || 'Anonymous'}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="flex-grow w-full max-w-7xl mx-auto px-4 md:px-12 py-10 md:py-16 flex flex-col gap-10">
       {/* Header Section */}
@@ -63,12 +142,13 @@ export default async function StoriesPage() {
 
       {/* Directory Grid */}
       <section className="w-full">
-        {error ? (
+        {error && (
           <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-2xl font-body text-xs flex items-center gap-2">
             <span className="material-symbols-outlined text-base">cloud_off</span>
             <span>Failed to sync success stories. Please verify your connection or try again.</span>
           </div>
-        ) : cats.length === 0 ? (
+        )}
+        {!error && cats.length === 0 && (
           <div className="bg-white rounded-2xl border border-[var(--bg-border)]/40 p-16 text-center shadow-ambient flex flex-col items-center justify-center gap-3">
             <span className="material-symbols-outlined text-4xl text-[var(--empire-gold)]/40">pets</span>
             <h3 className="font-display text-base font-bold text-[var(--empire-cream)]">Awaiting happy stories</h3>
@@ -82,7 +162,8 @@ export default async function StoriesPage() {
               Browse Stray Cats <span className="material-symbols-outlined text-xs">arrow_forward</span>
             </Link>
           </div>
-        ) : (
+        )}
+        {!error && cats.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {cats.map((cat) => (
               <div
@@ -95,7 +176,7 @@ export default async function StoriesPage() {
                     <img src={cat.photo_url} alt={cat.name || 'Happy cat'} className="w-full h-full object-cover" />
                   ) : (
                     <span className="material-symbols-outlined text-5xl text-[var(--empire-gold)]/30">pets</span>
-                  )}
+        )}
                   <span className="absolute top-3 right-3 bg-[var(--life-teal)] text-white text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-sm">
                     Adopted
                   </span>

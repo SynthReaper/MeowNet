@@ -18,7 +18,7 @@ export default async function SignupPage({
   searchParams: Promise<Record<string, string>>;
 }>) {
   const { userId } = await auth();
-  const params = await searchParams;
+  
 
   // If already authenticated, redirect dynamically based on their Supabase role
   if (userId) {

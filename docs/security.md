@@ -312,6 +312,9 @@ A second targeted CodeQL audit was performed on 2026-07-02 (v0.8.1). Three addit
 - **Cleartext Sensitive Data in localStorage (High — #39, #40)**: The vault passphrase is no longer written to `localStorage` in plaintext. `VaultUnlock.tsx` and `HelperWidget.tsx` now encrypt the passphrase with AES-GCM-256 (keyed to the Supabase user UUID) before storage, and decrypt it on remount. A zero-downtime migration path promotes existing plain-text keys automatically.
 - **DOM XSS URL Sanitizer Taint Closure (High — #31–#37)**: The `getSafeImageSrc` fallback path in `lib/security/url.ts` previously returned the raw URL string when DOMPurify was not loaded. It now returns `encodeURI(trimmed)`, closing the static-analysis taint flow.
 
+A third targeted CodeQL audit was performed on 2026-07-04 (v0.8.2). One finding was remediated:
+- **Overly Permissive Regular Expression Range (Medium — #41)**: Escaped the hyphens inside the DOMPurify `ALLOWED_URI_REGEXP` custom parameter within `lib/security/url.ts`. Previously, the hyphen inside `[^a-z+.-:]` was unescaped and positioned between `.` and `:`, resulting in a range representing all characters from code 46 to 58 (which includes `/` and digits `0-9`). Escaping the hyphens restricts the class strictly to the characters `+`, `.`, `-`, and `:`.
+
 ---
 
 ## Vulnerability Disclosure

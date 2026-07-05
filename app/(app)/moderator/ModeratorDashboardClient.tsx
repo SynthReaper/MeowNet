@@ -160,6 +160,56 @@ const fmtDateTime = (dateStr: string) => {
   }
 };
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload?.length) {
+    return (
+      <div className="bg-[var(--bg-surface)] border border-[var(--bg-border)] p-3 rounded-xl shadow-ambient text-xs font-body text-[var(--empire-cream)]">
+        <p className="font-bold mb-1">{label}</p>
+        {payload.map((pld: any) => (
+          <p key={pld.name} style={{ color: pld.color || pld.fill }}>
+            <span className="font-semibold">{pld.name}:</span> {pld.value.toLocaleString()}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+const renderLegendLabel = (value: string) => (
+  <span className="text-[10px] font-body font-semibold text-[var(--empire-cream)]/75">{value}</span>
+);
+
+const getEventStatusClass = (status: string) => {
+  if (status === 'open') {
+    return 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600';
+  }
+  if (status === 'pending') {
+    return 'bg-amber-500/10 border-amber-500/25 text-amber-600';
+  }
+  return 'bg-red-500/10 border-red-500/25 text-red-500';
+};
+
+const getQueryStatusClass = (status: string) => {
+  if (status === 'closed') {
+    return 'bg-zinc-500/10 border-zinc-500/25 text-zinc-500';
+  }
+  if (status === 'solved') {
+    return 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600 animate-pulse';
+  }
+  if (status === 'resolved') {
+    return 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600';
+  }
+  return 'bg-amber-500/10 border-amber-500/25 text-amber-600';
+};
+
+const getActivityIcon = (type: string) => {
+  if (type === 'chat') return 'chat';
+  if (type === 'cat') return 'pets';
+  if (type === 'event') return 'event';
+  return 'military_tech';
+};
+
 export default function ModeratorDashboardClient({
   initialCats,
   initialEvents,
@@ -252,21 +302,7 @@ export default function ModeratorDashboardClient({
     showNotification('success', 'Queries successfully exported to CSV.');
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload?.length) {
-      return (
-        <div className="bg-[var(--bg-surface)] border border-[var(--bg-border)] p-3 rounded-xl shadow-ambient text-xs font-body text-[var(--empire-cream)]">
-          <p className="font-bold mb-1">{label}</p>
-          {payload.map((pld: any) => (
-            <p key={pld.name} style={{ color: pld.color || pld.fill }}>
-              <span className="font-semibold">{pld.name}:</span> {pld.value.toLocaleString()}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
+
 
   useEffect(() => {
     const fetchInitialActivities = async () => {
@@ -501,11 +537,13 @@ export default function ModeratorDashboardClient({
 
   const handleApproveVolunteer = (id: string, name: string) => {
     setActionLoadingId(`volunteer-approve-${id}`);
-    setTimeout(() => {
-      setVolunteerApprovals(prev => prev.filter(v => v.id !== id));
+    const onTimeout = () => {
+      const nextApprovals = volunteerApprovals.filter(v => v.id !== id);
+      setVolunteerApprovals(nextApprovals);
       showNotification('success', `Volunteer "${name}" approved successfully!`);
       setActionLoadingId(null);
-    }, 800);
+    };
+    setTimeout(onTimeout, 800);
   };
 
   // Fetch Audit Logs when audits tab becomes active
@@ -892,6 +930,219 @@ export default function ModeratorDashboardClient({
   });
 
 
+
+  const renderQueryActions = (q: any, canCurrentUserResolve: boolean, isShifted: boolean, isModToAdmin: boolean) => {
+    if (resolvingQueryId === q.id) {
+      return (
+        <div className="flex flex-col gap-3">
+          <textarea
+            rows={2}
+            placeholder="Write a response note to attach to this resolution..."
+            value={queryResolutionText}
+            onChange={(e) => setQueryResolutionText(e.target.value)}
+            className="w-full bg-[var(--bg-surface)] border border-[var(--bg-border)] rounded-xl p-3 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none resize-none"
+          />
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setResolvingQueryId(null);
+              }}
+              className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-700 text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleResolveQuery(q.id);
+              }}
+              disabled={actionLoadingId === `query-resolve-${q.id}`}
+              className="px-3 py-1.5 bg-[var(--empire-gold)] hover:bg-[#e6b020] text-white text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+            >
+              Submit Resolution
+            </button>
+          </div>
+        </div>
+      );
+    }
+    if (shiftingQueryId === q.id) {
+      return (
+        <div className="flex flex-col gap-3">
+          <textarea
+            rows={2}
+            placeholder="State the reason why you are shifting this query to Admin..."
+            value={shiftReasonText}
+            onChange={(e) => setShiftReasonText(e.target.value)}
+            className="w-full bg-[var(--bg-surface)] border border-[var(--bg-border)] rounded-xl p-3 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none resize-none"
+          />
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShiftingQueryId(null);
+              }}
+              className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-700 text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShiftQuery(q.id);
+              }}
+              disabled={actionLoadingId === `query-shift-${q.id}`}
+              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-[14px]">gavel</span>
+              Shift to Admin
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="flex justify-end gap-2 items-center">
+        {!canCurrentUserResolve ? (
+          <span className="text-[11px] font-bold text-rose-400/80 bg-rose-500/5 border border-rose-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1 select-none">
+            <span className="material-symbols-outlined text-sm">lock</span>
+            Awaiting Admin Resolution
+          </span>
+        ) : (
+          <>
+            {currentUser?.role === 'moderator' && !isShifted && !isModToAdmin && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShiftingQueryId(q.id);
+                  setShiftReasonText('');
+                }}
+                className="px-3 py-1.5 bg-rose-500/10 border border-rose-500/35 text-rose-400 hover:bg-rose-500/20 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[14px]">gavel</span>
+                Shift to Admin
+              </button>
+            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setResolvingQueryId(q.id);
+                setQueryResolutionText('');
+              }}
+              className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/35 text-emerald-600 hover:bg-emerald-500/20 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-[14px]">done_all</span>
+              Resolve Inquiry
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/support/${q.id}`);
+              }}
+              className="px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-white/10 text-[var(--empire-cream)] text-xs font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-[14px]">chat</span>
+              Open Chat
+            </button>
+          </>
+        )}
+      </div>
+    );
+  };
+
+
+  const renderVolunteerActivity = () => {
+    if (loadingActivity) {
+      return (
+        <div className="py-8 text-center text-[var(--empire-cream)]/50 font-body text-[10px] flex items-center justify-center gap-2">
+          <span className="material-symbols-outlined text-lg animate-spin text-[var(--empire-gold)]">
+            progress_activity
+          </span>
+          <span>Loading database logs...</span>
+        </div>
+      );
+    }
+    if (profileActivity) {
+      return (
+        <div className="flex flex-col gap-4 max-h-[30vh] overflow-y-auto pr-1">
+          {/* Grid metrics summary */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-[var(--bg-elevated)] p-2.5 rounded-lg border border-[var(--bg-border)]/30 text-center">
+              <div className="font-data font-bold text-sm text-[var(--empire-cream)]">
+                {profileActivity.cats?.length ?? 0}
+              </div>
+              <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
+                Cats Sighted
+              </span>
+            </div>
+            <div className="bg-[var(--bg-elevated)] p-2.5 rounded-lg border border-[var(--bg-border)]/30 text-center">
+              <div className="font-data font-bold text-sm text-[var(--empire-cream)]">
+                {profileActivity.organizedEvents?.length ?? 0}
+              </div>
+              <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
+                Campaigns Run
+              </span>
+            </div>
+            <div className="bg-[var(--bg-elevated)] p-2.5 rounded-lg border border-[var(--bg-border)]/30 text-center">
+              <div className="font-data font-bold text-sm text-[var(--empire-cream)]">
+                {profileActivity.signups?.length ?? 0}
+              </div>
+              <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
+                Events Attended
+              </span>
+            </div>
+          </div>
+
+          {/* Log lists */}
+          <div className="flex flex-col gap-2">
+            <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--empire-cream)]/40 block">
+              History Log
+            </span>
+            {profileActivity.auditLogs?.length === 0 && profileActivity.modQueries?.length === 0 ? (
+              <div className="text-[10px] text-[var(--empire-cream)]/40 italic py-2">
+                No recent audit or query activities logged.
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {profileActivity.auditLogs?.map((log: any) => (
+                  <div
+                    key={log.id}
+                    className="bg-[var(--bg-surface)] p-2 rounded-lg border border-[var(--bg-border)]/20 flex justify-between gap-4 text-[10px]"
+                  >
+                    <span className="font-medium text-[var(--empire-cream)]/85">
+                      {log.details || log.action}
+                    </span>
+                    <span className="font-data text-[9px] text-[var(--empire-cream)]/40 shrink-0">
+                      {fmtDate(log.created_at)}
+                    </span>
+                  </div>
+                ))}
+                {profileActivity.modQueries?.map((q: any) => (
+                  <div
+                    key={q.id}
+                    className="bg-amber-500/5 p-2 rounded-lg border border-amber-500/20 flex justify-between gap-4 text-[10px]"
+                  >
+                    <span className="font-medium text-amber-800">
+                      Query: "{q.message.slice(0, 45)}..." ({q.status})
+                    </span>
+                    <span className="font-data text-[9px] text-amber-500 shrink-0">
+                      {fmtDate(q.created_at)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="text-[10px] text-[var(--empire-cream)]/40 italic">
+        Could not retrieve database logs for this volunteer.
+      </div>
+    );
+  };
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-12 py-8 flex flex-col lg:flex-row gap-8 items-start animate-dashboard-fade">
       {/* Toast Notification */}
@@ -1242,7 +1493,7 @@ export default function ModeratorDashboardClient({
                             <Cell key={`cell-${entry.name}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Legend verticalAlign="bottom" height={24} formatter={(value) => <span className="text-[10px] font-body font-semibold text-[var(--empire-cream)]/75">{value}</span>} />
+                        <Legend verticalAlign="bottom" height={24} formatter={renderLegendLabel} />
                       </RechartsPieChart>
                     </ResponsiveContainer>
                   </div>
@@ -1514,13 +1765,7 @@ export default function ModeratorDashboardClient({
                         </td>
                         <td className="py-4 px-4 font-body text-xs">
                           <span
-                            className={`px-2 py-0.5 border text-[9px] font-bold uppercase rounded-md ${
-                              event.status === 'open'
-                                ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600'
-                                : event.status === 'pending'
-                                ? 'bg-amber-500/10 border-amber-500/25 text-amber-600'
-                                : 'bg-red-500/10 border-red-500/25 text-red-500'
-                            }`}
+                            className={`px-2 py-0.5 border text-[9px] font-bold uppercase rounded-md ${getEventStatusClass(event.status)}`}
                           >
                             {event.status}
                           </span>
@@ -1680,15 +1925,7 @@ export default function ModeratorDashboardClient({
                               Query #{q.id.slice(0, 8)}
                             </span>
                             <span
-                              className={`px-2 py-0.5 border text-[9px] font-bold uppercase rounded-md ${
-                                q.status === 'closed'
-                                  ? 'bg-zinc-500/10 border-zinc-500/25 text-zinc-500'
-                                  : q.status === 'solved'
-                                  ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600 animate-pulse'
-                                  : q.status === 'resolved'
-                                  ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600'
-                                  : 'bg-amber-500/10 border-amber-500/25 text-amber-600'
-                              }`}
+                              className={`px-2 py-0.5 border text-[9px] font-bold uppercase rounded-md ${getQueryStatusClass(q.status)}`}
                             >
                               {q.status}
                             </span>
@@ -1747,115 +1984,7 @@ export default function ModeratorDashboardClient({
                         </div>
                       ) : (
                         <div className="border-t border-[var(--bg-border)]/20 pt-3.5 flex flex-col gap-3">
-                          {resolvingQueryId === q.id ? (
-                            <div className="flex flex-col gap-3">
-                              <textarea
-                                rows={2}
-                                placeholder="Write a response note to attach to this resolution..."
-                                value={queryResolutionText}
-                                onChange={(e) => setQueryResolutionText(e.target.value)}
-                                className="w-full bg-[var(--bg-surface)] border border-[var(--bg-border)] rounded-xl p-3 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none resize-none"
-                              />
-                              <div className="flex gap-2 justify-end">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setResolvingQueryId(null);
-                                  }}
-                                  className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-700 text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer"
-                                >
-                                  Cancel
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleResolveQuery(q.id);
-                                  }}
-                                  disabled={actionLoadingId === `query-resolve-${q.id}`}
-                                  className="px-3 py-1.5 bg-[var(--empire-gold)] hover:bg-[#e6b020] text-white text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                                >
-                                  Submit Resolution
-                                </button>
-                              </div>
-                            </div>
-                          ) : shiftingQueryId === q.id ? (
-                            <div className="flex flex-col gap-3">
-                              <textarea
-                                rows={2}
-                                placeholder="State the reason why you are shifting this query to Admin..."
-                                value={shiftReasonText}
-                                onChange={(e) => setShiftReasonText(e.target.value)}
-                                className="w-full bg-[var(--bg-surface)] border border-[var(--bg-border)] rounded-xl p-3 text-xs text-[var(--empire-cream)] focus:border-[var(--empire-gold)] outline-none resize-none"
-                              />
-                              <div className="flex gap-2 justify-end">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShiftingQueryId(null);
-                                  }}
-                                  className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-700 text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer"
-                                >
-                                  Cancel
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleShiftQuery(q.id);
-                                  }}
-                                  disabled={actionLoadingId === `query-shift-${q.id}`}
-                                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold uppercase rounded-lg transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
-                                >
-                                  <span className="material-symbols-outlined text-[14px]">gavel</span>
-                                  Shift to Admin
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex justify-end gap-2 items-center">
-                              {!canCurrentUserResolve ? (
-                                <span className="text-[11px] font-bold text-rose-400/80 bg-rose-500/5 border border-rose-500/20 px-3 py-1.5 rounded-lg flex items-center gap-1 select-none">
-                                  <span className="material-symbols-outlined text-sm">lock</span>
-                                  Awaiting Admin Resolution
-                                </span>
-                              ) : (
-                                <>
-                                  {currentUser?.role === 'moderator' && !isShifted && !isModToAdmin && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShiftingQueryId(q.id);
-                                        setShiftReasonText('');
-                                      }}
-                                      className="px-3 py-1.5 bg-rose-500/10 border border-rose-500/35 text-rose-400 hover:bg-rose-500/20 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1"
-                                    >
-                                      <span className="material-symbols-outlined text-[14px]">gavel</span>
-                                      Shift to Admin
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setResolvingQueryId(q.id);
-                                      setQueryResolutionText('');
-                                    }}
-                                    className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/35 text-emerald-600 hover:bg-emerald-500/20 text-xs font-bold uppercase rounded-lg transition-all cursor-pointer"
-                                  >
-                                    Resolve Inquiry
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      router.push(`/support/${q.id}`);
-                                    }}
-                                    className="px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-white/10 text-[var(--empire-cream)] text-xs font-bold uppercase rounded-lg transition-all cursor-pointer flex items-center gap-1"
-                                  >
-                                    <span className="material-symbols-outlined text-[14px]">chat</span>
-                                    Open Chat
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          )}
+                          {renderQueryActions(q, canCurrentUserResolve, isShifted, isModToAdmin)}
                         </div>
                       )}
                     </div>
@@ -1983,7 +2112,7 @@ export default function ModeratorDashboardClient({
                   <div key={act.id} className="flex gap-3 items-start p-3 bg-[var(--bg-elevated)]/35 border border-[var(--bg-border)]/20 rounded-xl hover:border-[var(--empire-gold)]/30 transition-all">
                     <div className="w-8 h-8 rounded-lg bg-[var(--bg-surface)] flex items-center justify-center text-[var(--empire-gold)] border border-[var(--bg-border)]/50 shrink-0">
                       <span className="material-symbols-outlined text-lg">
-                        {act.type === 'chat' ? 'chat' : act.type === 'cat' ? 'pets' : act.type === 'event' ? 'event' : 'military_tech'}
+                        {getActivityIcon(act.type)}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0 font-body text-xs text-[var(--empire-cream)]">
@@ -2539,89 +2668,7 @@ export default function ModeratorDashboardClient({
                     Recent Volunteer Activity
                   </h3>
 
-                  {loadingActivity ? (
-                    <div className="py-8 text-center text-[var(--empire-cream)]/50 font-body text-[10px] flex items-center justify-center gap-2">
-                      <span className="material-symbols-outlined text-lg animate-spin text-[var(--empire-gold)]">
-                        progress_activity
-                      </span>
-                      <span>Loading database logs...</span>
-                    </div>
-                  ) : profileActivity ? (
-                    <div className="flex flex-col gap-4 max-h-[30vh] overflow-y-auto pr-1">
-                      {/* Grid metrics summary */}
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="bg-[var(--bg-elevated)] p-2.5 rounded-lg border border-[var(--bg-border)]/30 text-center">
-                          <div className="font-data font-bold text-sm text-[var(--empire-cream)]">
-                            {profileActivity.cats?.length ?? 0}
-                          </div>
-                          <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
-                            Cats Sighted
-                          </span>
-                        </div>
-                        <div className="bg-[var(--bg-elevated)] p-2.5 rounded-lg border border-[var(--bg-border)]/30 text-center">
-                          <div className="font-data font-bold text-sm text-[var(--empire-cream)]">
-                            {profileActivity.organizedEvents?.length ?? 0}
-                          </div>
-                          <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
-                            Campaigns Run
-                          </span>
-                        </div>
-                        <div className="bg-[var(--bg-elevated)] p-2.5 rounded-lg border border-[var(--bg-border)]/30 text-center">
-                          <div className="font-data font-bold text-sm text-[var(--empire-cream)]">
-                            {profileActivity.signups?.length ?? 0}
-                          </div>
-                          <span className="text-[8px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/40">
-                            Events Attended
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Log lists */}
-                      <div className="flex flex-col gap-2">
-                        <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--empire-cream)]/40 block">
-                          History Log
-                        </span>
-                        {profileActivity.auditLogs?.length === 0 && profileActivity.modQueries?.length === 0 ? (
-                          <div className="text-[10px] text-[var(--empire-cream)]/40 italic py-2">
-                            No recent audit or query activities logged.
-                          </div>
-                        ) : (
-                          <div className="flex flex-col gap-1.5">
-                            {profileActivity.auditLogs?.map((log: any) => (
-                              <div
-                                key={log.id}
-                                className="bg-[var(--bg-surface)] p-2 rounded-lg border border-[var(--bg-border)]/20 flex justify-between gap-4 text-[10px]"
-                              >
-                                <span className="font-medium text-[var(--empire-cream)]/85">
-                                  {log.details || log.action}
-                                </span>
-                                <span className="font-data text-[9px] text-[var(--empire-cream)]/40 shrink-0">
-                                  {fmtDate(log.created_at)}
-                                </span>
-                              </div>
-                            ))}
-                            {profileActivity.modQueries?.map((q: any) => (
-                              <div
-                                key={q.id}
-                                className="bg-amber-500/5 p-2 rounded-lg border border-amber-500/20 flex justify-between gap-4 text-[10px]"
-                              >
-                                <span className="font-medium text-amber-800">
-                                  Query: "{q.message.slice(0, 45)}..." ({q.status})
-                                </span>
-                                <span className="font-data text-[9px] text-amber-500 shrink-0">
-                                  {fmtDate(q.created_at)}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-[10px] text-[var(--empire-cream)]/40 italic">
-                      Could not retrieve database logs for this volunteer.
-                    </div>
-                  )}
+                  {renderVolunteerActivity()}
                 </div>
 
                 <div className="border-t border-[var(--bg-border)]/20 pt-4 flex gap-3 justify-end flex-wrap">

@@ -224,6 +224,32 @@ export default function MeowTranslatorPage() {
     synth.speak(utterance);
   };
 
+  let recordingContent;
+  if (recording) {
+    recordingContent = (
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" width={300} height={180} />
+    );
+  } else if (audioUrl) {
+    recordingContent = (
+      <div className="flex flex-col items-center gap-3 z-10">
+        <span className="material-symbols-outlined text-emerald-400 text-5xl animate-pulse">audiotrack</span>
+        <span className="font-body text-xs text-[var(--empire-cream)]/60">Audio file ready for translation</span>
+        <audio src={getSafeImageSrc(audioUrl)} controls className="h-10 mt-1">
+          <track kind="captions" src="" label="Captions" />
+        </audio>
+      </div>
+    );
+  } else {
+    recordingContent = (
+      <div className="flex flex-col items-center gap-3 z-10 text-center px-4">
+        <span className="material-symbols-outlined text-[var(--empire-cream)]/20 text-5xl">mic_off</span>
+        <span className="font-body text-xs text-[var(--empire-cream)]/50">
+          Tap record or upload a meow file (.wav, .mp3) below
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-4xl mx-auto px-4 md:px-12 py-10 md:py-16 flex flex-col gap-8">
       {/* Header */}
@@ -254,24 +280,7 @@ export default function MeowTranslatorPage() {
 
           {/* Recording Canvas / Visualizer */}
           <div className="bg-[var(--bg-void)] rounded-2xl p-6 flex flex-col items-center justify-center min-h-[180px] relative overflow-hidden border border-[var(--bg-border)]/20">
-            {recording ? (
-              <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" width={300} height={180} />
-            ) : audioUrl ? (
-              <div className="flex flex-col items-center gap-3 z-10">
-                <span className="material-symbols-outlined text-emerald-400 text-5xl animate-pulse">audiotrack</span>
-                <span className="font-body text-xs text-[var(--empire-cream)]/60">Audio file ready for translation</span>
-                <audio src={getSafeImageSrc(audioUrl)} controls className="h-10 mt-1">
-                  <track kind="captions" src="" label="Captions" />
-                </audio>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-3 z-10 text-center px-4">
-                <span className="material-symbols-outlined text-[var(--empire-cream)]/20 text-5xl">mic_off</span>
-                <span className="font-body text-xs text-[var(--empire-cream)]/50">
-                  Tap record or upload a meow file (.wav, .mp3) below
-                </span>
-              </div>
-            )}
+            {recordingContent}
           </div>
 
           {/* Controls */}

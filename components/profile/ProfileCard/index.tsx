@@ -14,7 +14,7 @@ interface Profile {
   readonly password_expires_at?: string | null;
 }
 
-interface ProfileCardProps { profile: Profile; email: string; badgeCount: number; }
+interface ProfileCardProps { readonly profile: Profile; readonly email: string; readonly badgeCount: number; }
 
 export default function ProfileCard({ profile, email, badgeCount }: ProfileCardProps) {
   const [isEditing, setIsEditing] = useState(false);

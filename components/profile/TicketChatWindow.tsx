@@ -31,6 +31,24 @@ interface Props {
   readonly onBack?: () => void;
 }
 
+
+// SonarQube Style Helpers (Resolving Nested Ternaries)
+const getTicketStatusClass = (status: string) => {
+  if (status === 'closed') return 'bg-zinc-500/10 border-zinc-500/25 text-zinc-500';
+  if (status === 'solved') return 'bg-amber-500/10 border-amber-500/25 text-amber-600 animate-pulse';
+  return 'bg-cyan-500/10 border-cyan-500/25 text-cyan-600';
+};
+
+const getMessageBoxClass = (isMe: boolean, isMsgStaff: boolean) => {
+  if (isMe) {
+    return 'bg-[var(--empire-gold)]/10 border border-[var(--empire-gold)]/30 text-[var(--text-primary)] rounded-tr-sm';
+  }
+  if (isMsgStaff) {
+    return 'bg-[var(--life-teal)]/10 border border-[var(--life-teal)]/20 text-[var(--text-primary)] rounded-tl-sm';
+  }
+  return 'bg-[var(--bg-surface)] border border-[var(--bg-border)]/50 text-[var(--text-primary)] rounded-tl-sm';
+};
+
 export default function TicketChatWindow({ ticket, currentUserId, currentUserRole, onUpdate, onBack }: Props) {
   const messages = ticket.chat_messages || [];
   const [typedMessage, setTypedMessage] = useState('');
@@ -114,13 +132,7 @@ export default function TicketChatWindow({ ticket, currentUserId, currentUserRol
               <h3 className="font-display text-sm font-black text-[var(--text-primary)]">
                 Support Ticket Chat
               </h3>
-              <span className={`px-2 py-0.5 rounded border text-[8px] font-black uppercase tracking-wider ${
-                ticket.status === 'closed'
-                  ? 'bg-zinc-500/10 border-zinc-500/25 text-zinc-500'
-                  : ticket.status === 'solved'
-                  ? 'bg-amber-500/10 border-amber-500/25 text-amber-600 animate-pulse'
-                  : 'bg-cyan-500/10 border-cyan-500/25 text-cyan-600'
-              }`}>
+              <span className={`px-2 py-0.5 rounded border text-[8px] font-black uppercase tracking-wider ${getTicketStatusClass(ticket.status)}`}>
                 {ticket.status === 'solved' ? 'Solution Proposed' : ticket.status}
               </span>
             </div>
@@ -170,13 +182,7 @@ export default function TicketChatWindow({ ticket, currentUserId, currentUserRol
 
               {/* Message Box */}
               <div
-                className={`p-3 rounded-2xl text-xs font-body leading-relaxed whitespace-pre-wrap ${
-                  isMe
-                    ? 'bg-[var(--empire-gold)]/10 border border-[var(--empire-gold)]/30 text-[var(--text-primary)] rounded-tr-sm'
-                    : isMsgStaff
-                    ? 'bg-[var(--life-teal)]/10 border border-[var(--life-teal)]/20 text-[var(--text-primary)] rounded-tl-sm'
-                    : 'bg-[var(--bg-surface)] border border-[var(--bg-border)]/50 text-[var(--text-primary)] rounded-tl-sm'
-                }`}
+                className={`p-3 rounded-2xl text-xs font-body leading-relaxed whitespace-pre-wrap ${getMessageBoxClass(isMe, isMsgStaff)}`}
               >
                 {msg.message}
               </div>

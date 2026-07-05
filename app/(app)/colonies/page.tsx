@@ -34,6 +34,96 @@ export default async function ColoniesPage() {
 
   const colonies = data ?? [];
 
+
+  let directoryContent;
+  if (error) {
+    directoryContent = (
+      <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-2xl font-body text-xs flex items-center gap-2">
+        <span className="material-symbols-outlined text-base">cloud_off</span>
+        <span>Failed to load colonies registry. Please verify your connection or try again.</span>
+      </div>
+    );
+  } else if (colonies.length === 0) {
+    directoryContent = (
+      <div className="bg-white rounded-2xl border border-[var(--bg-border)]/40 p-12 text-center shadow-ambient flex flex-col items-center justify-center gap-3">
+        <span className="material-symbols-outlined text-4xl text-[var(--empire-gold)]/50">home_work</span>
+        <h3 className="font-display text-base font-bold text-[var(--empire-cream)]">No colonies registered yet</h3>
+        <p className="font-body text-xs text-[var(--empire-cream)]/60 max-w-sm">
+          Be the first to map a local community cat colony to start tracking TNR progress and coordinating care!
+        </p>
+        {user && (
+          <Link
+            href="/colonies/new"
+            className="mt-2 text-xs font-bold text-[var(--empire-gold)] hover:underline flex items-center gap-1"
+          >
+            Get Started <span className="material-symbols-outlined text-xs">arrow_forward</span>
+          </Link>
+        )}
+      </div>
+    );
+  } else {
+    directoryContent = (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {colonies.map((colony) => {
+          let pct = 0;
+          if (colony.population_estimate > 0) {
+            pct = Math.min(100, Math.round((colony.tnr_count / colony.population_estimate) * 100));
+          }
+
+          return (
+            <div
+              key={colony.id}
+              className="bg-white rounded-2xl border border-[var(--bg-border)] shadow-ambient p-6 flex flex-col gap-4 hover:shadow-active transition-all"
+            >
+              <div>
+                <h3 className="font-display text-lg font-bold text-[var(--empire-cream)] truncate">
+                  {colony.name}
+                </h3>
+                <p className="font-body text-xs text-[var(--empire-cream)]/50 mt-1 flex items-center gap-1 font-semibold">
+                  <span className="material-symbols-outlined text-xs text-[var(--empire-cream)]/40">assignment_ind</span>
+                  <span>
+                    Caretaker: {colony.caretaker?.display_name || 'No caretaker assigned'}
+                  </span>
+                </p>
+              </div>
+
+              {colony.description && (
+                <p className="font-body text-xs text-[var(--empire-cream)]/70 line-clamp-2 min-h-[40px] leading-relaxed">
+                  {colony.description}
+                </p>
+              )}
+
+              {/* TNR Progress */}
+              <div className="flex flex-col gap-1.5 mt-2">
+                <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/45">
+                  <span>TNR Progress</span>
+                  <span>{pct}% sterilized</span>
+                </div>
+                <div className="tnr-progress-track">
+                  <div className="tnr-progress-fill" style={{ width: `${pct}%` }}></div>
+                </div>
+                <div className="flex justify-between items-center text-[10px] font-bold text-[var(--empire-cream)]/50 mt-0.5">
+                  <span>TNR: {colony.tnr_count}</span>
+                  <span>Est. Population: {colony.population_estimate}</span>
+                </div>
+              </div>
+
+              <div className="border-t border-[var(--bg-border)]/20 pt-4 mt-2 flex justify-end">
+                <Link
+                  href={`/colonies/${colony.id}`}
+                  className="font-body text-xs font-bold text-[var(--empire-gold)] hover:underline flex items-center gap-0.5"
+                >
+                  <span>View details</span>
+                  <span className="material-symbols-outlined text-sm">arrow_right_alt</span>
+                </Link>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className="flex-grow w-full max-w-7xl mx-auto px-4 md:px-12 py-10 md:py-16 flex flex-col gap-10">
       {/* Header Section */}
@@ -61,86 +151,7 @@ export default async function ColoniesPage() {
 
       {/* Directory Grid */}
       <section className="w-full">
-        {error ? (
-          <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-2xl font-body text-xs flex items-center gap-2">
-            <span className="material-symbols-outlined text-base">cloud_off</span>
-            <span>Failed to load colonies registry. Please verify your connection or try again.</span>
-          </div>
-        ) : colonies.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-[var(--bg-border)]/40 p-12 text-center shadow-ambient flex flex-col items-center justify-center gap-3">
-            <span className="material-symbols-outlined text-4xl text-[var(--empire-gold)]/50">home_work</span>
-            <h3 className="font-display text-base font-bold text-[var(--empire-cream)]">No colonies registered yet</h3>
-            <p className="font-body text-xs text-[var(--empire-cream)]/60 max-w-sm">
-              Be the first to map a local community cat colony to start tracking TNR progress and coordinating care!
-            </p>
-            {user && (
-              <Link
-                href="/colonies/new"
-                className="mt-2 text-xs font-bold text-[var(--empire-gold)] hover:underline flex items-center gap-1"
-              >
-                Get Started <span className="material-symbols-outlined text-xs">arrow_forward</span>
-              </Link>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {colonies.map((colony) => {
-              const pct = colony.population_estimate > 0 
-                ? Math.min(100, Math.round((colony.tnr_count / colony.population_estimate) * 100))
-                : 0;
-
-              return (
-                <div
-                  key={colony.id}
-                  className="bg-white rounded-2xl border border-[var(--bg-border)] shadow-ambient p-6 flex flex-col gap-4 hover:shadow-active transition-all"
-                >
-                  <div>
-                    <h3 className="font-display text-lg font-bold text-[var(--empire-cream)] truncate">
-                      {colony.name}
-                    </h3>
-                    <p className="font-body text-xs text-[var(--empire-cream)]/50 mt-1 flex items-center gap-1 font-semibold">
-                      <span className="material-symbols-outlined text-xs text-[var(--empire-cream)]/40">assignment_ind</span>
-                      <span>
-                        Caretaker: {colony.caretaker?.display_name || 'No caretaker assigned'}
-                      </span>
-                    </p>
-                  </div>
-
-                  {colony.description && (
-                    <p className="font-body text-xs text-[var(--empire-cream)]/70 line-clamp-2 min-h-[40px] leading-relaxed">
-                      {colony.description}
-                    </p>
-                  )}
-
-                  {/* TNR Progress */}
-                  <div className="flex flex-col gap-1.5 mt-2">
-                    <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-[var(--empire-cream)]/45">
-                      <span>TNR Progress</span>
-                      <span>{pct}% sterilized</span>
-                    </div>
-                    <div className="tnr-progress-track">
-                      <div className="tnr-progress-fill" style={{ width: `${pct}%` }}></div>
-                    </div>
-                    <div className="flex justify-between items-center text-[10px] font-bold text-[var(--empire-cream)]/50 mt-0.5">
-                      <span>TNR: {colony.tnr_count}</span>
-                      <span>Est. Population: {colony.population_estimate}</span>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-[var(--bg-border)]/20 pt-4 mt-2 flex justify-end">
-                    <Link
-                      href={`/colonies/${colony.id}`}
-                      className="font-body text-xs font-bold text-[var(--empire-gold)] hover:underline flex items-center gap-0.5"
-                    >
-                      <span>View details</span>
-                      <span className="material-symbols-outlined text-sm">arrow_right_alt</span>
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {directoryContent}
       </section>
     </div>
   );

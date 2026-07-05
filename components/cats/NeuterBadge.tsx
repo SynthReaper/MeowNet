@@ -13,7 +13,7 @@ interface Props {
 
 export default function NeuterBadge({ catId, isSterilized, canRequest }: Props) {
   const router = useRouter();
-  const [proof, setProof] = useState<any | null>(null);
+  const [proof, setProof] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   

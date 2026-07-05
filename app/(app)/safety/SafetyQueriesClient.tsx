@@ -157,7 +157,7 @@ export default function SafetyQueriesClient({ initialQueries, userId }: Props) {
                     {isShifted && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[8px] font-bold uppercase rounded">
                         <span className="material-symbols-outlined text-[10px]">gavel</span>
-                        Shifted to Admin
+                        <span>Shifted to Admin</span>
                       </span>
                     )}
 

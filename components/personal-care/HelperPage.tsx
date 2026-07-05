@@ -9,6 +9,7 @@ import { decryptData, encryptData } from '@/lib/security/encryption';
 import Link from 'next/link';
 
 interface ChatMessage {
+  id?: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
 }
@@ -108,6 +109,96 @@ interface DecryptedCatData {
   }>;
 }
 
+
+const decryptConfig = async (encryptedKeys: string, phrase: string) => {
+  const configObj = (await decryptData(encryptedKeys, phrase)) as PrivateConfig;
+  let activeKey = configObj.anthropicKey;
+  if (configObj.preferredProvider === 'gemini') {
+    activeKey = configObj.geminiKey;
+  } else if (configObj.preferredProvider === 'openai') {
+    activeKey = configObj.openaiKey;
+  }
+  return {
+    apiKey: activeKey || '',
+    provider: configObj.preferredProvider || 'gemini',
+    model: configObj.preferredModel || 'gemini-1.5-flash',
+    hasKey: !!activeKey,
+  };
+};
+
+const decryptCats = async (catsData: any[], phrase: string) => {
+  const decCats: CatContextItem[] = [];
+  for (const rawCat of catsData) {
+    try {
+      const dec = (await decryptData(rawCat.encrypted_data, phrase)) as DecryptedCatData;
+      decCats.push({
+        id: rawCat.id,
+        name: dec.name,
+        photoUrl: dec.photoUrl,
+        status: dec.status,
+        age: dec.ageEstimate,
+        color: dec.color,
+        vitals: dec.vitals || [],
+        reminders: dec.calendar || [],
+        activities: dec.activities || [],
+        medical: dec.medical || [],
+        customFields: dec.customFields || [],
+      });
+    } catch {
+      // Skip single decryption failures
+    }
+  }
+  return decCats;
+};
+
+const getUpdatedCatData = (actionType: string, actionPayload: any, currentData: any) => {
+  const updated = { ...currentData };
+  if (actionType === 'log_activity') {
+    const newAct = {
+      id: crypto.randomUUID(),
+      date: new Date().toISOString(),
+      category: actionPayload.category || 'Food',
+      notes: actionPayload.notes || 'Logged from AI Suggestion',
+    };
+    updated.activities = [newAct, ...updated.activities];
+  } else if (actionType === 'log_vitals') {
+    const newVit = {
+      date: new Date().toISOString(),
+      bpm: actionPayload.bpm || 140,
+      rr: actionPayload.rr || 24,
+      weight: actionPayload.weight || 4.5,
+      sleep: actionPayload.sleep || 14,
+      calories: actionPayload.calories || 220,
+      stress: actionPayload.stress || 1,
+    };
+    updated.vitals = [...updated.vitals, newVit];
+  } else if (actionType === 'log_reminder') {
+    const newRem = {
+      id: crypto.randomUUID(),
+      date: actionPayload.date || new Date().toISOString().split('T')[0],
+      title: actionPayload.title || 'AI Task',
+      type: actionPayload.type || 'pill',
+      completed: false,
+    };
+    updated.calendar = [...updated.calendar, newRem].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+  }
+  return updated;
+};
+
+const getInitMessages = (provider: string, hasKey: boolean) => {
+  return [
+    {
+      id: `init-msg-${Date.now()}`,
+      role: 'assistant' as const,
+      content: hasKey
+        ? 'Vault unlocked. I am ready to assist you. Ask me anything about your cats, health logs, or schedules!'
+        : `Hello! Your vault is unlocked, but you have not configured an API key for ${provider} yet. Please go to the Care Center Settings to configure your keys.`,
+    },
+  ];
+};
+
 export default function HelperPage() {
   const [passphrase, setPassphrase] = useState<string | null>(null);
   
@@ -137,170 +228,102 @@ export default function HelperPage() {
     try {
       const configRes = await getPrivateConfig();
       if (configRes.success && configRes.data?.encrypted_keys) {
-        const configObj = (await decryptData(configRes.data.encrypted_keys, phrase)) as PrivateConfig;
-        let activeKey = configObj.anthropicKey;
-        if (configObj.preferredProvider === 'gemini') {
-          activeKey = configObj.geminiKey;
-        } else if (configObj.preferredProvider === 'openai') {
-          activeKey = configObj.openaiKey;
-        }
+        const { apiKey: activeKey, provider: newProvider, model: newModel, hasKey } = await decryptConfig(configRes.data.encrypted_keys, phrase);
 
-        setApiKey(activeKey || '');
-        setProvider(configObj.preferredProvider || 'gemini');
-        setModel(configObj.preferredModel || 'gemini-1.5-flash');
+        setApiKey(activeKey);
+        setProvider(newProvider);
+        setModel(newModel);
 
-        if (!activeKey) {
-          setMessages([
-            {
-              role: 'assistant',
-              content: `Hello! Your vault is unlocked, but you have not configured an API key for ${configObj.preferredProvider} yet. Please go to the Care Center Settings to configure your keys.`,
-            },
-          ]);
-        } else {
-          setMessages([
-            {
-              role: 'assistant',
-              content: 'Vault unlocked. I am ready to assist you. Ask me anything about your cats, health logs, or schedules!',
-            },
-          ]);
-        }
+        setMessages(getInitMessages(newProvider, hasKey));
       }
-
-      // Load cats
-      const catsRes = await listPrivateCats();
-      if (catsRes.success && catsRes.data) {
-        const decCats: CatContextItem[] = [];
-        for (const rawCat of catsRes.data) {
-          try {
-            const dec = (await decryptData(rawCat.encrypted_data, phrase)) as DecryptedCatData;
-            decCats.push({
-              id: rawCat.id,
-              name: dec.name,
-              photoUrl: dec.photoUrl,
-              status: dec.status,
-              age: dec.ageEstimate,
-              color: dec.color,
-              vitals: dec.vitals || [],
-              reminders: dec.calendar || [],
-              activities: dec.activities || [],
-              medical: dec.medical || [],
-              customFields: dec.customFields || [],
-            });
-          } catch {
-            // Skip single decryption failures
-          }
+  
+        // Load cats
+        const catsRes = await listPrivateCats();
+        if (catsRes.success && catsRes.data) {
+          const decCats = await decryptCats(catsRes.data, phrase);
+          setCats(decCats);
         }
-        setCats(decCats);
+      } catch {
+        setMessages([
+          {
+            id: `error-msg-${Date.now()}`,
+            role: 'assistant',
+            content: 'An error occurred while loading your secure configuration. Please check your credentials.',
+          },
+        ]);
+      } finally {
+        setIsLoadingCats(false);
       }
-    } catch {
-      setMessages([
-        {
-          role: 'assistant',
-          content: 'An error occurred while loading your secure configuration. Please check your credentials.',
-        },
-      ]);
-    } finally {
-      setIsLoadingCats(false);
-    }
-  };
+    };
 
   // Execute suggested AI actions directly onto the database
   const handleExecuteAction = async (catId: string, actionType: string, actionPayload: any) => {
-    if (!passphrase) return;
-    const catToUpdate = cats.find((c) => c.id === catId);
-    if (!catToUpdate) return;
-
-    try {
-      const currentData = {
-        name: catToUpdate.name,
-        photoUrl: catToUpdate.photoUrl,
-        status: catToUpdate.status,
-        ageEstimate: catToUpdate.age,
-        color: catToUpdate.color,
-        vitals: catToUpdate.vitals,
-        calendar: catToUpdate.reminders,
-        activities: catToUpdate.activities,
-        medical: catToUpdate.medical || [],
-        customFields: catToUpdate.customFields || [],
-      };
-
-      if (actionType === 'log_activity') {
-        const newAct = {
-          id: crypto.randomUUID(),
-          date: new Date().toISOString(),
-          category: actionPayload.category || 'Food',
-          notes: actionPayload.notes || 'Logged from AI Suggestion',
+      if (!passphrase) return;
+      const catToUpdate = cats.find((c) => c.id === catId);
+      if (!catToUpdate) return;
+  
+      try {
+        const initialData = {
+          name: catToUpdate.name,
+          photoUrl: catToUpdate.photoUrl,
+          status: catToUpdate.status,
+          ageEstimate: catToUpdate.age,
+          color: catToUpdate.color,
+          vitals: catToUpdate.vitals,
+          calendar: catToUpdate.reminders,
+          activities: catToUpdate.activities,
+          medical: catToUpdate.medical || [],
+          customFields: catToUpdate.customFields || [],
         };
-        currentData.activities = [newAct, ...currentData.activities];
-      } else if (actionType === 'log_vitals') {
-        const newVit = {
-          date: new Date().toISOString(),
-          bpm: actionPayload.bpm || 140,
-          rr: actionPayload.rr || 24,
-          weight: actionPayload.weight || 4.5,
-          sleep: actionPayload.sleep || 14,
-          calories: actionPayload.calories || 220,
-          stress: actionPayload.stress || 1,
-        };
-        currentData.vitals = [...currentData.vitals, newVit];
-      } else if (actionType === 'log_reminder') {
-        const newRem = {
-          id: crypto.randomUUID(),
-          date: actionPayload.date || new Date().toISOString().split('T')[0],
-          title: actionPayload.title || 'AI Task',
-          type: actionPayload.type || 'pill',
-          completed: false,
-        };
-        currentData.calendar = [...currentData.calendar, newRem].sort(
-          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-        );
+  
+        const currentData = getUpdatedCatData(actionType, actionPayload, initialData);
+  
+        const ciphertext = await encryptData(currentData, passphrase);
+        const res = await upsertPrivateCat(catId, ciphertext);
+        if (res.success) {
+          // Refresh local state context
+          setCats((prev) =>
+            prev.map((c) =>
+              c.id === catId
+                ? {
+                    ...c,
+                    vitals: currentData.vitals,
+                    reminders: currentData.calendar,
+                    activities: currentData.activities,
+                  }
+                : c
+            )
+          );
+  
+          // Append log success feedback bubble
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `success-log-${Date.now()}`,
+              role: 'assistant',
+              content: `Successfully logged secure record for ${catToUpdate.name}! Action: "${
+                actionPayload.notes || actionPayload.title || 'Vitals'
+              }"`,
+            },
+          ]);
+        } else {
+          alert('Action failed: ' + res.error);
+        }
+      } catch {
+        alert('Encryption failed during action commit.');
       }
-
-      const ciphertext = await encryptData(currentData, passphrase);
-      const res = await upsertPrivateCat(catId, ciphertext);
-      if (res.success) {
-        // Refresh local state context
-        setCats((prev) =>
-          prev.map((c) =>
-            c.id === catId
-              ? {
-                  ...c,
-                  vitals: currentData.vitals,
-                  reminders: currentData.calendar,
-                  activities: currentData.activities,
-                }
-              : c
-          )
-        );
-
-        // Append log success feedback bubble
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: `Successfully logged secure record for ${catToUpdate.name}! Action: "${
-              actionPayload.notes || actionPayload.title || 'Vitals'
-            }"`,
-          },
-        ]);
-      } else {
-        alert('Action failed: ' + res.error);
-      }
-    } catch {
-      alert('Encryption failed during action commit.');
-    }
-  };
+    };
 
   const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputVal.trim() || isSending || !apiKey) return;
-
-    const userText = inputVal.trim();
-    setInputVal('');
-
-    const newMessages: ChatMessage[] = [...messages, { role: 'user', content: userText }];
-    setMessages(newMessages);
-    setIsSending(true);
+      e.preventDefault();
+      if (!inputVal.trim() || isSending || !apiKey) return;
+  
+      const userText = inputVal.trim();
+      setInputVal('');
+  
+      const newMessages: ChatMessage[] = [...messages, { id: `user-msg-${Date.now()}-${Math.random()}`, role: 'user', content: userText }];
+      setMessages(newMessages);
+      setIsSending(true);
 
     try {
       // Build context prompt
@@ -355,19 +378,19 @@ Provide helpful, expert, and practical cat care advice based on the data.
       }
 
       const data = await res.json();
-      if (data.success && data.text) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: data.text }]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', content: `Error: ${data.error || 'Unknown response format'}` },
-        ]);
-      }
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: 'Connection error. Could not contact helper proxy.' },
-      ]);
+            if (data.success && data.text) {
+              setMessages((prev) => [...prev, { id: `assistant-msg-${Date.now()}-${Math.random()}`, role: 'assistant', content: data.text }]);
+            } else {
+              setMessages((prev) => [
+                ...prev,
+                { id: `error-fmt-${Date.now()}`, role: 'assistant', content: `Error: ${data.error || 'Unknown response format'}` },
+              ]);
+            }
+          } catch {
+            setMessages((prev) => [
+              ...prev,
+              { id: `error-conn-${Date.now()}`, role: 'assistant', content: 'Connection error. Could not contact helper proxy.' },
+            ]);
     } finally {
       setIsSending(false);
     }
@@ -616,11 +639,11 @@ if (!passphrase) {
               const parsed = parseActionFromMessage(msg.content);
 
               return (
-                <div
-                  key={`helper-msg-${idx}`}
-                  className={`flex flex-col max-w-[80%] ${isUser ? 'self-end items-end' : 'self-start items-start'} domino-fade-item`}
-                  style={{ animationDelay: `${idx * 40}ms` }}
-                >
+                              <div
+                                key={msg.id || idx}
+                                className={`flex flex-col max-w-[80%] ${isUser ? 'self-end items-end' : 'self-start items-start'} domino-fade-item`}
+                                style={{ animationDelay: `${idx * 40}ms` }}
+                              >
                   <div
                     className={`p-4 rounded-3xl text-sm font-body leading-relaxed whitespace-pre-wrap border ${
                       isUser

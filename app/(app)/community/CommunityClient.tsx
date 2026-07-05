@@ -30,6 +30,565 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { getSafeImageSrc } from '@/lib/security/url';
 
+interface CacheProfile {
+  display_name: string | null;
+  avatar_url: string | null;
+  role: string | null;
+  active_badge_id: string | null;
+  custom_title: string | null;
+}
+
+const getAttachmentIcon = (type: string) => {
+  if (type.startsWith('image/')) return 'image';
+  if (type.startsWith('video/')) return 'video_file';
+  return 'picture_as_pdf';
+};
+
+const getInputPlaceholder = (activeDMUser: { display_name: string | null } | null, activeChannel: Channel | null) => {
+  if (activeDMUser) return `Message ${activeDMUser.display_name}...`;
+  if (activeChannel) return `Type a message to ${activeChannel.name}...`;
+  return 'Type a message...';
+};
+
+const getChannelIcon = (slug: string, fallbackIcon: string) => {
+  if (slug === 'general') return 'forum';
+  if (slug === 'adoption-stories') return 'favorite';
+  if (slug === 'volunteer-hub') return 'groups';
+  if (slug === 'urgent-medical') return 'medical_services';
+  return fallbackIcon;
+};
+
+const getChannelOnlineStatus = (slug: string, onlineCount: number) => {
+  if (slug === 'general') return `${onlineCount} members online • Active`;
+  if (slug === 'volunteer-hub') return `${onlineCount} online volunteers • Real-time dispatch`;
+  if (slug === 'adoption-stories') return `${Math.max(2, Math.ceil(onlineCount * 0.4))} members online • Sharing stories`;
+  if (slug === 'urgent-medical') return `${Math.max(1, Math.ceil(onlineCount * 0.15))} members online • Critical coordination`;
+  return `${onlineCount} members online • Active Now`;
+};
+
+const renderHvacAlert = (messageText: string) => {
+  const content = messageText.replace('[SYSTEM_HVAC_ALERT]', '').trim();
+  return (
+    <div className="flex items-center justify-center my-2.5 w-full animate-fade-in col-span-full">
+      <div className="inline-flex items-center gap-2 px-4.5 py-1.5 bg-[#fdf2f4] border border-[#fbd3db] rounded-full text-[11px] sm:text-xs font-semibold text-[#cf3c56] shadow-sm select-none">
+        <span className="material-symbols-outlined text-sm sm:text-base" style={{ fontVariationSettings: "'FILL' 1" }}>notifications_active</span>
+        <span>{content}</span>
+      </div>
+    </div>
+  );
+};
+
+const renderDispatchAlert = (messageText: string) => {
+  const content = messageText.replace('[SYSTEM_DISPATCH_ALERT]', '').trim();
+  return (
+    <div className="flex items-center justify-center my-2.5 w-full animate-fade-in col-span-full">
+      <div className="inline-flex items-center gap-2 px-4.5 py-1.5 bg-[#eafaf9] border border-[#ccefe3] rounded-full text-[11px] sm:text-xs font-semibold text-[#006a63] shadow-sm select-none">
+        <span className="w-2 h-2 rounded-full bg-[#10b981]" />
+        <span>{content}</span>
+      </div>
+    </div>
+  );
+};
+
+const renderMapPin = (messageText: string) => {
+  const match = /\[📍 Map Pin\] ([^(]+)\(([^,]+),([^)]+)\)/.exec(messageText);
+  const label = match ? match[1].trim() : 'Location';
+  
+  return (
+    <div className="flex flex-col gap-2 mt-1">
+      <div className="rounded-2xl overflow-hidden border border-[#dbc2b2]/45 w-64 sm:w-80 aspect-[2.2/1] relative bg-[#f7f0e8] flex flex-col justify-end shadow-sm">
+        <div className="absolute inset-0 bg-[#e3d8cd]" style={{
+          backgroundImage: 'radial-gradient(#dbc2b2 1.5px, transparent 1.5px)',
+          backgroundSize: '16px 16px'
+        }} />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative flex flex-col items-center select-none">
+            <span className="material-symbols-outlined text-3.5xl text-[#e07a34]" style={{ fontVariationSettings: "'FILL' 1'", filter: 'drop-shadow(0 2.5px 5px rgba(0,0,0,0.18))' }}>location_on</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-black/25 blur-[1.5px] absolute -bottom-0.5" />
+          </div>
+        </div>
+        <div className="m-2.5 bg-white border border-[#dbc2b2]/35 px-2.5 py-1 rounded-xl shadow-md z-10 self-start flex items-center gap-1 text-[10px] font-bold text-[#5c4a3c] select-none">
+          <span className="material-symbols-outlined text-xs text-[#e07a34]" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
+          <span>{label}</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const renderFileAttachment = (messageText: string) => {
+  const match = /\[📎 File Attachment: ([^\]]+)\]\(([^)]+)\)/.exec(messageText);
+  if (match) {
+    const filename = match[1];
+    const url = match[2];
+    const size = filename.includes('Roster') ? '1.2 MB' : 'Attachment';
+    return (
+      <div className="flex items-center justify-between gap-3.5 p-3.5 mt-1.5 bg-[#fdfdfc] border border-[#dbc2b2]/45 rounded-2xl max-w-xs shadow-sm hover:bg-[#f7f0e8]/10 transition-colors select-none">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8.5 h-8.5 rounded-xl bg-[#e6f7f6] flex items-center justify-center text-[#006a63] shrink-0 border border-[#ccefe3]/40">
+            <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>description</span>
+          </div>
+          <div className="min-w-0">
+            <p className="font-body text-xs font-extrabold text-[#5c4a3c] truncate">{filename}</p>
+            <p className="font-body text-[10px] text-[#6b5a4d]/50 font-bold">{size}</p>
+          </div>
+        </div>
+        <a href={getSafeImageSrc(url)} download target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-full hover:bg-[#dbc2b2]/20 flex items-center justify-center text-[#6b5a4d] hover:text-[#eb8424] transition-colors shrink-0">
+          <span className="material-symbols-outlined text-base">download</span>
+        </a>
+      </div>
+    );
+  }
+  return null;
+};
+
+const renderImageAttachment = (messageText: string) => {
+  const match = /\((.*?)\)/.exec(messageText);
+  if (match) {
+    const rawUrl = match[1];
+    const ALLOWED_HOSTS = ['media.tenor.com', 'c.tenor.com', 'supabase.co', 'supabase.in'];
+    let isSafe = false;
+    try {
+      const parsed = new URL(rawUrl);
+      isSafe = parsed.protocol === 'https:' && ALLOWED_HOSTS.some(h => parsed.hostname === h || parsed.hostname.endsWith('.' + h));
+    } catch {
+      isSafe = false;
+    }
+    if (isSafe) {
+      return <img src={getSafeImageSrc(rawUrl)} alt="Chat Media" className="rounded-xl max-h-48 shadow-sm border border-[#dbc2b2]/35 object-cover mt-1" />;
+    }
+  }
+  return null;
+};
+
+const renderChannelMessageText = (msg: CommunityMessage, isStaff: boolean) => {
+  if (msg.is_flagged) {
+    if (isStaff) {
+      return (
+        <span className="flex flex-col gap-1 border-l-2 border-red-500 pl-2 text-left">
+          <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 uppercase select-none">
+            <span className="material-symbols-outlined text-xs">warning</span>
+            <span>Flagged (Staff HQ visibility only)</span>
+          </span>
+          <span className="italic text-[#5c4a3c]/60">{msg.message}</span>
+        </span>
+      );
+    }
+    return (
+      <span className="flex items-center gap-1.5 text-red-500 italic text-[11px] font-semibold select-none">
+        <span className="material-symbols-outlined text-xs">flag</span>
+        <span>This message was flagged by moderation.</span>
+      </span>
+    );
+  }
+  return (
+    <div className="flex flex-col">
+      {renderMessageContent(msg.message, msg.id)}
+      {msg.edited_at && (
+        <span className="text-[9px] text-[#6b5a4d]/40 mt-1 self-end italic font-semibold select-none flex items-center gap-0.5 opacity-60">
+          Edited
+        </span>
+      )}
+    </div>
+  );
+};
+
+interface DmMessagesListProps {
+  filteredDmMessages: DirectMessage[];
+  currentUser: { id: string; role: string; displayName: string; avatarUrl: string | null; activeBadgeId: string | null; customTitle: string | null } | null;
+  activeDMUser: Profile;
+  hoveredMsg: string | null;
+  setHoveredMsg: (id: string | null) => void;
+  handleStartEditDM: (id: string, text: string) => void;
+  handleDelete: (id: string) => void;
+}
+
+function DmMessagesList({
+  filteredDmMessages,
+  currentUser,
+  activeDMUser,
+  hoveredMsg,
+  setHoveredMsg,
+  handleStartEditDM,
+  handleDelete,
+}: Readonly<DmMessagesListProps>) {
+  let lastSenderId: string | null = null;
+  let lastTime: number | null = null;
+  
+  return (
+    <>
+      {filteredDmMessages.map((dm) => {
+        const isOwn = dm.sender_id === currentUser?.id;
+        const dmTime = new Date(dm.created_at).getTime();
+        const isSameGroup =
+          lastSenderId === dm.sender_id &&
+          lastTime !== null &&
+          dmTime - lastTime < 5 * 60 * 1000;
+        lastSenderId = dm.sender_id;
+        lastTime = dmTime;
+
+        const elapsed = Date.now() - new Date(dm.created_at).getTime();
+        const canEdit = isOwn && elapsed < 15 * 60 * 1000;
+
+        return (
+          <div
+            key={dm.id}
+            className={`group relative flex gap-3 w-full ${
+              isOwn ? 'justify-end' : 'justify-start'
+            } ${isSameGroup ? 'mt-0.5' : 'mt-4'}`}
+            onMouseEnter={() => setHoveredMsg(dm.id)}
+            onMouseLeave={() => setHoveredMsg(null)}
+          >
+            {!isOwn && (
+              !isSameGroup ? (
+                <div className="w-9 h-9 rounded-full overflow-hidden border border-[#dbc2b2]/45 shrink-0 bg-[#f7f0e8] flex items-center justify-center shadow-sm">
+                  {activeDMUser.avatar_url ? (
+                    <img src={getSafeImageSrc(activeDMUser.avatar_url)} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="font-display text-xs font-bold text-[#eb8424]">
+                      {activeDMUser.display_name?.[0]?.toUpperCase() ?? '?'}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="w-9 shrink-0" />
+              )
+            )}
+
+            <div className={`flex flex-col max-w-[70%] ${isOwn ? 'items-end' : 'items-start'}`}>
+              {!isOwn && !isSameGroup && (
+                <span className="text-[10px] text-[#6b5a4d]/60 font-body mb-0.5 select-none font-bold">
+                  {activeDMUser.display_name}
+                </span>
+              )}
+              <div className={`px-4 py-2.5 rounded-2xl shadow-sm border ${
+                isOwn
+                  ? 'bg-[#eb8424] text-white border-[#e07a34] rounded-tr-none'
+                  : 'bg-white text-[#5c4a3c] border-[#dbc2b2]/35 rounded-tl-none'
+              }`}>
+                {renderMessageContent(dm.message, dm.id)}
+              </div>
+
+              <span className="text-[9px] text-[#6b5a4d]/30 mt-0.5 font-body select-none font-bold">
+                {new Date(dm.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {dm.edited_at && <span className="italic ml-1">Edited</span>}
+              </span>
+
+              {isOwn && (
+                <span className="flex items-center gap-0.5 text-[9px] text-[#6b5a4d]/30 mt-0.5 font-body select-none">
+                  <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>done</span>{' '}Sent
+                </span>
+              )}
+            </div>
+
+            {isOwn && (
+              !isSameGroup ? (
+                <div className="w-9 h-9 rounded-full overflow-hidden border border-[#dbc2b2]/45 shrink-0 bg-[#fceee1] flex items-center justify-center shadow-sm">
+                  {currentUser?.avatarUrl ? (
+                    <img src={getSafeImageSrc(currentUser.avatarUrl)} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="font-display text-xs font-bold text-[#eb8424]">ME</span>
+                  )}
+                </div>
+              ) : (
+                <div className="w-9 shrink-0" />
+              )
+            )}
+
+            {hoveredMsg === dm.id && (
+              <div className={`absolute -top-3.5 flex items-center gap-0.5 bg-white border border-[#dbc2b2]/45 rounded-xl shadow-md px-1.5 py-0.5 z-10 animate-fade-in ${
+                isOwn ? 'right-12' : 'left-12'
+              }`}>
+                {canEdit && (
+                  <button
+                    onClick={() => handleStartEditDM(dm.id, dm.message)}
+                    className="p-1 rounded text-[#6b5a4d]/50 hover:text-[#eb8424] hover:bg-[#dbc2b2]/20 transition-all cursor-pointer bg-transparent border-none flex items-center"
+                    type="button"
+                    title="Edit message"
+                  >
+                    <span className="material-symbols-outlined text-sm">edit</span>
+                  </button>
+                )}
+
+                {isOwn && (
+                  <button
+                    onClick={() => handleDelete(dm.id)}
+                    className="p-1 rounded text-[#6b5a4d]/50 hover:text-red-500 hover:bg-red-50 transition-all cursor-pointer bg-transparent border-none flex items-center"
+                    type="button"
+                    title="Delete message"
+                  >
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+interface ChannelMessagesListProps {
+  channelMessages: CommunityMessage[];
+  currentUser: { id: string; role: string; displayName: string; avatarUrl: string | null; activeBadgeId: string | null; customTitle: string | null } | null;
+  hoveredMsg: string | null;
+  setHoveredMsg: (id: string | null) => void;
+  reactions: Record<string, Reaction[]>;
+  isStaff: boolean;
+  editingMessageId: string | null;
+  editText: string;
+  setEditText: (text: string) => void;
+  actionPending: boolean;
+  handleCancelEdit: () => void;
+  handleSaveEdit: (id: string) => void;
+  handleReact: (id: string, emoji: string) => void;
+  handleFlag: (id: string, flagged: boolean) => void;
+  handleStartEdit: (msg: CommunityMessage) => void;
+  handleReportMessage: (msgId: string) => void;
+  handleStartDeleteMessage: (msgId: string) => void;
+  setSelectedProfileId: (id: string | null) => void;
+  isSignedIn: boolean;
+  setReplyToMessage: (msg: CommunityMessage | null) => void;
+  messages: CommunityMessage[];
+}
+
+function ChannelMessagesList({
+  channelMessages,
+  currentUser,
+  hoveredMsg,
+  setHoveredMsg,
+  reactions,
+  isStaff,
+  editingMessageId,
+  editText,
+  setEditText,
+  actionPending,
+  handleCancelEdit,
+  handleSaveEdit,
+  handleReact,
+  handleFlag,
+  handleStartEdit,
+  handleReportMessage,
+  handleStartDeleteMessage,
+  setSelectedProfileId,
+  isSignedIn,
+  setReplyToMessage,
+  messages,
+}: Readonly<ChannelMessagesListProps>) {
+  return (
+    <>
+      {channelMessages.map((msg, idx) => {
+        const prev = channelMessages[idx - 1];
+        const isSystemAlert = msg.message.includes('[SYSTEM_HVAC_ALERT]') || msg.message.includes('[SYSTEM_DISPATCH_ALERT]');
+        
+        if (isSystemAlert) {
+          return (
+            <div key={msg.id} className="w-full">
+              {renderMessageContent(msg.message, msg.id)}
+            </div>
+          );
+        }
+
+        const isSameAuthor = prev && prev.user_id === msg.user_id &&
+          (new Date(msg.created_at).getTime() - new Date(prev.created_at).getTime()) < 5 * 60 * 1000;
+        const isOwn = currentUser?.id === msg.user_id;
+        const msgReactions = reactions[msg.id] ?? [];
+        const elapsed = Date.now() - new Date(msg.created_at).getTime();
+        const canEdit = isOwn && elapsed < 15 * 60 * 1000;
+
+        return (
+          <div
+            key={msg.id}
+            className={`group relative flex gap-3 w-full ${isOwn ? 'justify-end' : 'justify-start'} ${isSameAuthor ? 'mt-0.5' : 'mt-4'}`}
+            onMouseEnter={() => setHoveredMsg(msg.id)}
+            onMouseLeave={() => setHoveredMsg(null)}
+          >
+            {!isOwn && !isSameAuthor && (
+              <button
+                onClick={() => setSelectedProfileId(msg.user_id)}
+                className="w-9 h-9 rounded-full border border-[#dbc2b2]/45 overflow-hidden flex items-center justify-center shadow-sm shrink-0 cursor-pointer bg-[#f7f0e8]"
+              >
+                {msg.avatar_url ? (
+                  <img src={getSafeImageSrc(msg.avatar_url)} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="font-display text-xs font-bold text-[#eb8424]">
+                    {msg.display_name?.[0]?.toUpperCase() ?? '?'}
+                  </span>
+                )}
+              </button>
+            )}
+            
+            {!isOwn && isSameAuthor && <div className="w-9 shrink-0" />}
+
+            <div className={`flex flex-col max-w-[70%] ${isOwn ? 'items-end' : 'items-start'}`}>
+              {!isOwn && !isSameAuthor && (
+                <div className="flex items-center gap-1.5 mb-0.5 select-none">
+                  <span className="text-[10px] font-bold text-[#5c4a3c] font-body">{msg.display_name}</span>
+                  {msg.custom_title && (
+                    <span className="px-1 py-0.5 bg-[var(--empire-gold)]/10 text-[var(--empire-gold)] font-extrabold uppercase rounded text-[7px] border border-[var(--empire-gold)]/20 tracking-wider">
+                      {msg.custom_title}
+                    </span>
+                  )}
+                  <RoleBadge role={msg.role} />
+                </div>
+              )}
+
+              {editingMessageId === msg.id ? (
+                <div className="w-64 sm:w-80 bg-white border border-[#dbc2b2]/60 rounded-2xl p-3 shadow-md flex flex-col gap-2.5 text-left">
+                  <textarea
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    className="w-full bg-transparent border-0 outline-none font-body text-xs sm:text-sm text-[#5c4a3c] resize-none"
+                    rows={2}
+                    maxLength={2000}
+                    disabled={actionPending}
+                  />
+                  <div className="flex gap-2 justify-end text-[10px] font-bold uppercase">
+                    <button
+                      type="button"
+                      disabled={actionPending}
+                      onClick={handleCancelEdit}
+                      className="px-2 py-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 border border-zinc-200 rounded-lg cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={actionPending || !editText.trim()}
+                      onClick={() => handleSaveEdit(msg.id)}
+                      className="px-2 py-1 bg-[#eb8424] text-white rounded-lg hover:bg-[#d66c0e] cursor-pointer disabled:opacity-40"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className={`rounded-2xl p-4 text-xs sm:text-sm border shadow-sm ${
+                  isOwn
+                    ? 'bg-[#eb8424] border-[#d66c0e] text-white rounded-tr-none'
+                    : 'bg-white dark:bg-[var(--bg-elevated)] border-[#f0e6dc] dark:border-[var(--bg-border)] text-[#5c4a3c] dark:text-[var(--text-primary)] rounded-tl-none'
+                } ${msg.is_flagged ? 'border-red-200' : ''}`}>
+                  {renderChannelMessageText(msg, isStaff)}
+                </div>
+              )}
+
+              {msgReactions.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {msgReactions.map((r) => (
+                    <button
+                      key={r.emoji}
+                      onClick={() => handleReact(msg.id, r.emoji)}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] transition-all cursor-pointer ${
+                        r.reacted
+                          ? 'bg-[#eb8424]/10 border-[#eb8424]/40 text-[#eb8424]'
+                          : 'bg-white border-[#dbc2b2]/40 text-[#6b5a4d] hover:border-[#eb8424]/30'
+                      }`}
+                      type="button"
+                    >
+                      {r.emoji} <span className="font-body font-bold text-[9px]">{r.count}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {isOwn && !isSameAuthor && (
+              <button
+                onClick={() => setSelectedProfileId(msg.user_id)}
+                className="w-9 h-9 rounded-full border border-[#dbc2b2]/45 overflow-hidden flex items-center justify-center shadow-sm shrink-0 cursor-pointer bg-[#fceee1]"
+              >
+                {currentUser?.avatarUrl ? (
+                  <img src={getSafeImageSrc(currentUser.avatarUrl)} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="font-display text-xs font-bold text-[#eb8424]">
+                    ME
+                  </span>
+                )}
+              </button>
+            )}
+            
+            {isOwn && isSameAuthor && <div className="w-9 shrink-0" />}
+
+            {hoveredMsg === msg.id && (
+              <div className={`absolute -top-3.5 flex items-center gap-0.5 bg-white border border-[#dbc2b2]/45 rounded-xl shadow-md px-1.5 py-0.5 z-10 animate-fade-in ${
+                isOwn ? 'right-12' : 'left-12'
+              }`}>
+                {isSignedIn && QUICK_REACTIONS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => handleReact(msg.id, emoji)}
+                    className="text-xs p-1 rounded hover:bg-[#dbc2b2]/20 transition-all cursor-pointer border-none bg-transparent"
+                    type="button"
+                    title={`React with ${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+
+                {isSignedIn && (
+                  <button
+                    onClick={() => setReplyToMessage(msg)}
+                    className="p-1 rounded text-[#6b5a4d]/50 hover:text-[#eb8424] hover:bg-[#dbc2b2]/20 transition-all cursor-pointer bg-transparent border-none flex items-center"
+                    type="button"
+                    title="Reply"
+                  >
+                    <span className="material-symbols-outlined text-sm">reply</span>
+                  </button>
+                )}
+
+                {canEdit && (
+                  <button
+                    onClick={() => handleStartEdit(msg)}
+                    className="p-1 rounded text-[#6b5a4d]/50 hover:text-[#eb8424] hover:bg-[#dbc2b2]/20 transition-all cursor-pointer bg-transparent border-none flex items-center"
+                    type="button"
+                    title="Edit message"
+                  >
+                    <span className="material-symbols-outlined text-sm">edit</span>
+                  </button>
+                )}
+
+                {isStaff ? (
+                  <button
+                    onClick={() => handleFlag(msg.id, msg.is_flagged)}
+                    className={`p-1 rounded transition-all cursor-pointer bg-transparent border-none flex items-center ${msg.is_flagged ? 'text-red-500 hover:bg-red-50' : 'text-[#6b5a4d]/50 hover:text-amber-500 hover:bg-amber-50'}`}
+                    type="button"
+                    title={msg.is_flagged ? 'Unflag' : 'Flag message'}
+                  >
+                    <span className="material-symbols-outlined text-sm" style={msg.is_flagged ? { fontVariationSettings: "'FILL' 1" } : {}}>flag</span>
+                  </button>
+                ) : (
+                  isSignedIn && !isOwn && !msg.is_flagged && (
+                    <button
+                      onClick={() => handleReportMessage(msg.id)}
+                      className="p-1 rounded text-[#6b5a4d]/50 hover:text-red-500 hover:bg-red-50 transition-all cursor-pointer bg-transparent border-none flex items-center"
+                      type="button"
+                      title="Report message"
+                    >
+                      <span className="material-symbols-outlined text-sm">flag</span>
+                    </button>
+                  )
+                )}
+
+                {isSignedIn && (isOwn || isStaff) && (
+                  <button
+                    onClick={() => handleStartDeleteMessage(msg.id)}
+                    className="p-1 rounded text-[#6b5a4d]/50 hover:text-red-500 hover:bg-red-50 transition-all cursor-pointer bg-transparent border-none flex items-center"
+                    type="button"
+                    title="Delete message"
+                  >
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface Profile {
@@ -120,17 +679,15 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
-function RoleBadge({ role }: { role: string | null }) {
+function RoleBadge({ role }: Readonly<{ role: string | null }>) {
   if (role === 'admin') return (
     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[9px] font-bold uppercase tracking-wider">
-      <span className="material-symbols-outlined text-[9px]" style={{ fontVariationSettings: "'FILL' 1" }}>crown</span>
-      Admin
+      <span className="material-symbols-outlined text-[9px]" style={{ fontVariationSettings: "'FILL' 1" }}>crown</span>{' '}Admin
     </span>
   );
   if (role === 'moderator') return (
     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-full text-[9px] font-bold uppercase tracking-wider">
-      <span className="material-symbols-outlined text-[9px]" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
-      Mod
+      <span className="material-symbols-outlined text-[9px]" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>{' '}Mod
     </span>
   );
   return null;
@@ -144,9 +701,48 @@ const MOCK_AVATARS = [
   'https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&q=80&w=100',
 ];
 
+function getPollOptionClass(isVoted: boolean, isAnyVoted: boolean) {
+  if (isVoted) return 'border-[#eb8424] text-[#944a00]';
+  if (isAnyVoted) return 'text-[#5c4a3c]/50';
+  return 'hover:border-[#eb8424]/60 hover:bg-[#dbc2b2]/5 text-[#5c4a3c] cursor-pointer';
+}
+
 interface PollProps {
   messageId: string;
   messageText: string;
+}
+
+interface PollOptionButtonProps {
+  opt: string;
+  idx: number;
+  count: number;
+  percentage: number;
+  isVoted: boolean;
+  isAnyVoted: boolean;
+  onVote: (idx: number) => void;
+}
+
+function PollOptionButton({ opt, idx, count, percentage, isVoted, isAnyVoted, onVote }: Readonly<PollOptionButtonProps>) {
+  return (
+    <button
+      disabled={isAnyVoted}
+      onClick={() => onVote(idx)}
+      className={`w-full relative overflow-hidden p-2 rounded-xl border text-left text-[11px] font-semibold font-body transition-all flex items-center justify-between min-h-[36px] bg-white border-[#dbc2b2]/30 ${getPollOptionClass(isVoted, isAnyVoted)}`}
+    >
+      <div 
+        className={`absolute left-0 top-0 bottom-0 transition-all duration-500 ease-out z-0 ${
+          isVoted ? 'bg-[#eb8424]/15' : 'bg-[#dbc2b2]/5'
+        }`}
+        style={{ width: `${percentage}%` }}
+      />
+      <span className="relative z-10 break-words max-w-[80%]">{opt}</span>
+      {isAnyVoted && (
+        <span className="relative z-10 font-bold text-[9px] text-[#6b5a4d]/60 shrink-0">
+          {percentage}% ({count})
+        </span>
+      )}
+    </button>
+  );
 }
 
 function PollCard({ messageId, messageText }: Readonly<PollProps>) {
@@ -206,27 +802,16 @@ function PollCard({ messageId, messageText }: Readonly<PollProps>) {
           const isAnyVoted = selectedOption !== null;
 
           return (
-            <button
+            <PollOptionButton
               key={opt + '-' + idx}
-              disabled={isAnyVoted}
-              onClick={() => handleVote(idx)}
-              className={`w-full relative overflow-hidden p-2 rounded-xl border text-left text-[11px] font-semibold font-body transition-all flex items-center justify-between min-h-[36px] bg-white border-[#dbc2b2]/30 ${
-                isVoted ? 'border-[#eb8424] text-[#944a00]' : (isAnyVoted ? 'text-[#5c4a3c]/50' : 'hover:border-[#eb8424]/60 hover:bg-[#dbc2b2]/5 text-[#5c4a3c] cursor-pointer')
-              }`}
-            >
-              <div 
-                className={`absolute left-0 top-0 bottom-0 transition-all duration-500 ease-out z-0 ${
-                  isVoted ? 'bg-[#eb8424]/15' : 'bg-[#dbc2b2]/5'
-                }`}
-                style={{ width: `${percentage}%` }}
-              />
-              <span className="relative z-10 break-words max-w-[80%]">{opt}</span>
-              {isAnyVoted && (
-                <span className="relative z-10 font-bold text-[9px] text-[#6b5a4d]/60 shrink-0">
-                  {percentage}% ({count})
-                </span>
-              )}
-            </button>
+              opt={opt}
+              idx={idx}
+              count={count}
+              percentage={percentage}
+              isVoted={isVoted}
+              isAnyVoted={isAnyVoted}
+              onVote={handleVote}
+            />
           );
         })}
       </div>
@@ -241,114 +826,24 @@ function PollCard({ messageId, messageText }: Readonly<PollProps>) {
 
 // High-fidelity layout parser for custom message templates
 const renderMessageContent = (messageText: string, messageId?: string) => {
-  // 1. Check for HVAC System Alert
   if (messageText.includes('[SYSTEM_HVAC_ALERT]')) {
-    const content = messageText.replace('[SYSTEM_HVAC_ALERT]', '').trim();
-    return (
-      <div className="flex items-center justify-center my-2.5 w-full animate-fade-in col-span-full">
-        <div className="inline-flex items-center gap-2 px-4.5 py-1.5 bg-[#fdf2f4] border border-[#fbd3db] rounded-full text-[11px] sm:text-xs font-semibold text-[#cf3c56] shadow-sm select-none">
-          <span className="material-symbols-outlined text-sm sm:text-base" style={{ fontVariationSettings: "'FILL' 1" }}>notifications_active</span>
-          <span>{content}</span>
-        </div>
-      </div>
-    );
+    return renderHvacAlert(messageText);
   }
-
-  // 2. Check for Dispatch System Alert
   if (messageText.includes('[SYSTEM_DISPATCH_ALERT]')) {
-    const content = messageText.replace('[SYSTEM_DISPATCH_ALERT]', '').trim();
-    return (
-      <div className="flex items-center justify-center my-2.5 w-full animate-fade-in col-span-full">
-        <div className="inline-flex items-center gap-2 px-4.5 py-1.5 bg-[#eafaf9] border border-[#ccefe3] rounded-full text-[11px] sm:text-xs font-semibold text-[#006a63] shadow-sm select-none">
-          <span className="w-2 h-2 rounded-full bg-[#10b981]" />
-          <span>{content}</span>
-        </div>
-      </div>
-    );
+    return renderDispatchAlert(messageText);
   }
-
-  // 3. Check for Map Pin Card
   if (messageText.includes('[📍 Map Pin]')) {
-    const match = /\[📍 Map Pin\] ([^(]+)\(([^,]+),([^)]+)\)/.exec(messageText);
-    const label = match ? match[1].trim() : 'Location';
-    
-    return (
-      <div className="flex flex-col gap-2 mt-1">
-        <div className="rounded-2xl overflow-hidden border border-[#dbc2b2]/45 w-64 sm:w-80 aspect-[2.2/1] relative bg-[#f7f0e8] flex flex-col justify-end shadow-sm">
-          {/* Map Styled background */}
-          <div className="absolute inset-0 bg-[#e3d8cd]" style={{
-            backgroundImage: 'radial-gradient(#dbc2b2 1.5px, transparent 1.5px)',
-            backgroundSize: '16px 16px'
-          }} />
-          {/* Map Pin in center */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative flex flex-col items-center select-none">
-              <span className="material-symbols-outlined text-3.5xl text-[#e07a34]" style={{ fontVariationSettings: "'FILL' 1'", filter: 'drop-shadow(0 2.5px 5px rgba(0,0,0,0.18))' }}>location_on</span>
-              <span className="w-2.5 h-2.5 rounded-full bg-black/25 blur-[1.5px] absolute -bottom-0.5" />
-            </div>
-          </div>
-          {/* Overlay Label in bottom left */}
-          <div className="m-2.5 bg-white border border-[#dbc2b2]/35 px-2.5 py-1 rounded-xl shadow-md z-10 self-start flex items-center gap-1 text-[10px] font-bold text-[#5c4a3c] select-none">
-            <span className="material-symbols-outlined text-xs text-[#e07a34]" style={{ fontVariationSettings: "'FILL' 1" }}>location_on</span>
-            <span>{label}</span>
-          </div>
-        </div>
-      </div>
-    );
+    return renderMapPin(messageText);
   }
-
-  // 4. Check for PDF Document File Attachment Card
   if (messageText.includes('[📎 File Attachment:')) {
-    const match = /\[📎 File Attachment: ([^\]]+)\]\(([^)]+)\)/.exec(messageText);
-    if (match) {
-      const filename = match[1];
-      const url = match[2];
-      const size = filename.includes('Roster') ? '1.2 MB' : 'Attachment';
-      return (
-        <div className="flex items-center justify-between gap-3.5 p-3.5 mt-1.5 bg-[#fdfdfc] border border-[#dbc2b2]/45 rounded-2xl max-w-xs shadow-sm hover:bg-[#f7f0e8]/10 transition-colors select-none">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8.5 h-8.5 rounded-xl bg-[#e6f7f6] flex items-center justify-center text-[#006a63] shrink-0 border border-[#ccefe3]/40">
-              <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>description</span>
-            </div>
-            <div className="min-w-0">
-              <p className="font-body text-xs font-extrabold text-[#5c4a3c] truncate">{filename}</p>
-              <p className="font-body text-[10px] text-[#6b5a4d]/50 font-bold">{size}</p>
-            </div>
-          </div>
-          <a href={getSafeImageSrc(url)} download target="_blank" rel="noopener noreferrer" className="w-7 h-7 rounded-full hover:bg-[#dbc2b2]/20 flex items-center justify-center text-[#6b5a4d] hover:text-[#eb8424] transition-colors shrink-0">
-            <span className="material-symbols-outlined text-base">download</span>
-          </a>
-        </div>
-      );
-    }
+    return renderFileAttachment(messageText);
   }
-
-  // 5. Check for Poll Card
   if (messageText.includes('[📊 Poll]')) {
     return <PollCard messageId={messageId ?? 'poll-temp'} messageText={messageText} />;
   }
-
-  // 6. Check for standard image markdown MOCK rendering
   if (messageText.startsWith('![GIF]') || messageText.startsWith('![Image]')) {
-    const match = /\((.*?)\)/.exec(messageText);
-    if (match) {
-      const rawUrl = match[1];
-      // Only render images from known safe CDN domains to prevent injection
-      const ALLOWED_HOSTS = ['media.tenor.com', 'c.tenor.com', 'supabase.co', 'supabase.in'];
-      let isSafe = false;
-      try {
-        const parsed = new URL(rawUrl);
-        isSafe = parsed.protocol === 'https:' && ALLOWED_HOSTS.some(h => parsed.hostname === h || parsed.hostname.endsWith('.' + h));
-      } catch {
-        isSafe = false;
-      }
-      if (isSafe) {
-        return <img src={getSafeImageSrc(rawUrl)} alt="Chat Media" className="rounded-xl max-h-48 shadow-sm border border-[#dbc2b2]/35 object-cover mt-1" />;
-      }
-    }
+    return renderImageAttachment(messageText);
   }
-
-  // Standard Plain Text Message
   return <p className="break-words leading-relaxed text-sm font-body">{messageText}</p>;
 };
 
@@ -516,34 +1011,38 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
   // Real-time channels list updates
   useEffect(() => {
     const supabase = createClient();
+    const onNewChannel = (payload: any) => {
+      const newChan = payload.new as Channel;
+      setChannels((prev) => {
+        if (prev.some(c => c.id === newChan.id)) return prev;
+        return [...prev, newChan];
+      });
+    };
+    const onUpdateChannel = (payload: any) => {
+      const updatedChan = payload.new as Channel;
+      setChannels((prev) => prev.map(c => c.id === updatedChan.id ? { ...c, ...updatedChan } : c));
+    };
+    const onDeleteChannel = (payload: any) => {
+      setChannels((prev) => prev.filter(c => c.id !== payload.old.id));
+    };
+
     const channelsSub = supabase
       .channel('realtime-channels-list')
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'community_channels',
-      }, (payload) => {
-        const newChan = payload.new as Channel;
-        setChannels((prev) => {
-          if (prev.some(c => c.id === newChan.id)) return prev;
-          return [...prev, newChan];
-        });
-      })
+      }, onNewChannel)
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'community_channels',
-      }, (payload) => {
-        const updatedChan = payload.new as Channel;
-        setChannels((prev) => prev.map(c => c.id === updatedChan.id ? { ...c, ...updatedChan } : c));
-      })
+      }, onUpdateChannel)
       .on('postgres_changes', {
         event: 'DELETE',
         schema: 'public',
         table: 'community_channels',
-      }, (payload) => {
-        setChannels((prev) => prev.filter(c => c.id !== payload.old.id));
-      })
+      }, onDeleteChannel)
       .subscribe();
 
     return () => {
@@ -735,49 +1234,52 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
     // Use a stable, sorted pair as the channel name so this subscription
     // only fires for the exact conversation between the two users.
     const pairKey = [currentUser?.id, activeDMUser.id].sort((a, b) => (a ?? '').localeCompare(b ?? '')).join('-');
+    const onNewDirectMessage = (payload: any) => {
+      const incoming = payload.new as unknown as DirectMessage;
+      const isThisConversation =
+        (incoming.sender_id === currentUser?.id && incoming.receiver_id === activeDMUser.id) ||
+        (incoming.sender_id === activeDMUser.id && incoming.receiver_id === currentUser?.id);
+      if (!isThisConversation) return;
+      setDmMessages((prev) => {
+        if (prev.some((m) => m.id === incoming.id)) return prev;
+        return [...prev, incoming];
+      });
+
+      if (incoming.sender_id === activeDMUser.id && incoming.receiver_id === currentUser?.id) {
+        markDMsAsRead(activeDMUser.id).catch(console.error);
+      }
+
+      loadConversations();
+    };
+
+    const onUpdateDirectMessage = (payload: any) => {
+      const updated = payload.new as unknown as DirectMessage;
+      setDmMessages((prev) =>
+        prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m))
+      );
+    };
+
+    const onDeleteDirectMessage = (payload: any) => {
+      setDmMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
+    };
+
     const sub = supabase
       .channel(`dm-pair-${pairKey}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'direct_messages',
-      }, (payload) => {
-        const incoming = payload.new as unknown as DirectMessage;
-        // Only apply if it belongs to this exact conversation
-        const isThisConversation =
-          (incoming.sender_id === currentUser?.id && incoming.receiver_id === activeDMUser.id) ||
-          (incoming.sender_id === activeDMUser.id && incoming.receiver_id === currentUser?.id);
-        if (!isThisConversation) return;
-        // Dedup — the optimistic update from handlePost may have already added it
-        setDmMessages((prev) => {
-          if (prev.some((m) => m.id === incoming.id)) return prev;
-          return [...prev, incoming];
-        });
-
-        // If we are actively viewing the conversation and the sender is the other user, mark as read in backend
-        if (incoming.sender_id === activeDMUser.id && incoming.receiver_id === currentUser?.id) {
-          markDMsAsRead(activeDMUser.id).catch(console.error);
-        }
-
-        loadConversations();
-      })
+      }, onNewDirectMessage)
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'direct_messages',
-      }, (payload) => {
-        const updated = payload.new as unknown as DirectMessage;
-        setDmMessages((prev) =>
-          prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m))
-        );
-      })
+      }, onUpdateDirectMessage)
       .on('postgres_changes', {
         event: 'DELETE',
         schema: 'public',
         table: 'direct_messages',
-      }, (payload) => {
-        setDmMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
-      })
+      }, onDeleteDirectMessage)
       .subscribe();
 
     return () => {
@@ -877,106 +1379,113 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
     const supabase = createClient();
     const channelId = `community-messages-${crypto.randomUUID().slice(0, 7)}`;
     
+    const onNewCommunityMessage = (payload: any) => {
+      const incoming = payload.new as unknown as {
+        id: string;
+        user_id: string;
+        message: string;
+        created_at: string;
+        is_flagged?: boolean;
+        channel_id?: string;
+        parent_id?: string;
+        edited_at?: string;
+      };
+      const isOwn = incoming.user_id === currentUser?.id;
+      const cached = profileCache.current[incoming.user_id];
+      const matchingChannel = channelsList.find(c => c.id === incoming.channel_id);
+      const channelSlug = matchingChannel ? matchingChannel.slug : null;
+
+      // Avoid duplicates
+      setMessages((prev) => {
+        const exists = prev.some((m) => m.id === incoming.id);
+        if (exists) return prev;
+        return [...prev, {
+          id: incoming.id,
+          user_id: incoming.user_id,
+          message: incoming.message,
+          created_at: incoming.created_at,
+          is_flagged: incoming.is_flagged ?? false,
+          channel_id: incoming.channel_id ?? null,
+          channel_slug: channelSlug,
+          parent_id: incoming.parent_id ?? null,
+          edited_at: incoming.edited_at ?? null,
+          display_name: isOwn ? (currentUser?.displayName ?? 'You') : (cached?.display_name ?? 'Anonymous Volunteer'),
+          avatar_url: isOwn ? (currentUser?.avatarUrl ?? null) : (cached?.avatar_url ?? null),
+          role: isOwn ? (currentUser?.role ?? 'user') : (cached?.role ?? 'user'),
+          active_badge_id: isOwn ? (currentUser?.activeBadgeId ?? null) : (cached?.active_badge_id ?? null),
+          custom_title: isOwn ? (currentUser?.customTitle ?? null) : (cached?.custom_title ?? null),
+          reactions: [],
+        }];
+      });
+
+      // Fetch profile details if not cached and not own message
+      if (!isOwn && !cached) {
+        const supabaseInstance = createClient();
+        supabaseInstance
+          .from('profiles' as never)
+          .select('display_name, avatar_url, role, active_badge_id, custom_title')
+          .eq('id', incoming.user_id)
+          .single()
+          .then((res) => {
+            const data = res.data as CacheProfile | null;
+            if (data) {
+              const resolved = {
+                display_name: data.display_name ?? 'Anonymous Volunteer',
+                avatar_url: data.avatar_url ?? null,
+                role: data.role ?? 'user',
+                active_badge_id: data.active_badge_id ?? null,
+                custom_title: data.custom_title ?? null
+              };
+              profileCache.current[incoming.user_id] = resolved;
+              setMessages((prev) => prev.map((m) => m.user_id === incoming.user_id ? {
+                ...m,
+                display_name: resolved.display_name,
+                avatar_url: resolved.avatar_url,
+                role: resolved.role,
+                active_badge_id: resolved.active_badge_id,
+                custom_title: resolved.custom_title,
+              } : m));
+            }
+          });
+      }
+    };
+
+    const onUpdateCommunityMessage = (payload: any) => {
+      const updated = payload.new as unknown as {
+        id: string;
+        message: string;
+        is_flagged?: boolean;
+        edited_at?: string;
+      };
+      setMessages((prev) => prev.map((m) => m.id === updated.id ? {
+        ...m,
+        message: updated.message,
+        is_flagged: updated.is_flagged ?? false,
+        edited_at: updated.edited_at ?? null,
+      } : m));
+    };
+
+    const onDeleteCommunityMessage = (payload: any) => {
+      setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
+    };
+
     const sub = supabase
       .channel(channelId)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'community_messages',
-      }, (payload) => {
-        const incoming = payload.new as unknown as {
-          id: string;
-          user_id: string;
-          message: string;
-          created_at: string;
-          is_flagged?: boolean;
-          channel_id?: string;
-          parent_id?: string;
-          edited_at?: string;
-        };
-        const isOwn = incoming.user_id === currentUser?.id;
-        const cached = profileCache.current[incoming.user_id];
-        const matchingChannel = channelsList.find(c => c.id === incoming.channel_id);
-        const channelSlug = matchingChannel ? matchingChannel.slug : null;
-
-        // Avoid duplicates
-        setMessages((prev) => {
-          const exists = prev.some((m) => m.id === incoming.id);
-          if (exists) return prev;
-          return [...prev, {
-            id: incoming.id,
-            user_id: incoming.user_id,
-            message: incoming.message,
-            created_at: incoming.created_at,
-            is_flagged: incoming.is_flagged ?? false,
-            channel_id: incoming.channel_id ?? null,
-            channel_slug: channelSlug,
-            parent_id: incoming.parent_id ?? null,
-            edited_at: incoming.edited_at ?? null,
-            display_name: isOwn ? (currentUser?.displayName ?? 'You') : (cached?.display_name ?? 'Anonymous Volunteer'),
-            avatar_url: isOwn ? (currentUser?.avatarUrl ?? null) : (cached?.avatar_url ?? null),
-            role: isOwn ? (currentUser?.role ?? 'user') : (cached?.role ?? 'user'),
-            active_badge_id: isOwn ? (currentUser?.activeBadgeId ?? null) : (cached?.active_badge_id ?? null),
-            custom_title: isOwn ? (currentUser?.customTitle ?? null) : (cached?.custom_title ?? null),
-            reactions: [],
-          }];
-        });
-
-        // Fetch profile details if not cached and not own message
-        if (!isOwn && !cached) {
-          supabase
-            .from('profiles' as never)
-            .select('display_name, avatar_url, role, active_badge_id, custom_title')
-            .eq('id', incoming.user_id)
-            .single()
-            .then((res) => {
-              const data = res.data as unknown as any | null;
-              if (data) {
-                const resolved = {
-                  display_name: data.display_name ?? 'Anonymous Volunteer',
-                  avatar_url: data.avatar_url ?? null,
-                  role: data.role ?? 'user',
-                  active_badge_id: data.active_badge_id ?? null,
-                  custom_title: data.custom_title ?? null
-                };
-                profileCache.current[incoming.user_id] = resolved;
-                setMessages((prev) => prev.map((m) => m.user_id === incoming.user_id ? {
-                  ...m,
-                  display_name: resolved.display_name,
-                  avatar_url: resolved.avatar_url,
-                  role: resolved.role,
-                  active_badge_id: resolved.active_badge_id,
-                  custom_title: resolved.custom_title,
-                } : m));
-              }
-            });
-        }
-      })
+      }, onNewCommunityMessage)
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'community_messages',
-      }, (payload) => {
-        const updated = payload.new as unknown as {
-          id: string;
-          message: string;
-          is_flagged?: boolean;
-          edited_at?: string;
-        };
-        setMessages((prev) => prev.map((m) => m.id === updated.id ? {
-          ...m,
-          message: updated.message,
-          is_flagged: updated.is_flagged ?? false,
-          edited_at: updated.edited_at ?? null,
-        } : m));
-      })
+      }, onUpdateCommunityMessage)
       .on('postgres_changes', {
         event: 'DELETE',
         schema: 'public',
         table: 'community_messages',
-      }, (payload) => {
-        setMessages((prev) => prev.filter((m) => m.id !== payload.old.id));
-      });
+      }, onDeleteCommunityMessage);
 
     sub.subscribe();
 
@@ -1403,7 +1912,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
 
       {/* Backdrop for mobile drawer */}
       {sidebarOpen && (
-        <div role="presentation" aria-hidden="true" className="fixed inset-0 bg-black/40 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} onKeyDown={() => setSidebarOpen(false)} />
+        <button type="button" aria-label="Close sidebar" className="fixed inset-0 bg-black/40 z-30 lg:hidden border-none cursor-default" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* ── REDESIGNED UNIFIED SIDEBAR (Mockup 1 & 2) ─────────────────────── */}
@@ -1848,196 +2357,29 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
                 </div>
               )}
               {filteredDmMessages.length === 0 ? (
-              <div className="flex-grow flex flex-col items-center justify-center py-20 text-center select-none">
-                <span className="material-symbols-outlined text-5xl text-[var(--empire-gold)]/30 mb-2">forum</span>
-                <h2 className="font-display text-base font-bold text-[var(--empire-cream)]/50">
-                  {searchQuery.trim() ? 'No matching messages' : 'Start a conversation'}
-                </h2>
-                <p className="font-body text-xs text-[var(--empire-cream)]/35 mt-1">
-                  {searchQuery.trim() ? 'Try adjusting your search query.' : 'Direct messages are private and real-time.'}
-                </p>
-              </div>
-            ) : (
-              (() => {
-                // Group consecutive DM messages from the same sender (like channel view)
-                let lastSenderId: string | null = null;
-                let lastTime: number | null = null;
-                return filteredDmMessages.map((dm) => {
-                  const isOwn = dm.sender_id === currentUser?.id;
-                  const dmTime = new Date(dm.created_at).getTime();
-                  // Group if same sender and within 5 minutes
-                  const isSameGroup =
-                    lastSenderId === dm.sender_id &&
-                    lastTime !== null &&
-                    dmTime - lastTime < 5 * 60 * 1000;
-                  lastSenderId = dm.sender_id;
-                  lastTime = dmTime;
-
-                  return (
-                    <div
-                      key={dm.id}
-                      className={`group relative flex gap-3 w-full ${
-                        isOwn ? 'justify-end' : 'justify-start'
-                      } ${isSameGroup ? 'mt-0.5' : 'mt-4'}`}
-                      onMouseEnter={() => setHoveredMsg(dm.id)}
-                      onMouseLeave={() => setHoveredMsg(null)}
-                    >
-                      {/* Left avatar — only on first message of incoming group */}
-                      {!isOwn && (
-                        !isSameGroup ? (
-                          <div className="w-9 h-9 rounded-full overflow-hidden border border-[#dbc2b2]/45 shrink-0 bg-[#f7f0e8] flex items-center justify-center shadow-sm">
-                            {activeDMUser.avatar_url ? (
-                              <img src={activeDMUser.avatar_url} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="font-display text-sm font-bold text-[#eb8424]">
-                                {activeDMUser.display_name?.[0]?.toUpperCase() ?? '?'}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          // Spacer so grouped messages stay aligned
-                          <div className="w-9 shrink-0" />
-                        )
-                      )}
-
-                      <div className={`flex flex-col max-w-[72%] ${isOwn ? 'items-end' : 'items-start'}`}>
-                        {/* Name + role badge — only on first message of group */}
-                        {!isSameGroup && (
-                          <div className="flex items-center gap-1.5 mb-1">
-                            {!isOwn && (
-                              <>
-                                <span className="font-body text-[11px] font-bold text-[#5c4a3c]">{activeDMUser.display_name}</span>
-                                <RoleBadge role={activeDMUser.role} />
-                              </>
-                            )}
-                            {isOwn && (
-                              <span className="font-body text-[11px] font-bold text-[#eb8424]">You</span>
-                            )}
-                            <span className="font-body text-[10px] text-[#6b5a4d]/35">
-                              {new Date(dm.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Message bubble or edit textarea */}
-                        {editingMessageId === dm.id ? (
-                          <div className="flex flex-col gap-2 mt-1 bg-white p-3 rounded-2xl border border-[#dbc2b2] shadow-sm w-64 sm:w-80 text-left">
-                            <textarea
-                              value={editText}
-                              onChange={(e) => setEditText(e.target.value)}
-                              className="w-full bg-transparent border-0 outline-none font-body text-xs sm:text-sm text-[#5c4a3c] resize-none"
-                              rows={2}
-                              maxLength={2000}
-                              disabled={actionPending}
-                            />
-                            <div className="flex gap-2 justify-end text-[10px] font-bold uppercase">
-                              <button
-                                type="button"
-                                disabled={actionPending}
-                                onClick={handleCancelEdit}
-                                className="px-2 py-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 border border-zinc-200 rounded-lg cursor-pointer"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="button"
-                                disabled={actionPending || !editText.trim()}
-                                onClick={() => handleSaveEdit(dm.id)}
-                                className="px-2 py-1 bg-[#eb8424] text-white rounded-lg hover:bg-[#d66c0e] cursor-pointer disabled:opacity-40"
-                              >
-                                Save
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className={`rounded-2xl px-4 py-2.5 text-xs sm:text-sm border shadow-sm leading-relaxed ${
-                            isOwn
-                              ? 'bg-[#eb8424] border-[#d66c0e] text-white rounded-tr-sm'
-                              : 'bg-white dark:bg-[var(--bg-elevated)] border-[#f0e6dc] dark:border-[var(--bg-border)] text-[#5c4a3c] dark:text-[var(--text-primary)] rounded-tl-sm'
-                          }`}>
-                            <div className="flex flex-col">
-                              {renderMessageContent(dm.message, dm.id)}
-                              {dm.edited_at && (
-                                <span className="text-[9px] text-[#6b5a4d]/40 mt-1 self-end italic font-semibold select-none flex items-center gap-0.5 opacity-60">
-                                  <span className="material-symbols-outlined text-[9px] scale-75">edit</span>
-                                  <span>edited</span>
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Timestamp on grouped messages (subtle) + sent check for own */}
-                        {isSameGroup && (
-                          <span className="font-body text-[9px] text-[#6b5a4d]/25 mt-0.5">
-                            {new Date(dm.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        )}
-
-                        {/* Sent indicator for own messages */}
-                        {isOwn && (
-                          <span className="flex items-center gap-0.5 text-[9px] text-[#6b5a4d]/30 mt-0.5 font-body select-none">
-                            <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>done</span>
-                            Sent
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Right avatar — only on first message of own group */}
-                      {isOwn && (
-                        !isSameGroup ? (
-                          <div className="w-9 h-9 rounded-full overflow-hidden border border-[#dbc2b2]/45 shrink-0 bg-[#fceee1] flex items-center justify-center shadow-sm">
-                            {currentUser?.avatarUrl ? (
-                              <img src={currentUser.avatarUrl} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="font-display text-xs font-bold text-[#eb8424]">ME</span>
-                            )}
-                          </div>
-                        ) : (
-                          // Spacer so grouped messages stay aligned
-                          <div className="w-9 shrink-0" />
-                        )
-                      )}
-
-                      {/* Hover Reaction Toolbar Menu for DMs */}
-                      {hoveredMsg === dm.id && (
-                        <div className={`absolute -top-3.5 flex items-center gap-0.5 bg-white border border-[#dbc2b2]/45 rounded-xl shadow-md px-1.5 py-0.5 z-10 animate-fade-in ${
-                          isOwn ? 'right-12' : 'left-12'
-                        }`}>
-                          {(() => {
-                            const elapsed = Date.now() - new Date(dm.created_at).getTime();
-                            const canEdit = isOwn && elapsed < 15 * 60 * 1000;
-                            return canEdit ? (
-                              <button
-                                onClick={() => {
-                                  setEditingMessageId(dm.id);
-                                  setEditText(dm.message);
-                                }}
-                                className="p-1 rounded text-[#6b5a4d]/50 hover:text-[#eb8424] hover:bg-[#dbc2b2]/20 transition-all cursor-pointer bg-transparent border-none flex items-center"
-                                type="button"
-                                title="Edit message"
-                              >
-                                <span className="material-symbols-outlined text-sm">edit</span>
-                              </button>
-                            ) : null;
-                          })()}
-
-                          {isOwn && (
-                            <button
-                              onClick={() => handleDelete(dm.id)}
-                              className="p-1 rounded text-[#6b5a4d]/50 hover:text-red-500 hover:bg-red-50 transition-all cursor-pointer bg-transparent border-none flex items-center"
-                              type="button"
-                              title="Delete message"
-                            >
-                              <span className="material-symbols-outlined text-sm">delete</span>
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                });
-              })()  )}
+                <div className="flex-grow flex flex-col items-center justify-center py-20 text-center select-none">
+                  <span className="material-symbols-outlined text-5xl text-[var(--empire-gold)]/30 mb-2">forum</span>
+                  <h2 className="font-display text-base font-bold text-[var(--empire-cream)]/50">
+                    {searchQuery.trim() ? 'No matching messages' : 'Start a conversation'}
+                  </h2>
+                  <p className="font-body text-xs text-[var(--empire-cream)]/35 mt-1">
+                    {searchQuery.trim() ? 'Try adjusting your search query.' : 'Direct messages are private and real-time.'}
+                  </p>
+                </div>
+              ) : (
+                <DmMessagesList
+                  filteredDmMessages={filteredDmMessages}
+                  currentUser={currentUser}
+                  activeDMUser={activeDMUser}
+                  hoveredMsg={hoveredMsg}
+                  setHoveredMsg={setHoveredMsg}
+                  handleStartEditDM={(id, text) => {
+                    setEditingMessageId(id);
+                    setEditText(text);
+                  }}
+                  handleDelete={handleDelete}
+                />
+              )}
             </>
           ) : activeChannel ? (
             // Channel Feed Messages rendering
@@ -2048,283 +2390,29 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
                 <p className="font-body text-xs text-[var(--empire-cream)]/35 mt-1">Be the first to say something in #{activeChannel.name}!</p>
               </div>
             ) : (
-              channelMessages.map((msg, idx) => {
-                const prev = channelMessages[idx - 1];
-                const isSystemAlert = msg.message.includes('[SYSTEM_HVAC_ALERT]') || msg.message.includes('[SYSTEM_DISPATCH_ALERT]');
-                
-                if (isSystemAlert) {
-                  return (
-                    <div key={msg.id} className="w-full">
-                      {renderMessageContent(msg.message, msg.id)}
-                    </div>
-                  );
-                }
-
-                const isSameAuthor = prev && prev.user_id === msg.user_id &&
-                  (new Date(msg.created_at).getTime() - new Date(prev.created_at).getTime()) < 5 * 60 * 1000;
-                const isOwn = currentUser?.id === msg.user_id;
-                const msgReactions = reactions[msg.id] ?? [];
-
-                return (
-                  <div
-                    key={msg.id}
-                    className={`group relative flex gap-3 w-full ${isOwn ? 'justify-end' : 'justify-start'} ${isSameAuthor ? 'mt-0.5' : 'mt-4'}`}
-                    onMouseEnter={() => setHoveredMsg(msg.id)}
-                    onMouseLeave={() => setHoveredMsg(null)}
-                  >
-                    {/* Left Avatar for incoming */}
-                    {!isOwn && !isSameAuthor && (
-                      <button
-                        onClick={() => setSelectedProfileId(msg.user_id)}
-                        className="w-9 h-9 rounded-full border border-[#dbc2b2]/45 overflow-hidden flex items-center justify-center shadow-sm shrink-0 cursor-pointer bg-[#f7f0e8]"
-                      >
-                        {msg.avatar_url ? (
-                          <img src={msg.avatar_url} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="font-display text-sm font-bold text-[#eb8424]">
-                            {(msg.display_name ?? 'V')[0].toUpperCase()}
-                          </span>
-                        )}
-                      </button>
-                    )}
-                    
-                    {!isOwn && isSameAuthor && <div className="w-9 shrink-0" />}
-
-                    <div className={`flex flex-col max-w-[70%] ${isOwn ? 'items-end' : 'items-start'}`}>
-                      {!isSameAuthor && (
-                        <div className="flex items-center gap-2 mb-1 text-[11px] text-[#6b5a4d]/45 font-bold flex-wrap">
-                          {isOwn ? (
-                            <>
-                              <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                              {currentUser?.activeBadgeId && (
-                                <span className="px-1.5 py-0.5 rounded bg-teal-50 text-[8px] text-teal-700 border border-teal-100 font-extrabold flex items-center gap-0.5 uppercase tracking-wider">
-                                  <span>🎖️</span>
-                                  <span>{currentUser.activeBadgeId.replace(/_/g, ' ')}</span>
-                                </span>
-                              )}
-                              {currentUser?.customTitle && (
-                                <span className="px-1.5 py-0.5 rounded bg-amber-50 text-[8px] text-[#b87333] border border-amber-200 font-extrabold uppercase tracking-wider">
-                                  {currentUser.customTitle}
-                                </span>
-                              )}
-                              <span className="text-[#eb8424] font-bold">You</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="font-bold text-[#5c4a3c]">{msg.display_name ?? 'Anonymous'}</span>
-                              {msg.custom_title && (
-                                <span className="px-1.5 py-0.5 rounded bg-amber-50 text-[8px] text-[#b87333] border border-amber-200 font-extrabold uppercase tracking-wider">
-                                  {msg.custom_title}
-                                </span>
-                              )}
-                              {msg.active_badge_id && (
-                                <span className="px-1.5 py-0.5 rounded bg-teal-50 text-[8px] text-teal-700 border border-teal-100 font-extrabold flex items-center gap-0.5 uppercase tracking-wider">
-                                  <span>🎖️</span>
-                                  <span>{msg.active_badge_id.replace(/_/g, ' ')}</span>
-                                </span>
-                              )}
-                              <RoleBadge role={msg.role} />
-                              <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Reply Target Header if reply */}
-                      {msg.parent_id && (() => {
-                        const parentMsg = messages.find(m => m.id === msg.parent_id);
-                        return parentMsg ? (
-                          <div className="flex items-center gap-1.5 text-[10px] text-[#6b5a4d]/50 mb-1 select-none font-bold">
-                            <span className="material-symbols-outlined text-xs">reply</span>
-                            <span>Replying to <strong>{parentMsg.display_name}</strong></span>
-                            <span className="truncate max-w-[120px] italic">&quot;{parentMsg.message}&quot;</span>
-                          </div>
-                        ) : null;
-                      })()}
-
-                      {/* Main Message Bubble */}
-                      {editingMessageId === msg.id ? (
-                        <div className="flex flex-col gap-2 mt-1 bg-white p-3 rounded-2xl border border-[#dbc2b2] shadow-sm w-64 sm:w-80">
-                          <textarea
-                            value={editText}
-                            onChange={(e) => setEditText(e.target.value)}
-                            className="w-full bg-transparent border-0 outline-none font-body text-xs sm:text-sm text-[#5c4a3c] resize-none"
-                            rows={2}
-                            maxLength={2000}
-                            disabled={actionPending}
-                          />
-                          <div className="flex gap-2 justify-end text-[10px] font-bold uppercase">
-                            <button
-                              type="button"
-                              disabled={actionPending}
-                              onClick={handleCancelEdit}
-                              className="px-2 py-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 border border-zinc-200 rounded-lg cursor-pointer"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="button"
-                              disabled={actionPending || !editText.trim()}
-                              onClick={() => handleSaveEdit(msg.id)}
-                              className="px-2 py-1 bg-[#eb8424] text-white rounded-lg hover:bg-[#d66c0e] cursor-pointer disabled:opacity-40"
-                            >
-                              Save
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className={`rounded-2xl p-4 text-xs sm:text-sm border shadow-sm ${
-                          isOwn
-                            ? 'bg-[#eb8424] border-[#d66c0e] text-white rounded-tr-none'
-                            : 'bg-white dark:bg-[var(--bg-elevated)] border-[#f0e6dc] dark:border-[var(--bg-border)] text-[#5c4a3c] dark:text-[var(--text-primary)] rounded-tl-none'
-                        } ${msg.is_flagged ? 'border-red-200' : ''}`}>
-                          {msg.is_flagged ? (
-                            isStaff ? (
-                              <span className="flex flex-col gap-1 border-l-2 border-red-500 pl-2 text-left">
-                                <span className="flex items-center gap-1 text-[10px] font-bold text-red-500 uppercase select-none">
-                                  <span className="material-symbols-outlined text-xs">warning</span>
-                                  <span>Flagged (Staff HQ visibility only)</span>
-                                </span>
-                                <span className="italic text-[#5c4a3c]/60">{msg.message}</span>
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1.5 text-red-500 italic text-[11px] font-semibold select-none">
-                                <span className="material-symbols-outlined text-xs">flag</span>
-                                <span>This message was flagged by moderation.</span>
-                              </span>
-                            )
-                          ) : (
-                            <div className="flex flex-col">
-                              {renderMessageContent(msg.message, msg.id)}
-                              {msg.edited_at && (
-                                <span className="text-[9px] text-[#6b5a4d]/40 mt-1 self-end italic font-semibold select-none flex items-center gap-0.5 opacity-60">
-                                  <span className="material-symbols-outlined text-[9px] scale-75">edit</span>
-                                  <span>edited</span>
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Reactions list */}
-                      {msgReactions.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1.5">
-                          {msgReactions.map((r) => (
-                            <button
-                              key={r.emoji}
-                              onClick={() => handleReact(msg.id, r.emoji)}
-                              className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] transition-all cursor-pointer ${
-                                r.reacted
-                                  ? 'bg-[#eb8424]/10 border-[#eb8424]/40 text-[#eb8424]'
-                                  : 'bg-white border-[#dbc2b2]/40 text-[#6b5a4d] hover:border-[#eb8424]/30'
-                              }`}
-                              type="button"
-                            >
-                              {r.emoji} <span className="font-body font-bold text-[9px]">{r.count}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Right Avatar for outgoing */}
-                    {isOwn && !isSameAuthor && (
-                      <button
-                        onClick={() => setSelectedProfileId(msg.user_id)}
-                        className="w-9 h-9 rounded-full border border-[#dbc2b2]/45 overflow-hidden flex items-center justify-center shadow-sm shrink-0 cursor-pointer bg-[#fceee1]"
-                      >
-                        {currentUser?.avatarUrl ? (
-                          <img src={currentUser.avatarUrl} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="font-display text-xs font-bold text-[#eb8424]">
-                            ME
-                          </span>
-                        )}
-                      </button>
-                    )}
-                    
-                    {isOwn && isSameAuthor && <div className="w-9 shrink-0" />}
-
-                    {/* Hover Reaction Toolbar Menu */}
-                    {hoveredMsg === msg.id && (
-                      <div className={`absolute -top-3.5 flex items-center gap-0.5 bg-white border border-[#dbc2b2]/45 rounded-xl shadow-md px-1.5 py-0.5 z-10 animate-fade-in ${
-                        isOwn ? 'right-12' : 'left-12'
-                      }`}>
-                        {isSignedIn && QUICK_REACTIONS.map((emoji) => (
-                          <button
-                            key={emoji}
-                            onClick={() => handleReact(msg.id, emoji)}
-                            className="text-xs p-1 rounded hover:bg-[#dbc2b2]/20 transition-all cursor-pointer border-none bg-transparent"
-                            type="button"
-                            title={`React with ${emoji}`}
-                          >
-                            {emoji}
-                          </button>
-                        ))}
-
-                        {isSignedIn && (
-                          <button
-                            onClick={() => setReplyToMessage(msg)}
-                            className="p-1 rounded text-[#6b5a4d]/50 hover:text-[#eb8424] hover:bg-[#dbc2b2]/20 transition-all cursor-pointer bg-transparent border-none flex items-center"
-                            type="button"
-                            title="Reply"
-                          >
-                            <span className="material-symbols-outlined text-sm">reply</span>
-                          </button>
-                        )}
-
-                        {(() => {
-                          const elapsed = Date.now() - new Date(msg.created_at).getTime();
-                          const canEdit = isOwn && elapsed < 15 * 60 * 1000;
-                          return canEdit ? (
-                            <button
-                              onClick={() => handleStartEdit(msg)}
-                              className="p-1 rounded text-[#6b5a4d]/50 hover:text-[#eb8424] hover:bg-[#dbc2b2]/20 transition-all cursor-pointer bg-transparent border-none flex items-center"
-                              type="button"
-                              title="Edit message"
-                            >
-                              <span className="material-symbols-outlined text-sm">edit</span>
-                            </button>
-                          ) : null;
-                        })()}
-
-                        {isStaff ? (
-                          <button
-                            onClick={() => handleFlag(msg.id, msg.is_flagged)}
-                            className={`p-1 rounded transition-all cursor-pointer bg-transparent border-none flex items-center ${msg.is_flagged ? 'text-red-500 hover:bg-red-50' : 'text-[#6b5a4d]/50 hover:text-amber-500 hover:bg-amber-50'}`}
-                            type="button"
-                            title={msg.is_flagged ? 'Unflag' : 'Flag message'}
-                          >
-                            <span className="material-symbols-outlined text-sm" style={msg.is_flagged ? { fontVariationSettings: "'FILL' 1" } : {}}>flag</span>
-                          </button>
-                        ) : (
-                          isSignedIn && !isOwn && !msg.is_flagged && (
-                            <button
-                              onClick={() => handleReportMessage(msg.id)}
-                              className="p-1 rounded text-[#6b5a4d]/50 hover:text-red-500 hover:bg-red-50 transition-all cursor-pointer bg-transparent border-none flex items-center"
-                              type="button"
-                              title="Report message to moderators"
-                            >
-                              <span className="material-symbols-outlined text-sm">flag</span>
-                            </button>
-                          )
-                        )}
-                        {(isOwn || isStaff) && (
-                          <button
-                            onClick={() => handleDelete(msg.id)}
-                            className="p-1 rounded text-[#6b5a4d]/50 hover:text-red-500 hover:bg-red-50 transition-all cursor-pointer bg-transparent border-none flex items-center"
-                            type="button"
-                            title="Delete message"
-                          >
-                            <span className="material-symbols-outlined text-sm">delete</span>
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
+              <ChannelMessagesList
+                channelMessages={channelMessages}
+                currentUser={currentUser}
+                hoveredMsg={hoveredMsg}
+                setHoveredMsg={setHoveredMsg}
+                reactions={reactions}
+                isStaff={isStaff}
+                editingMessageId={editingMessageId}
+                editText={editText}
+                setEditText={setEditText}
+                actionPending={actionPending}
+                handleCancelEdit={handleCancelEdit}
+                handleSaveEdit={handleSaveEdit}
+                handleReact={handleReact}
+                handleFlag={handleFlag}
+                handleStartEdit={handleStartEdit}
+                handleReportMessage={handleReportMessage}
+                handleStartDeleteMessage={handleDelete}
+                setSelectedProfileId={setSelectedProfileId}
+                isSignedIn={isSignedIn}
+                setReplyToMessage={setReplyToMessage}
+                messages={messages}
+              />
             )
           ) : (
             <div className="flex-grow flex flex-col items-center justify-center p-8 text-center select-none">
@@ -2343,7 +2431,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
           <div className="px-5 lg:px-6 py-2.5 bg-[#f7f0e8]/50 border-t border-[#dbc2b2]/35 flex items-center justify-between gap-3 animate-slide-up select-none">
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-xl text-[#eb8424]">
-                {attachedFile.type.startsWith('image/') ? 'image' : (attachedFile.type.startsWith('video/') ? 'video_file' : 'picture_as_pdf')}
+                {getAttachmentIcon(attachedFile.type)}
               </span>
               <div className="text-xs font-body">
                 <p className="font-extrabold text-[#5c4a3c] truncate max-w-md">{attachedFile.name}</p>
@@ -2639,13 +2727,7 @@ export default function CommunityClient({ initialMessages, initialChannels, isSi
                       value={text}
                       onChange={(e) => setText(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder={
-                        activeDMUser
-                          ? `Message ${activeDMUser.display_name}...`
-                          : activeChannel
-                            ? `Type a message to ${activeChannel.name}...`
-                            : 'Type a message...'
-                      }
+                      placeholder={getInputPlaceholder(activeDMUser, activeChannel)}
                       rows={1}
                       maxLength={2000}
                       disabled={isPending || isUploadingMedia}
@@ -3310,10 +3392,15 @@ function ProfileDetailModal({ userId, onClose, onStartDM, currentUser }: Readonl
   const isSelf = currentUser?.id === profile.id;
 
   return (
-    <div role="presentation" aria-hidden="true" className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4" onClick={onClose} onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <button
+        type="button"
+        aria-label="Close modal"
+        className="fixed inset-0 bg-black/60 border-none cursor-default"
+        onClick={onClose}
+      />
       <div 
-        className="bg-[var(--bg-surface)] border border-[var(--bg-border)] rounded-3xl p-6 w-full max-w-md flex flex-col gap-5 shadow-2xl relative"
-        onClick={(e) => e.stopPropagation()}
+        className="bg-[var(--bg-surface)] border border-[var(--bg-border)] rounded-3xl p-6 w-full max-w-md flex flex-col gap-5 shadow-2xl relative z-10"
       >
         <button onClick={onClose} className="absolute top-4 right-4 text-[var(--empire-cream)]/40 hover:text-red-400 p-1 cursor-pointer bg-transparent border-none">
           <span className="material-symbols-outlined text-lg">close</span>

@@ -78,6 +78,42 @@ const PROVIDER_MODELS = {
   anthropic: ['claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest'],
 };
 
+const resizeImageOnCanvas = (img: HTMLImageElement): string => {
+  const canvas = document.createElement('canvas');
+  const MAX_WIDTH = 300;
+  const MAX_HEIGHT = 300;
+  let width = img.width;
+  let height = img.height;
+  if (width > height) {
+    if (width > MAX_WIDTH) {
+      height *= MAX_WIDTH / width;
+      width = MAX_WIDTH;
+    }
+  } else if (height > MAX_HEIGHT) {
+    width *= MAX_HEIGHT / height;
+    height = MAX_HEIGHT;
+  }
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx?.drawImage(img, 0, 0, width, height);
+  return canvas.toDataURL('image/jpeg', 0.6);
+};
+
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        resolve(resizeImageOnCanvas(img));
+      };
+    };
+  });
+};
+
 export default function CareCenterDashboard({ passphrase }: CareCenterDashboardProps) {
   // Config state
   const [config, setConfig] = useState<PrivateConfig>({
@@ -204,38 +240,7 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
     }
   };
 
-  // Image compressor helper
-  const compressImage = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 300;
-          const MAX_HEIGHT = 300;
-          let width = img.width;
-          let height = img.height;
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.6));
-        };
-      };
-    });
-  };
+
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -620,206 +625,9 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
     );
   }
 
-  return (
-    <div className="w-full flex flex-col lg:flex-row gap-8">
-      {/* Sidebar - Cats List & Navigation */}
-      <div className="w-full lg:w-80 flex flex-col gap-6 flex-shrink-0 animate-in fade-in duration-300">
-        <div
-          className="border p-6 rounded-3xl flex flex-col gap-4 shadow-xl"
-          style={{ background: 'var(--dropdown-bg)', borderColor: 'var(--dropdown-border)' }}
-        >
-          <div className="flex justify-between items-center border-b pb-3" style={{ borderColor: 'var(--dropdown-border)' }}>
-            <h3 className="font-display text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
-              My Cats
-            </h3>
-            <button
-              onClick={() => setIsAddingCat(true)}
-              className="w-8 h-8 rounded-lg bg-[var(--empire-gold)]/10 text-[var(--empire-gold)] hover:bg-[var(--empire-gold)] hover:text-white flex items-center justify-center transition-all cursor-pointer border-none"
-            >
-              <span className="material-symbols-outlined text-lg">add</span>
-            </button>
-          </div>
 
-          {isAddingCat ? (
-            <form onSubmit={handleAddCat} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <label htmlFor="cc-cat-name" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Name</label>
-                <input
-                  id="cc-cat-name"
-                  type="text"
-                  value={newCatName}
-                  onChange={(e) => setNewCatName(e.target.value)}
-                  placeholder="Cat's name…"
-                  required
-                  className="w-full font-body text-xs px-3 py-2 rounded-xl border outline-none"
-                  style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', borderColor: 'var(--dropdown-border)' }}
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label htmlFor="cc-cat-photo" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Photo</label>
-                <input
-                  id="cc-cat-photo"
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  className="w-full text-[var(--text-secondary)] font-body text-xs file:mr-2 file:cursor-pointer"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="cc-cat-status" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Status</label>
-                  <select
-                    id="cc-cat-status"
-                    value={newCatStatus}
-                    onChange={(e) => setNewCatStatus(e.target.value)}
-                    className="w-full font-body text-xs px-2 py-2 rounded-xl border outline-none"
-                    style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', borderColor: 'var(--dropdown-border)' }}
-                  >
-                    <option value="adopted">Adopted</option>
-                    <option value="fostered">Fostered</option>
-                    <option value="stray">Stray</option>
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label htmlFor="cc-cat-age" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Age</label>
-                  <select
-                    id="cc-cat-age"
-                    value={newCatAge}
-                    onChange={(e) => setNewCatAge(e.target.value)}
-                    className="w-full font-body text-xs px-2 py-2 rounded-xl border outline-none"
-                    style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', borderColor: 'var(--dropdown-border)' }}
-                  >
-                    <option value="kitten">Kitten</option>
-                    <option value="juvenile">Juvenile</option>
-                    <option value="adult">Adult</option>
-                    <option value="senior">Senior</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label htmlFor="cc-cat-color" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Color/Pattern</label>
-                <input
-                  id="cc-cat-color"
-                  type="text"
-                  value={newCatColor}
-                  onChange={(e) => setNewCatColor(e.target.value)}
-                  placeholder="e.g. Tabby, Tuxedo…"
-                  className="w-full font-body text-xs px-3 py-2 rounded-xl border outline-none"
-                  style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', borderColor: 'var(--dropdown-border)' }}
-                />
-              </div>
-
-              <div className="flex gap-2 justify-end mt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsAddingCat(false)}
-                  className="bg-transparent border border-[var(--dropdown-border)] text-[var(--text-primary)] hover:bg-black/5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={catActionLoading}
-                  className="text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border-none"
-                  style={{ background: 'linear-gradient(135deg, var(--empire-gold), #f97316)' }}
-                >
-                  Save
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="flex flex-col gap-2 max-h-[400px] overflow-y-auto">
-              {cats.length === 0 ? (
-                <p className="font-body text-xs text-[var(--text-secondary)] opacity-50 text-center py-6">
-                  No private cats registered yet.
-                </p>
-              ) : (
-                cats.map((c, idx) => {
-                  const active = c.id === selectedCatId;
-                  return (
-                    <div
-                      key={c.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => {
-                        setSelectedCatId(c.id);
-                        if (activeTab === 'settings') {
-                          setActiveTab('overview');
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          setSelectedCatId(c.id);
-                          if (activeTab === 'settings') setActiveTab('overview');
-                        }
-                      }}
-                      onMouseMove={handleCardMouseMove}
-                      onMouseLeave={handleCardMouseLeave}
-                      className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all border preserve-3d domino-fade-item`}
-                      style={{
-                        animationDelay: `${idx * 60}ms`,
-                        background: active ? 'var(--bg-elevated)' : 'var(--dropdown-bg)',
-                        borderColor: active ? 'var(--empire-gold)' : 'var(--dropdown-border)',
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={c.data.photoUrl}
-                          alt={c.data.name}
-                          className="w-10 h-10 rounded-full object-cover border"
-                          style={{ borderColor: 'var(--dropdown-border)' }}
-                        />
-                        <div className="flex flex-col">
-                          <span className="font-display text-xs font-bold text-[var(--text-primary)]">{c.data.name}</span>
-                          <span className="font-body text-[10px] text-[var(--text-secondary)] opacity-70 capitalize">
-                            {c.data.status} · {c.data.ageEstimate}
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteCat(c.id);
-                        }}
-                        className="text-[var(--text-secondary)] opacity-40 hover:opacity-100 hover:text-red-600 p-1 transition-all cursor-pointer bg-transparent border-none"
-                      >
-                        <span className="material-symbols-outlined text-base">delete</span>
-                      </button>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* AI & Vault Configuration Navigation Link */}
-        <button
-          onClick={() => {
-            setSelectedCatId(null);
-            setActiveTab('settings');
-          }}
-          className={`w-full p-4 rounded-3xl border text-left font-display text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-3 cursor-pointer ${
-            activeTab === 'settings'
-              ? 'bg-[var(--empire-gold)]/15 border-[var(--empire-gold)] text-[var(--text-primary)]'
-              : 'text-[var(--text-secondary)] hover:bg-black/5'
-          }`}
-          style={{
-            background: activeTab === 'settings' ? 'var(--bg-elevated)' : 'var(--dropdown-bg)',
-            borderColor: activeTab === 'settings' ? 'var(--empire-gold)' : 'var(--dropdown-border)',
-          }}
-        >
-          <span className="material-symbols-outlined text-lg">settings</span>
-          <span>Vault & AI Settings</span>
-        </button>
-      </div>
-
-      {/* Main Console Content */}
-      <div className="flex-grow">
-        {activeTab === 'settings' ? (
+  const renderDashboardMainContent = () => {
+            if (activeTab === 'settings') { return (
           <div
             className="border p-8 rounded-3xl shadow-xl flex flex-col gap-6"
             style={{ background: 'var(--dropdown-bg)', borderColor: 'var(--dropdown-border)' }}
@@ -940,7 +748,7 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
               </button>
             </form>
           </div>
-        ) : activeCat ? (
+    ); } if (activeCat) { return (
           <div className="flex flex-col gap-6">
             {/* Tab Navigation header */}
             <div className="flex border-b pb-2 gap-2 overflow-x-auto" style={{ borderColor: 'var(--dropdown-border)' }}>
@@ -1786,7 +1594,7 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
               </div>
             )}
           </div>
-        ) : (
+    ); } return (
           <div
             className="border p-12 rounded-3xl text-center flex flex-col items-center justify-center gap-4 min-h-[400px]"
             style={{ background: 'var(--dropdown-bg)', borderColor: 'var(--dropdown-border)' }}
@@ -1799,7 +1607,209 @@ export default function CareCenterDashboard({ passphrase }: CareCenterDashboardP
               Select one of your private cats from the list on the left to start tracking, or register a new one.
             </p>
           </div>
-        )}
+  );
+  };
+
+  return (
+    <div className="w-full flex flex-col lg:flex-row gap-8">
+      {/* Sidebar - Cats List & Navigation */}
+      <div className="w-full lg:w-80 flex flex-col gap-6 flex-shrink-0 animate-in fade-in duration-300">
+        <div
+          className="border p-6 rounded-3xl flex flex-col gap-4 shadow-xl"
+          style={{ background: 'var(--dropdown-bg)', borderColor: 'var(--dropdown-border)' }}
+        >
+          <div className="flex justify-between items-center border-b pb-3" style={{ borderColor: 'var(--dropdown-border)' }}>
+            <h3 className="font-display text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
+              My Cats
+            </h3>
+            <button
+              onClick={() => setIsAddingCat(true)}
+              className="w-8 h-8 rounded-lg bg-[var(--empire-gold)]/10 text-[var(--empire-gold)] hover:bg-[var(--empire-gold)] hover:text-white flex items-center justify-center transition-all cursor-pointer border-none"
+            >
+              <span className="material-symbols-outlined text-lg">add</span>
+            </button>
+          </div>
+
+          {isAddingCat ? (
+            <form onSubmit={handleAddCat} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label htmlFor="cc-cat-name" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Name</label>
+                <input
+                  id="cc-cat-name"
+                  type="text"
+                  value={newCatName}
+                  onChange={(e) => setNewCatName(e.target.value)}
+                  placeholder="Cat's name…"
+                  required
+                  className="w-full font-body text-xs px-3 py-2 rounded-xl border outline-none"
+                  style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', borderColor: 'var(--dropdown-border)' }}
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label htmlFor="cc-cat-photo" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Photo</label>
+                <input
+                  id="cc-cat-photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="w-full text-[var(--text-secondary)] font-body text-xs file:mr-2 file:cursor-pointer"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="cc-cat-status" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Status</label>
+                  <select
+                    id="cc-cat-status"
+                    value={newCatStatus}
+                    onChange={(e) => setNewCatStatus(e.target.value)}
+                    className="w-full font-body text-xs px-2 py-2 rounded-xl border outline-none"
+                    style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', borderColor: 'var(--dropdown-border)' }}
+                  >
+                    <option value="adopted">Adopted</option>
+                    <option value="fostered">Fostered</option>
+                    <option value="stray">Stray</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="cc-cat-age" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Age</label>
+                  <select
+                    id="cc-cat-age"
+                    value={newCatAge}
+                    onChange={(e) => setNewCatAge(e.target.value)}
+                    className="w-full font-body text-xs px-2 py-2 rounded-xl border outline-none"
+                    style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', borderColor: 'var(--dropdown-border)' }}
+                  >
+                    <option value="kitten">Kitten</option>
+                    <option value="juvenile">Juvenile</option>
+                    <option value="adult">Adult</option>
+                    <option value="senior">Senior</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label htmlFor="cc-cat-color" className="text-[10px] font-bold text-[var(--text-secondary)] opacity-60 uppercase">Color/Pattern</label>
+                <input
+                  id="cc-cat-color"
+                  type="text"
+                  value={newCatColor}
+                  onChange={(e) => setNewCatColor(e.target.value)}
+                  placeholder="e.g. Tabby, Tuxedo…"
+                  className="w-full font-body text-xs px-3 py-2 rounded-xl border outline-none"
+                  style={{ background: 'var(--bg-elevated)', color: 'var(--text-primary)', borderColor: 'var(--dropdown-border)' }}
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end mt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddingCat(false)}
+                  className="bg-transparent border border-[var(--dropdown-border)] text-[var(--text-primary)] hover:bg-black/5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={catActionLoading}
+                  className="text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border-none"
+                  style={{ background: 'linear-gradient(135deg, var(--empire-gold), #f97316)' }}
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="flex flex-col gap-2 max-h-[400px] overflow-y-auto">
+              {cats.length === 0 ? (
+                <p className="font-body text-xs text-[var(--text-secondary)] opacity-50 text-center py-6">
+                  No private cats registered yet.
+                </p>
+              ) : (
+                cats.map((c, idx) => {
+                  const active = c.id === selectedCatId;
+                  return (
+                    <div
+                      key={c.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        setSelectedCatId(c.id);
+                        if (activeTab === 'settings') {
+                          setActiveTab('overview');
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          setSelectedCatId(c.id);
+                          if (activeTab === 'settings') setActiveTab('overview');
+                        }
+                      }}
+                      onMouseMove={handleCardMouseMove}
+                      onMouseLeave={handleCardMouseLeave}
+                      className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all border preserve-3d domino-fade-item`}
+                      style={{
+                        animationDelay: `${idx * 60}ms`,
+                        background: active ? 'var(--bg-elevated)' : 'var(--dropdown-bg)',
+                        borderColor: active ? 'var(--empire-gold)' : 'var(--dropdown-border)',
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={c.data.photoUrl}
+                          alt={c.data.name}
+                          className="w-10 h-10 rounded-full object-cover border"
+                          style={{ borderColor: 'var(--dropdown-border)' }}
+                        />
+                        <div className="flex flex-col">
+                          <span className="font-display text-xs font-bold text-[var(--text-primary)]">{c.data.name}</span>
+                          <span className="font-body text-[10px] text-[var(--text-secondary)] opacity-70 capitalize">
+                            {c.data.status} · {c.data.ageEstimate}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCat(c.id);
+                        }}
+                        className="text-[var(--text-secondary)] opacity-40 hover:opacity-100 hover:text-red-600 p-1 transition-all cursor-pointer bg-transparent border-none"
+                      >
+                        <span className="material-symbols-outlined text-base">delete</span>
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* AI & Vault Configuration Navigation Link */}
+        <button
+          onClick={() => {
+            setSelectedCatId(null);
+            setActiveTab('settings');
+          }}
+          className={`w-full p-4 rounded-3xl border text-left font-display text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-3 cursor-pointer ${
+            activeTab === 'settings'
+              ? 'bg-[var(--empire-gold)]/15 border-[var(--empire-gold)] text-[var(--text-primary)]'
+              : 'text-[var(--text-secondary)] hover:bg-black/5'
+          }`}
+          style={{
+            background: activeTab === 'settings' ? 'var(--bg-elevated)' : 'var(--dropdown-bg)',
+            borderColor: activeTab === 'settings' ? 'var(--empire-gold)' : 'var(--dropdown-border)',
+          }}
+        >
+          <span className="material-symbols-outlined text-lg">settings</span>
+          <span>Vault & AI Settings</span>
+        </button>
+      </div>
+
+      {/* Main Console Content */}
+      <div className="flex-grow">
+        {renderDashboardMainContent()}
       </div>
     </div>
   );

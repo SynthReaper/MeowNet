@@ -930,6 +930,27 @@ export async function updateEventByStaff(
   }
 }
 
+async function handlePasswordUpdate(
+  serviceClient: any,
+  targetUserId: string,
+  callerRole: string,
+  newPassword?: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!newPassword || newPassword.trim().length < 6) {
+    return { success: true };
+  }
+  if (callerRole !== 'admin') {
+    return { success: false, error: 'Only administrators can update account passwords.' };
+  }
+  const { error: authError } = await serviceClient.auth.admin.updateUserById(targetUserId, {
+    password: newPassword.trim()
+  });
+  if (authError) {
+    return { success: false, error: `Password update failed: ${authError.message}` };
+  }
+  return { success: true };
+}
+
 /**
  * Updates a user profile (Moderator/Admin only).
  * Moderators can only edit normal users. Admins can edit anyone.
@@ -976,17 +997,9 @@ export async function updateProfileByStaff(
 
     const serviceClient = createServiceClient();
 
-    // If password change is requested and caller is admin, update it in auth
-    if (newPassword && newPassword.trim().length >= 6) {
-      if (caller.role !== 'admin') {
-        return { success: false, error: 'Only administrators can update account passwords.' };
-      }
-      const { error: authError } = await serviceClient.auth.admin.updateUserById(targetUserId, {
-        password: newPassword.trim()
-      });
-      if (authError) {
-        return { success: false, error: `Password update failed: ${authError.message}` };
-      }
+    const pwdRes = await handlePasswordUpdate(serviceClient, targetUserId, caller.role, newPassword);
+    if (!pwdRes.success) {
+      return { success: false, error: pwdRes.error };
     }
 
     const { error } = await serviceClient

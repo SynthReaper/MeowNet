@@ -303,6 +303,9 @@ export default function FuturisticAuditDashboard({ initialAuditLogs, currentUser
           ) : (
             paginatedLogs.map(log => {
               const theme = getActionTheme(log.action);
+              let roleColor = 'text-emerald-600 dark:text-emerald-400';
+              if (log.actor_role === 'admin') roleColor = 'text-[var(--empire-gold)]';
+              else if (log.actor_role === 'moderator') roleColor = 'text-cyan-600 dark:text-cyan-400';
               return (
                 <button
                   key={log.id}
@@ -325,13 +328,7 @@ export default function FuturisticAuditDashboard({ initialAuditLogs, currentUser
                     <strong className="font-bold text-[var(--text-primary)] truncate max-w-[120px]">
                       {log.profiles?.display_name || 'Anonymous User'}
                     </strong>
-                    <span className={`text-[8px] font-black uppercase mt-0.5 ${
-                      log.actor_role === 'admin' 
-                        ? 'text-[var(--empire-gold)]' 
-                        : log.actor_role === 'moderator' 
-                        ? 'text-cyan-600 dark:text-cyan-400' 
-                        : 'text-emerald-600 dark:text-emerald-400'
-                    }`}>
+                    <span className={`text-[8px] font-black uppercase mt-0.5 ${roleColor}`}>
                       {log.actor_role}
                     </span>
                   </div>

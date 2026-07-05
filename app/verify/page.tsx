@@ -100,7 +100,7 @@ export default async function VerifyPortalPage({ searchParams }: Readonly<{ sear
           {error === 'invalid_token' && (
             <span className="text-[10px] text-rose-500 font-semibold bg-rose-50 border border-rose-100 py-2 px-3 rounded-lg text-left flex items-center gap-1.5 animate-pulse">
               <span className="material-symbols-outlined text-sm">error</span>
-              Token signature verification failed. Please try again.
+              <span>Token signature verification failed. Please try again.</span>
             </span>
           )}
 

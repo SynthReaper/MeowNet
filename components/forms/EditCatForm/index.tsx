@@ -149,7 +149,7 @@ export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
                   photo_camera
                 </span>
                 <span className="font-body text-xs font-semibold text-[var(--empire-cream)]">Upload New Photo</span>
-                <span className="font-body text-[10px] text-[var(--empire-cream)]/50 mt-0.5">JPEG, PNG or WebP (max 5MB)</span>
+                <span className="font-body text-[10px] text-[var(--empire-cream)]/50 mt-0.5">JPEG, PNG or WebP (max 5MB)</span>{' '}
                 
                 <input 
                   type="file" 
@@ -183,7 +183,7 @@ export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
-                Latitude
+                <span>Latitude</span>{' '}
                 <input 
                   type="number" 
                   step="any" 
@@ -197,7 +197,7 @@ export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
             </div>
             <div>
               <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
-                Longitude
+                <span>Longitude</span>{' '}
                 <input 
                   type="number" 
                   step="any" 
@@ -239,7 +239,7 @@ export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
-                Cat Name
+                <span>Cat Name</span>{' '}
                 <input 
                   type="text" 
                   name="name" 
@@ -252,7 +252,7 @@ export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
             </div>
             <div>
               <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
-                Breed Estimate
+                <span>Breed Estimate</span>{' '}
                 <input 
                   type="text" 
                   name="breed_estimate" 
@@ -268,7 +268,7 @@ export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
-                Status Classification
+                <span>Status Classification</span>{' '}
                 <select 
                   name="status" 
                   required 
@@ -285,7 +285,7 @@ export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
             </div>
             <div>
               <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
-                Age Estimate
+                <span>Age Estimate</span>{' '}
                 <select 
                   name="age_estimate" 
                   defaultValue={cat.age_estimate ?? ''}
@@ -305,7 +305,7 @@ export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
-                Primary Color / Pattern
+                <span>Primary Color / Pattern</span>{' '}
                 <input 
                   type="text" 
                   name="color" 
@@ -318,7 +318,7 @@ export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
             </div>
             <div>
               <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
-                Rescue Contact Info
+                <span>Rescue Contact Info</span>{' '}
                 <input 
                   type="text" 
                   name="contact_info" 
@@ -333,8 +333,8 @@ export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
 
           <div className="mb-4">
             <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-1.5">
-              Rescue Shelter URL
-              <input 
+                <span>Rescue Shelter URL</span>{' '}
+                <input 
                 type="url" 
                 name="shelter_url" 
                 defaultValue={cat.shelter_url ?? ''}
@@ -392,8 +392,8 @@ export default function EditCatForm({ cat }: Readonly<EditCatFormProps>) {
 
           <div className="mb-4">
             <label className="block font-body text-[10px] font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
-              Observer Notes
-              <textarea 
+                <span>Observer Notes</span>{' '}
+                <textarea 
                 name="health_notes" 
                 defaultValue={cat.health_notes ?? ''}
                 maxLength={2000} 

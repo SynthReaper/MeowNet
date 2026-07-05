@@ -80,7 +80,7 @@ export default function JudgeWelcomePopup() {
               <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/40 space-y-2">
                 <h4 className="font-display text-xs font-bold text-[var(--empire-cream)] uppercase tracking-wider flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-xs text-[var(--empire-gold)]">explore</span>
-                  What to Test
+                  <span>What to Test</span>
                 </h4>
                 <ul className="list-disc pl-4 space-y-1 text-xs">
                   <li><strong>Log Feline Sighting</strong>: Navigate to <em>Cats → Log New Cat</em>. Toggle the AI breed consent gate and upload a picture.</li>
@@ -99,7 +99,7 @@ export default function JudgeWelcomePopup() {
               <div className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/40 space-y-2">
                 <h4 className="font-display text-xs font-bold text-[var(--empire-cream)] uppercase tracking-wider flex items-center gap-1.5">
                   <span className="material-symbols-outlined text-xs text-[var(--empire-gold)]">shield</span>
-                  What to Test
+                  <span>What to Test</span>
                 </h4>
                 <ul className="list-disc pl-4 space-y-1 text-xs">
                   <li><strong>Moderator Dashboard</strong>: Navigate to the <em>Moderator</em> portal in your navbar.</li>

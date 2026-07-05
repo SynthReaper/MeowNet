@@ -256,18 +256,20 @@ export default function OnboardingClient() {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            {[1, 2, 3, 4].map((s) => (
-              <div
-                key={s}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  s === step
-                    ? 'w-6 bg-[var(--empire-gold)]'
-                    : s < step
-                    ? 'w-2 bg-[var(--life-teal)]'
-                    : 'w-2 bg-[var(--bg-border)]'
-                }`}
-              />
-            ))}
+            {[1, 2, 3, 4].map((s) => {
+              let stepClass = 'w-2 bg-[var(--bg-border)]';
+              if (s === step) {
+                stepClass = 'w-6 bg-[var(--empire-gold)]';
+              } else if (s < step) {
+                stepClass = 'w-2 bg-[var(--life-teal)]';
+              }
+              return (
+                <div
+                  key={s}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${stepClass}`}
+                />
+              );
+            })}
           </div>
         </div>
 

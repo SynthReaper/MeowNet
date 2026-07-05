@@ -348,7 +348,7 @@ export default function InteractiveCat({ temperature = null }: Readonly<Interact
   return (
     <div
       ref={containerRef}
-      role="region"
+      role="application"
       aria-label="Interactive Cat Companion"
       tabIndex={0}
       onKeyDown={(e) => {

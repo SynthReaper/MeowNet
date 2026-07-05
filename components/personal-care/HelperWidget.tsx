@@ -8,7 +8,7 @@ import { decryptData, encryptData } from '@/lib/security/encryption';
 import { createClient } from '@/lib/supabase/client';
 
 interface ChatMessage {
-  id: string;
+  id?: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
 }
@@ -46,6 +46,102 @@ interface DecryptedCatData {
   customFields?: Array<any>;
 }
 
+
+const decryptConfig = async (encryptedKeys: string, phrase: string) => {
+  const configObj = (await decryptData(encryptedKeys, phrase)) as PrivateConfig;
+  let activeKey = '';
+  if (configObj.preferredProvider === 'gemini') {
+    activeKey = configObj.geminiKey || '';
+  } else if (configObj.preferredProvider === 'openai') {
+    activeKey = configObj.openaiKey || '';
+  } else {
+    activeKey = configObj.anthropicKey || '';
+  }
+  return {
+    apiKey: activeKey,
+    provider: configObj.preferredProvider,
+    model: configObj.preferredModel,
+    hasKey: !!activeKey,
+  };
+};
+
+const decryptCats = async (catsData: any[], phrase: string) => {
+  const decCats: CatContextItem[] = [];
+  for (const rawCat of catsData) {
+    try {
+      const dec = (await decryptData(rawCat.encrypted_data, phrase)) as DecryptedCatData;
+      decCats.push({
+        id: rawCat.id,
+        name: dec.name,
+        status: dec.status,
+        age: dec.ageEstimate,
+        color: dec.color,
+        vitals: dec.vitals || [],
+        reminders: dec.calendar || [],
+        recentActivities: dec.activities || [],
+        medical: dec.medical || [],
+        customFields: dec.customFields || [],
+      });
+    } catch {
+      // Skip single failures
+    }
+  }
+  return decCats;
+};
+
+const getUpdatedCatData = (actionType: string, actionPayload: any, currentData: any) => {
+  const updated = { ...currentData };
+  if (actionType === 'log_activity') {
+    const newAct = {
+      id: crypto.randomUUID(),
+      date: new Date().toISOString(),
+      category: actionPayload.category || 'Food',
+      notes: actionPayload.notes || 'Logged from AI suggestion',
+    };
+    updated.activities = [newAct, ...updated.activities];
+  } else if (actionType === 'log_vitals') {
+    const newVit = {
+      date: new Date().toISOString(),
+      bpm: actionPayload.bpm || 140,
+      rr: actionPayload.rr || 24,
+      weight: actionPayload.weight || 4.5,
+      sleep: actionPayload.sleep || 14,
+      calories: actionPayload.calories || 220,
+      stress: actionPayload.stress || 1,
+    };
+    updated.vitals = [...updated.vitals, newVit];
+  } else if (actionType === 'log_reminder') {
+    const newRem = {
+      id: crypto.randomUUID(),
+      date: actionPayload.date || new Date().toISOString().split('T')[0],
+      title: actionPayload.title || 'AI Task',
+      type: actionPayload.type || 'pill',
+      completed: false,
+    };
+    updated.calendar = [...updated.calendar, newRem].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+  }
+  return updated;
+};
+
+const resolvePassphrase = async (): Promise<string | null> => {
+  let phrase = localStorage.getItem('meownet_vault_key');
+  if (!phrase) {
+    const cachedToken = localStorage.getItem('meownet_vault_token');
+    if (cachedToken) {
+      try {
+        const supabase = createClient();
+        const { data: { user: su } } = await supabase.auth.getUser();
+        if (su) {
+          phrase = (await decryptData(cachedToken, su.id)) as string;
+        }
+      } catch {}
+    }
+  }
+  return phrase;
+};
+
 export default function HelperWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -67,89 +163,64 @@ export default function HelperWidget() {
 
   // Decrypt and unlock the vault
   async function handleUnlockWithPassphrase(phrase: string) {
-    setUnlockError('');
-    try {
-      const configRes = await getPrivateConfig();
-      if (!configRes.success) {
-        setUnlockError('Could not connect to database.');
-        return;
-      }
-      if (!configRes.data?.encrypted_keys) {
-        setUnlockError('Vault has not been set up yet. Go to your Profile Care Center to initialize it.');
-        return;
-      }
-
-      // Decrypt credentials
-      const configObj = (await decryptData(configRes.data.encrypted_keys, phrase)) as PrivateConfig;
-      const activeKey =
-        configObj.preferredProvider === 'gemini'
-          ? configObj.geminiKey
-          : configObj.preferredProvider === 'openai'
-          ? configObj.openaiKey
-          : configObj.anthropicKey;
-
-      if (!activeKey) {
-        setUnlockError(`No key configured for ${configObj.preferredProvider}. Please check settings.`);
-        return;
-      }
-
-      setApiKey(activeKey);
-      setProvider(configObj.preferredProvider);
-      setModel(configObj.preferredModel);
-      setPassphrase('');
+      setUnlockError('');
       try {
-        const supabase = createClient();
-        const { data: { user: su } } = await supabase.auth.getUser();
-        if (su) {
-          const encKey = await encryptData(phrase, su.id);
-          localStorage.setItem('meownet_vault_token', encKey);
+        const configRes = await getPrivateConfig();
+        if (!configRes.success) {
+          setUnlockError('Could not connect to database.');
+          return;
         }
-      } catch {}
-      localStorage.removeItem('meownet_vault_key');
-      setIsUnlocked(true);
-
-      // Load cat data in background for context
-      try {
-        const catsRes = await listPrivateCats();
-        if (catsRes.success && catsRes.data) {
-          const decCats: CatContextItem[] = [];
-          for (const rawCat of catsRes.data) {
-            try {
-              const dec = (await decryptData(rawCat.encrypted_data, phrase)) as DecryptedCatData;
-              decCats.push({
-                id: rawCat.id,
-                name: dec.name,
-                status: dec.status,
-                age: dec.ageEstimate,
-                color: dec.color,
-                vitals: dec.vitals || [],
-                reminders: dec.calendar || [],
-                recentActivities: dec.activities || [],
-                medical: dec.medical || [],
-                customFields: dec.customFields || [],
-              });
-            } catch {
-              // Skip single failures
-            }
+        if (!configRes.data?.encrypted_keys) {
+          setUnlockError('Vault has not been set up yet. Go to your Profile Care Center to initialize it.');
+          return;
+        }
+  
+        // Decrypt credentials
+        const { apiKey: activeKey, provider: newProvider, model: newModel, hasKey } = await decryptConfig(configRes.data.encrypted_keys, phrase);
+  
+        if (!hasKey) {
+          setUnlockError(`No key configured for ${newProvider}. Please check settings.`);
+          return;
+        }
+  
+        setApiKey(activeKey);
+        setProvider(newProvider);
+        setModel(newModel);
+        setPassphrase('');
+        try {
+          const supabase = createClient();
+          const { data: { user: su } } = await supabase.auth.getUser();
+          if (su) {
+            const encKey = await encryptData(phrase, su.id);
+            localStorage.setItem('meownet_vault_token', encKey);
           }
-          setCatsContext(decCats);
+        } catch {}
+        localStorage.removeItem('meownet_vault_key');
+        setIsUnlocked(true);
+  
+        // Load cat data in background for context
+        try {
+          const catsRes = await listPrivateCats();
+          if (catsRes.success && catsRes.data) {
+            const decCats = await decryptCats(catsRes.data, phrase);
+            setCatsContext(decCats);
+          }
+        } catch {
+          // Skip background context load failures silently
         }
+  
+        // Initialize welcome message
+        setMessages([
+          {
+            id: 'init-widget',
+            role: 'assistant',
+            content: 'Hello! I am your personal cat care helper. How can I assist you with your cats today?',
+          },
+        ]);
       } catch {
-        // Skip background context load failures silently
+        setUnlockError('Decryption failed. Incorrect password.');
       }
-
-      // Initialize welcome message
-      setMessages([
-        {
-          id: 'init-widget',
-          role: 'assistant',
-          content: 'Hello! I am your personal cat care helper. How can I assist you with your cats today?',
-        },
-      ]);
-    } catch {
-      setUnlockError('Decryption failed. Incorrect password.');
     }
-  }
 
   // Auto-scroll chat history
   useEffect(() => {
@@ -203,104 +274,62 @@ export default function HelperWidget() {
 
   // Commit dynamic actions suggested by AI
   const handleExecuteAction = async (catId: string, actionType: string, actionPayload: any) => {
-    let cachedPhrase = localStorage.getItem('meownet_vault_key');
-    if (!cachedPhrase) {
-      const cachedToken = localStorage.getItem('meownet_vault_token');
-      if (cachedToken) {
-        try {
-          const supabase = createClient();
-          const { data: { user: su } } = await supabase.auth.getUser();
-          if (su) {
-            cachedPhrase = await decryptData(cachedToken, su.id) as string;
-          }
-        } catch {}
-      }
-    }
-    if (!cachedPhrase) return;
-
-    const catToUpdate = catsContext.find((c) => c.id === catId);
-    if (!catToUpdate) return;
-
-    try {
-      const currentData = {
-        name: catToUpdate.name,
-        photoUrl: '/pet-logo.avif',
-        status: catToUpdate.status,
-        ageEstimate: catToUpdate.age,
-        color: catToUpdate.color,
-        vitals: catToUpdate.vitals,
-        calendar: catToUpdate.reminders,
-        activities: catToUpdate.recentActivities,
-        medical: catToUpdate.medical || [],
-        customFields: catToUpdate.customFields || [],
-      };
-
-      if (actionType === 'log_activity') {
-        const newAct = {
-          id: crypto.randomUUID(),
-          date: new Date().toISOString(),
-          category: actionPayload.category || 'Food',
-          notes: actionPayload.notes || 'Logged from AI suggestion',
+      const cachedPhrase = await resolvePassphrase();
+      if (!cachedPhrase) return;
+  
+      const catToUpdate = catsContext.find((c) => c.id === catId);
+      if (!catToUpdate) return;
+  
+      try {
+        const initialData = {
+          name: catToUpdate.name,
+          photoUrl: '/pet-logo.avif',
+          status: catToUpdate.status,
+          ageEstimate: catToUpdate.age,
+          color: catToUpdate.color,
+          vitals: catToUpdate.vitals,
+          calendar: catToUpdate.reminders,
+          activities: catToUpdate.recentActivities,
+          medical: catToUpdate.medical || [],
+          customFields: catToUpdate.customFields || [],
         };
-        currentData.activities = [newAct, ...currentData.activities];
-      } else if (actionType === 'log_vitals') {
-        const newVit = {
-          date: new Date().toISOString(),
-          bpm: actionPayload.bpm || 140,
-          rr: actionPayload.rr || 24,
-          weight: actionPayload.weight || 4.5,
-          sleep: actionPayload.sleep || 14,
-          calories: actionPayload.calories || 220,
-          stress: actionPayload.stress || 1,
-        };
-        currentData.vitals = [...currentData.vitals, newVit];
-      } else if (actionType === 'log_reminder') {
-        const newRem = {
-          id: crypto.randomUUID(),
-          date: actionPayload.date || new Date().toISOString().split('T')[0],
-          title: actionPayload.title || 'AI Task',
-          type: actionPayload.type || 'pill',
-          completed: false,
-        };
-        currentData.calendar = [...currentData.calendar, newRem].sort(
-          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-        );
+  
+        const currentData = getUpdatedCatData(actionType, actionPayload, initialData);
+  
+        const ciphertext = await encryptData(currentData, cachedPhrase);
+        const res = await upsertPrivateCat(catId, ciphertext);
+        if (res.success) {
+          // Refresh local state context
+          setCatsContext((prev) =>
+            prev.map((c) =>
+              c.id === catId
+                ? {
+                    ...c,
+                    vitals: currentData.vitals,
+                    reminders: currentData.calendar,
+                    recentActivities: currentData.activities,
+                  }
+                : c
+            )
+          );
+  
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `log-feedback-${Date.now()}-${Math.random()}`,
+              role: 'assistant',
+              content: `Successfully logged secure record for ${catToUpdate.name}! Action: "${
+                actionPayload.notes || actionPayload.title || 'Vitals'
+              }"`,
+            },
+          ]);
+        } else {
+          alert('Action failed: ' + res.error);
+        }
+      } catch {
+        alert('Encryption failed during action commit.');
       }
-
-      const ciphertext = await encryptData(currentData, cachedPhrase);
-      const res = await upsertPrivateCat(catId, ciphertext);
-      if (res.success) {
-        // Refresh local state context
-        setCatsContext((prev) =>
-          prev.map((c) =>
-            c.id === catId
-              ? {
-                  ...c,
-                  vitals: currentData.vitals,
-                  reminders: currentData.calendar,
-                  recentActivities: currentData.activities,
-                }
-              : c
-          )
-        );
-
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `log-feedback-${Date.now()}-${Math.random()}`,
-            role: 'assistant',
-            content: `Successfully logged secure record for ${catToUpdate.name}! Action: "${
-              actionPayload.notes || actionPayload.title || 'Vitals'
-            }"`,
-          },
-        ]);
-      } else {
-        alert('Action failed: ' + res.error);
-      }
-    } catch {
-      alert('Encryption failed during action commit.');
-    }
-  };
+    };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();

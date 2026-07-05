@@ -225,32 +225,35 @@ export default function EmpireCodex() {
         {/* BADGES TAB */}
         {activeTab === 'badges' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {BADGE_CRITERIA_LIST.map((badge) => (
-              <div 
-                key={badge.id}
-                className="p-4 rounded-xl border border-[var(--bg-border)]/20 bg-[var(--bg-elevated)] flex items-start gap-3 hover:bg-[var(--bg-border)]/5 transition-all"
-              >
-                <span 
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-sm shrink-0 border ${
-                    badge.rarity === 'legendary' 
-                      ? 'bg-[#ffdcc5] text-[var(--empire-gold)] border-[var(--empire-gold)]/30' 
-                      : badge.rarity === 'rare' 
-                        ? 'bg-[#8bf1e6]/30 text-[var(--life-teal)] border-[var(--life-teal)]/20' 
-                        : 'bg-white text-[var(--empire-cream)]/60 border-[var(--bg-border)]/40'
-                  }`}
+            {BADGE_CRITERIA_LIST.map((badge) => {
+              let rarityBg = 'bg-white text-[var(--empire-cream)]/60 border-[var(--bg-border)]/40';
+              if (badge.rarity === 'legendary') {
+                rarityBg = 'bg-[#ffdcc5] text-[var(--empire-gold)] border-[var(--empire-gold)]/30';
+              } else if (badge.rarity === 'rare') {
+                rarityBg = 'bg-[#8bf1e6]/30 text-[var(--life-teal)] border-[var(--life-teal)]/20';
+              }
+
+              let rarityBadgeClass = 'bg-[var(--bg-border)] text-[var(--empire-cream)]/70';
+              if (badge.rarity === 'legendary') {
+                rarityBadgeClass = 'bg-[var(--empire-gold)] text-white';
+              } else if (badge.rarity === 'rare') {
+                rarityBadgeClass = 'bg-[var(--life-teal)] text-white';
+              }
+
+              return (
+                <div 
+                  key={badge.id}
+                  className="p-4 rounded-xl border border-[var(--bg-border)]/20 bg-[var(--bg-elevated)] flex items-start gap-3 hover:bg-[var(--bg-border)]/5 transition-all"
                 >
-                  <span className="material-symbols-outlined text-lg">{badge.icon}</span>
-                </span>
-                <div>
-                  <h4 className="font-display text-sm font-bold text-[var(--empire-cream)] mb-0.5">{badge.name}</h4>
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <span className={`font-body text-[8px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 rounded ${
-                      badge.rarity === 'legendary' 
-                        ? 'bg-[var(--empire-gold)] text-white' 
-                        : badge.rarity === 'rare' 
-                          ? 'bg-[var(--life-teal)] text-white' 
-                          : 'bg-[var(--bg-border)] text-[var(--empire-cream)]/70'
-                    }`}>
+                  <span 
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-sm shrink-0 border ${rarityBg}`}
+                  >
+                    <span className="material-symbols-outlined text-lg">{badge.icon}</span>
+                  </span>
+                  <div>
+                    <h4 className="font-display text-sm font-bold text-[var(--empire-cream)] mb-0.5">{badge.name}</h4>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className={`font-body text-[8px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 rounded ${rarityBadgeClass}`}>
                       {badge.rarity}
                     </span>
                   </div>
@@ -259,7 +262,8 @@ export default function EmpireCodex() {
                   </p>
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         )}
 

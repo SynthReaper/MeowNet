@@ -79,6 +79,44 @@ export default function TycoonInterface({ initialSanctuary, initialUpgrades, ini
   const walkRot = Math.sin(tick * 0.35) * 4.5;
   const faBob = Math.sin(tick * 0.12) * 3;
 
+  const createSmokeParticle = (tick: number) => ({
+    id: Math.random() + tick,
+    x: sA.x + 10,
+    y: sA.y - 45,
+    vx: -0.3 - Math.random() * 0.3,
+    vy: -0.6 - Math.random() * 0.3,
+    life: 50,
+    maxLife: 50,
+    color: '#d1d5db',
+    size: 4 + Math.random() * 5
+  });
+
+  const createSnoreParticle = (tick: number) => ({
+    id: Math.random() + tick,
+    x: csX - 8,
+    y: csY - 12,
+    vx: -0.2 - Math.random() * 0.2,
+    vy: -0.5 - Math.random() * 0.3,
+    life: 45,
+    maxLife: 45,
+    color: '#94a3b8',
+    size: 8 + Math.random() * 4,
+    text: Math.random() > 0.5 ? 'z' : 'Z'
+  });
+
+  const createMedicalParticle = (tick: number) => ({
+    id: Math.random() + tick,
+    x: faA.x + (Math.random() - 0.5) * 16,
+    y: faA.y - 12,
+    vx: (Math.random() - 0.5) * 0.2,
+    vy: -0.4 - Math.random() * 0.3,
+    life: 40,
+    maxLife: 40,
+    color: '#ef4444',
+    size: 9,
+    text: '+'
+  });
+
   // Sync points when initialUserPoints changes (e.g. on server path revalidation or external load)
   useEffect(() => {
     setUserPoints(initialUserPoints);
@@ -102,58 +140,17 @@ export default function TycoonInterface({ initialSanctuary, initialUpgrades, ini
 
         // Spawn chimney smoke from cottage if built (every 2 seconds)
         if (hasShelter && nextTick % 2 === 0) {
-          setParticles(old => [
-            ...old,
-            {
-              id: Math.random() + nextTick,
-              x: sA.x + 10,
-              y: sA.y - 45,
-              vx: -0.3 - Math.random() * 0.3, // drift left (wind)
-              vy: -0.6 - Math.random() * 0.3, // float up
-              life: 50,
-              maxLife: 50,
-              color: '#d1d5db', // smoke gray
-              size: 4 + Math.random() * 5
-            }
-          ]);
+          setParticles(old => [...old, createSmokeParticle(nextTick)]);
         }
 
         // Spawn snoring particles from sleeping cat (every 3 seconds)
         if (nextTick % 3 === 0) {
-          setParticles(old => [
-            ...old,
-            {
-              id: Math.random() + nextTick,
-              x: csX - 8,
-              y: csY - 12,
-              vx: -0.2 - Math.random() * 0.2,
-              vy: -0.5 - Math.random() * 0.3,
-              life: 45,
-              maxLife: 45,
-              color: '#94a3b8',
-              size: 8 + Math.random() * 4,
-              text: Math.random() > 0.5 ? 'z' : 'Z'
-            }
-          ]);
+          setParticles(old => [...old, createSnoreParticle(nextTick)]);
         }
 
         // Spawn medical cross particles from firstaid kit if built (every 4 seconds)
         if (hasFirstAid && nextTick % 4 === 0) {
-          setParticles(old => [
-            ...old,
-            {
-              id: Math.random() + nextTick,
-              x: faA.x + (Math.random() - 0.5) * 16,
-              y: faA.y - 12,
-              vx: (Math.random() - 0.5) * 0.2,
-              vy: -0.4 - Math.random() * 0.3,
-              life: 40,
-              maxLife: 40,
-              color: '#ef4444', // red medical plus
-              size: 9,
-              text: '+'
-            }
-          ]);
+          setParticles(old => [...old, createMedicalParticle(nextTick)]);
         }
 
         return nextTick;
@@ -163,21 +160,23 @@ export default function TycoonInterface({ initialSanctuary, initialUpgrades, ini
   }, [sanctuary.idle_points_rate, sanctuary.point_multiplier, hasShelter, hasFirstAid, sA.x, sA.y, csX, csY, faA.x, faA.y]);
 
 
+  const animateParticles = (p: Particle[]) => p.map(x => {
+    // Floating particles (smoke, snoring z's, medical crosses) rise instead of falling with gravity
+    const isFloat = x.text === 'z' || x.text === 'Z' || x.text === '+' || x.color === '#d1d5db';
+    const nextVy = isFloat ? x.vy : x.vy - 0.15; // standard gravity pull only on non-floaters
+    return {
+      ...x,
+      x: x.x + x.vx,
+      y: x.y + x.vy,
+      vy: nextVy,
+      life: x.life - 1
+    };
+  }).filter(x => x.life > 0);
+
   useEffect(() => {
     if (!particles.length) return;
     const f = requestAnimationFrame(() =>
-      setParticles(p => p.map(x => {
-        // Floating particles (smoke, snoring z's, medical crosses) rise instead of falling with gravity
-        const isFloat = x.text === 'z' || x.text === 'Z' || x.text === '+' || x.color === '#d1d5db';
-        const nextVy = isFloat ? x.vy : x.vy - 0.15; // standard gravity pull only on non-floaters
-        return {
-          ...x,
-          x: x.x + x.vx,
-          y: x.y + x.vy,
-          vy: nextVy,
-          life: x.life - 1
-        };
-      }).filter(x => x.life > 0))
+      setParticles(animateParticles)
     );
     return () => cancelAnimationFrame(f);
   }, [particles]);
@@ -626,8 +625,17 @@ export default function TycoonInterface({ initialSanctuary, initialUpgrades, ini
         </div>
         <div className="flex flex-col gap-3">
           {UPGRADES.map(cfg=>{
-            const lv=getLevel(cfg.type), cost=cfg.baseCost*(lv+1), busy=isUpgrading===cfg.type, afford=userPoints>=cost, unlocked=lv>0;
-            const buttonText = busy ? 'Buying...' : (unlocked ? `Upgrade (${cost})` : `Unlock (${cost})`);
+            const lv = getLevel(cfg.type);
+            const cost = cfg.baseCost * (lv + 1);
+            const busy = isUpgrading === cfg.type;
+            const afford = userPoints >= cost;
+            const unlocked = lv > 0;
+            let buttonText = `Unlock (${cost})`;
+            if (busy) {
+              buttonText = 'Buying...';
+            } else if (unlocked) {
+              buttonText = `Upgrade (${cost})`;
+            }
             return (
               <div key={cfg.type} className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:shadow-md ${unlocked?'border-emerald-200/60 bg-gradient-to-r from-emerald-50/50 to-transparent':'border-[var(--bg-border)]/40 bg-[var(--bg-elevated)]'}`}>
                 <div className="flex gap-3 min-w-0">

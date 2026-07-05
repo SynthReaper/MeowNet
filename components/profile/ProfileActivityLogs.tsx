@@ -23,6 +23,73 @@ interface Props {
 export default function ProfileActivityLogs({ recentPoints, auditLogs }: Props) {
   const [activeTab, setActiveTab] = useState<'points' | 'audits'>('points');
 
+  let tabContent;
+  if (activeTab === 'points') {
+    if (recentPoints.length === 0) {
+      tabContent = (
+        <p className="font-body text-xs text-[var(--empire-cream)]/50 py-4 italic text-center">
+          No XP transactions recorded yet.
+        </p>
+      );
+    } else {
+      tabContent = (
+        <div className="flex flex-col max-h-[350px] overflow-y-auto pr-1">
+          {recentPoints.map((log, i) => (
+            <div 
+              key={`${log.created_at}-${log.points}-${log.activity}`} 
+              className={`flex justify-between items-center py-3 ${
+                i < recentPoints.length - 1 ? 'border-b border-[var(--bg-border)]/40' : ''
+              }`}
+            >
+              <div>
+                <div className="font-body text-xs font-bold text-[var(--empire-cream)] capitalize">
+                  {log.activity.replace(/_/g, ' ').toLowerCase()}
+                </div>
+                <div className="font-body text-[10px] text-[var(--empire-cream)]/40 mt-0.5 font-semibold">
+                  {new Date(log.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
+              <div className="font-data text-xs font-bold text-[var(--life-teal)]">
+                +{log.points} pts
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+  } else {
+    if (auditLogs.length === 0) {
+      tabContent = (
+        <p className="font-body text-xs text-[var(--empire-cream)]/50 py-4 italic text-center">
+          No system audit entries recorded.
+        </p>
+      );
+    } else {
+      tabContent = (
+        <div className="flex flex-col max-h-[350px] overflow-y-auto pr-1 gap-2">
+          {auditLogs.map((log) => (
+            <div 
+              key={`${log.created_at}-${log.action}`} 
+              className="p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/15 flex flex-col gap-1.5"
+            >
+              <div className="flex justify-between items-start gap-4">
+                <span className="px-2 py-0.5 rounded bg-orange-950/20 border border-orange-850/40 text-[var(--empire-gold)] text-[8px] font-black uppercase tracking-wider">
+                  {log.action.replace(/_/g, ' ')}
+                </span>
+                <span className="font-data text-[9px] text-[var(--empire-cream)]/35 font-semibold">
+                  {new Date(log.created_at).toLocaleString()}
+                </span>
+              </div>
+              <p className="font-body text-[11px] text-[var(--empire-cream)]/75 leading-relaxed">
+                {log.details || 'System event recorded successfully.'}
+              </p>
+            </div>
+          ))}
+        </div>
+      );
+    }
+  }
+
   return (
     <div className="bg-white p-6 rounded-2xl shadow-ambient border border-[var(--bg-border)] flex flex-col gap-4">
       
@@ -43,7 +110,7 @@ export default function ProfileActivityLogs({ recentPoints, auditLogs }: Props) 
                 : 'bg-transparent text-[var(--empire-cream)]/50 hover:text-[var(--empire-cream)]'
             }`}
           >
-            XP History
+            Empire XP
           </button>
           <button
             onClick={() => setActiveTab('audits')}
@@ -59,63 +126,7 @@ export default function ProfileActivityLogs({ recentPoints, auditLogs }: Props) 
       </div>
 
       {/* Tab contents */}
-      {activeTab === 'points' ? (
-        recentPoints.length === 0 ? (
-          <p className="font-body text-xs text-[var(--empire-cream)]/50 py-4 italic text-center">
-            No XP transactions recorded yet.
-          </p>
-        ) : (
-          <div className="flex flex-col max-h-[350px] overflow-y-auto pr-1">
-            {recentPoints.map((log, i) => (
-              <div 
-                key={`${log.created_at}-${log.points}-${log.activity}`} 
-                className={`flex justify-between items-center py-3 ${
-                  i < recentPoints.length - 1 ? 'border-b border-[var(--bg-border)]/40' : ''
-                }`}
-              >
-                <div>
-                  <div className="font-body text-xs font-bold text-[var(--empire-cream)] capitalize">
-                    {log.activity.replace(/_/g, ' ').toLowerCase()}
-                  </div>
-                  <div className="font-body text-[10px] text-[var(--empire-cream)]/40 mt-0.5 font-semibold">
-                    {new Date(log.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                </div>
-                <div className="font-data text-xs font-bold text-[var(--life-teal)]">
-                  +{log.points} pts
-                </div>
-              </div>
-            ))}
-          </div>
-        )
-      ) : (
-        auditLogs.length === 0 ? (
-          <p className="font-body text-xs text-[var(--empire-cream)]/50 py-4 italic text-center">
-            No system audit entries recorded.
-          </p>
-        ) : (
-          <div className="flex flex-col max-h-[350px] overflow-y-auto pr-1 gap-2">
-            {auditLogs.map((log) => (
-              <div 
-                key={`${log.created_at}-${log.action}`} 
-                className={`p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/15 flex flex-col gap-1.5`}
-              >
-                <div className="flex justify-between items-start gap-4">
-                  <span className="px-2 py-0.5 rounded bg-orange-950/20 border border-orange-850/40 text-[var(--empire-gold)] text-[8px] font-black uppercase tracking-wider">
-                    {log.action.replace(/_/g, ' ')}
-                  </span>
-                  <span className="font-data text-[9px] text-[var(--empire-cream)]/35 font-semibold">
-                    {new Date(log.created_at).toLocaleString()}
-                  </span>
-                </div>
-                <p className="font-body text-[11px] text-[var(--empire-cream)]/75 leading-relaxed">
-                  {log.details || 'System event recorded successfully.'}
-                </p>
-              </div>
-            ))}
-          </div>
-        )
-      )}
+      {tabContent}
 
     </div>
   );

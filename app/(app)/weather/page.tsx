@@ -6,6 +6,10 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
+function getColonyShelters(shelters: any[] | null, colonyId: string) {
+  return (shelters || []).filter((s: any) => s.colony_id === colonyId);
+}
+
 interface WeatherReport {
   neighborhood: string;
   condition: string;
@@ -135,7 +139,7 @@ export default function WeatherPage() {
         table: 'system_settings',
         filter: 'key=eq.WEATHER_WARNING_THRESHOLD'
       }, (payload) => {
-        const val = (payload.new as any).value;
+        const val = payload.new.value;
         if (typeof val === 'number') {
           setThresholdF((val * 9/5) + 32);
         }
@@ -175,13 +179,10 @@ export default function WeatherPage() {
             .from('winter_shelters' as never)
             .select('colony_id, capacity_cats, insulation_r');
             
-          const mapped = cols.map((col: any) => {
-            const colShelters = (shelters || []).filter((s: any) => s.colony_id === col.id);
-            return {
-              ...col,
-              shelters: colShelters
-            };
-          });
+          const mapped = cols.map((col: any) => ({
+            ...col,
+            shelters: getColonyShelters(shelters, col.id)
+          }));
           setColonies(mapped);
         }
       } catch (err) {
@@ -306,6 +307,13 @@ export default function WeatherPage() {
     setTimeout(() => setSuccess(false), 4000);
   };
 
+  let liveStatusText = 'Live Status: All Clear';
+  if (loadingLive) {
+    liveStatusText = 'Loading Live Data…';
+  } else if (alert.severe) {
+    liveStatusText = 'Active System Alert';
+  }
+
   return (
     <div className="w-full max-w-7xl mx-auto px-4 md:px-12 py-8 flex flex-col gap-8">
       {/* Header */}
@@ -335,7 +343,7 @@ export default function WeatherPage() {
               <div className="flex items-center justify-center md:justify-start gap-2">
                 <span className={`w-2.5 h-2.5 rounded-full animate-pulse ${alert.severe ? 'bg-red-600' : 'bg-[var(--empire-gold)]'}`} />
                 <span className={`font-body text-[10px] font-bold uppercase tracking-widest ${alert.severe ? 'text-[#ba1a1a] dark:text-red-400' : 'text-[var(--empire-gold)]'}`}>
-                  {loadingLive ? 'Loading Live Data…' : alert.severe ? 'Active System Alert' : 'Live Status: All Clear'}
+                  {liveStatusText}
                 </span>
               </div>
               <h3 className="font-display text-lg font-bold text-[var(--empire-cream)]">
@@ -409,12 +417,12 @@ export default function WeatherPage() {
               {loadingLive ? (
                 <span className="text-[10px] text-[var(--empire-gold)] font-bold flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-[var(--empire-gold)] animate-ping" />
-                  Live Syncing…
+                  <span>Live Syncing…</span>
                 </span>
               ) : (
                 <span className="text-[10px] text-[var(--life-teal)] font-bold flex items-center gap-1">
                   <span className="material-symbols-outlined text-xs">check_circle</span>
-                  Open-Meteo Live Feed
+                  <span>Open-Meteo Live Feed</span>
                 </span>
               )}
             </h2>

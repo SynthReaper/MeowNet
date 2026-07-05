@@ -15,7 +15,7 @@ interface Shelter {
 
 interface MedicalLog {
   readonly id: string;
-  readonly log_type: 'vaccine' | 'parasite_treatment' | 'injury' | 'checkup';
+  readonly log_type: MedicalLogType;
   readonly notes: string;
   readonly created_at: string;
   readonly recorded_by: string;
@@ -32,6 +32,8 @@ interface Props {
   readonly initialTnr: number;
   readonly coords: { lat: number; lng: number };
 }
+
+type MedicalLogType = 'vaccine' | 'parasite_treatment' | 'injury' | 'checkup';
 
 export default function ColonyDetailsSidebar({
   colonyId,
@@ -61,7 +63,7 @@ export default function ColonyDetailsSidebar({
   const [showAddShelter, setShowAddShelter] = useState(false);
 
   // Medical Log form states
-  const [medLogType, setMedLogType] = useState<'vaccine' | 'parasite_treatment' | 'injury' | 'checkup'>('checkup');
+  const [medLogType, setMedLogType] = useState<MedicalLogType>('checkup');
   const [medNotes, setMedNotes] = useState('');
   const [showAddMedLog, setShowAddMedLog] = useState(false);
 
@@ -72,7 +74,7 @@ export default function ColonyDetailsSidebar({
   const [simYears, setSimYears] = useState(3);
 
   // Weather predictive states
-  const [weatherData, setWeatherData] = useState<any | null>(null);
+  const [weatherData, setWeatherData] = useState<any>(null);
   const [loadingWeather, setLoadingWeather] = useState(false);
 
   // Fetch weather data client-side when weather_risk tab is active

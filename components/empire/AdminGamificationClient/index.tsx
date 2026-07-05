@@ -182,6 +182,10 @@ export default function AdminGamificationClient({
     }
   };
 
+  let registryLength = guildsList.length;
+  if (activeTab === 'trivia') registryLength = triviaList.length;
+  else if (activeTab === 'bingo') registryLength = bingoList.length;
+
   return (
     <div className="w-full flex flex-col gap-6">
       {/* Notifications */}
@@ -201,19 +205,25 @@ export default function AdminGamificationClient({
 
       {/* Tabs */}
       <div className="flex border-b border-[var(--bg-border)]/50 gap-4">
-        {(['trivia', 'bingo', 'guilds'] as const).map(tab => (
-          <button
-            key={tab}
-            onClick={() => { setActiveTab(tab); setError(null); setSuccess(null); }}
-            className={`py-3.5 px-4 font-display text-sm font-extrabold capitalize border-b-2 transition-all cursor-pointer ${
-              activeTab === tab
-                ? 'border-[var(--empire-gold)] text-[var(--empire-gold)]'
-                : 'border-transparent text-[var(--empire-cream)]/50 hover:text-[var(--empire-cream)]'
-            }`}
-          >
-            {tab === 'trivia' ? 'Daily Trivia' : tab === 'bingo' ? 'Bingo Tasks' : 'Regional Guilds'}
-          </button>
-        ))}
+        {(['trivia', 'bingo', 'guilds'] as const).map(tab => {
+          let tabLabel = 'Regional Guilds';
+          if (tab === 'trivia') tabLabel = 'Daily Trivia';
+          else if (tab === 'bingo') tabLabel = 'Bingo Tasks';
+
+          return (
+            <button
+              key={tab}
+              onClick={() => { setActiveTab(tab); setError(null); setSuccess(null); }}
+              className={`py-3.5 px-4 font-display text-sm font-extrabold capitalize border-b-2 transition-all cursor-pointer ${
+                activeTab === tab
+                  ? 'border-[var(--empire-gold)] text-[var(--empire-gold)]'
+                  : 'border-transparent text-[var(--empire-cream)]/50 hover:text-[var(--empire-cream)]'
+              }`}
+            >
+              {tabLabel}
+            </button>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -403,7 +413,7 @@ export default function AdminGamificationClient({
         <div className="lg:col-span-7 bg-white rounded-2xl p-6 border border-[var(--bg-border)] flex flex-col gap-4 shadow-sm">
           <h2 className="font-display text-base text-[var(--empire-cream)] font-bold flex items-center gap-2">
             <span className="material-symbols-outlined text-[var(--empire-gold)]" style={{ fontVariationSettings: "'FILL' 1" }}>lists</span>
-            <span>Existing Registry ({activeTab === 'trivia' ? triviaList.length : activeTab === 'bingo' ? bingoList.length : guildsList.length})</span>
+            <span>Existing Registry ({registryLength})</span>
           </h2>
 
           <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-2">

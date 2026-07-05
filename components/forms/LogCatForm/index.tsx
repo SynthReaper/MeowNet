@@ -183,7 +183,7 @@ export default function LogCatForm() {
               photo_camera
             </span>
             <span className="font-body text-sm font-semibold text-[var(--empire-cream)]">Click to upload or drag & drop</span>
-            <span className="font-body text-xs text-[var(--empire-cream)]/50 mt-1">JPEG, PNG or WebP format (max 5MB)</span>
+            <span className="font-body text-xs text-[var(--empire-cream)]/50 mt-1">JPEG, PNG or WebP format (max 5MB)</span>{' '}
             
             <input 
               type="file" 
@@ -240,7 +240,7 @@ export default function LogCatForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
               <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
-                Latitude
+                <span>Latitude</span>{' '}
                 <input 
                   type="number" 
                   step="any" 
@@ -253,7 +253,7 @@ export default function LogCatForm() {
             </div>
             <div>
               <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
-                Longitude
+                <span>Longitude</span>{' '}
                 <input 
                   type="number" 
                   step="any" 
@@ -311,7 +311,7 @@ export default function LogCatForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
               <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
-                Cat Name (Optional)
+                <span>Cat Name (Optional)</span>{' '}
                 <input 
                   type="text" 
                   name="name" 
@@ -323,7 +323,7 @@ export default function LogCatForm() {
             </div>
             <div>
               <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
-                Primary Color / Pattern
+                <span>Primary Color / Pattern</span>{' '}
                 <input 
                   type="text" 
                   name="color" 
@@ -338,7 +338,7 @@ export default function LogCatForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
               <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
-                Status Classification
+                <span>Status Classification</span>{' '}
                 <select 
                   name="status" 
                   required 
@@ -354,7 +354,7 @@ export default function LogCatForm() {
             </div>
             <div>
               <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
-                Age Estimate
+                <span>Age Estimate</span>{' '}
                 <select 
                   name="age_estimate" 
                   className="w-full bg-white border border-[var(--bg-border)] rounded-xl px-4 py-2.5 text-[var(--empire-cream)] focus:border-[var(--empire-gold)] focus:ring-1 focus:ring-[var(--empire-gold)] outline-none transition-all mt-2 font-normal normal-case"
@@ -417,8 +417,8 @@ export default function LogCatForm() {
 
           <div className="mb-6">
             <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
-              Observer Notes
-              <textarea 
+                <span>Observer Notes</span>{' '}
+                <textarea 
                 name="health_notes" 
                 maxLength={2000} 
                 placeholder="e.g. Friendly, has a minor limp on front left paw..." 
@@ -431,7 +431,7 @@ export default function LogCatForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 pt-4 border-t border-[var(--bg-border)]/40">
             <div>
               <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
-                Contact Info (Optional)
+                <span>Contact Info (Optional)</span>{' '}
                 <input 
                   type="text" 
                   name="contact_info" 
@@ -443,7 +443,7 @@ export default function LogCatForm() {
             </div>
             <div>
               <label className="block font-body text-xs font-bold text-[var(--empire-cream)]/60 uppercase tracking-wider mb-2">
-                Rescue Shelter URL (Optional)
+                <span>Rescue Shelter URL (Optional)</span>{' '}
                 <input 
                   type="url" 
                   name="shelter_url" 

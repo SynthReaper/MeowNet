@@ -6,12 +6,16 @@ import { useUser } from '@clerk/nextjs';
 import { createClient } from '@/lib/supabase/client';
 import { createNotice, updateNotice, deleteNotice, getNotices } from '@/lib/actions/notices';
 
+type BroadcastType = 'info' | 'warning' | 'error' | 'success';
+type UserRole = 'user' | 'moderator' | 'admin';
+type FilterType = 'all' | 'broadcast' | 'popup' | 'standard';
+
 interface Notice {
   id: string;
   title: string;
   content: string;
   is_broadcast: boolean;
-  broadcast_type: 'info' | 'warning' | 'error' | 'success';
+  broadcast_type: BroadcastType;
   is_popup: boolean;
   expires_at: string | null;
   active: boolean;
@@ -22,14 +26,22 @@ interface Notice {
   profiles: { display_name: string } | null;
 }
 
+
+function getBroadcastTypeClass(broadcastType: string | null) {
+  if (broadcastType === 'error') return 'bg-red-500/10 text-red-500';
+  if (broadcastType === 'warning') return 'bg-orange-500/10 text-orange-500';
+  if (broadcastType === 'success') return 'bg-teal-500/10 text-teal-500';
+  return 'bg-[var(--empire-gold)]/10 text-[var(--empire-gold)]';
+}
+
 export default function NoticesPage() {
   const { user: clerkUser } = useUser();
   const supabase = createClient();
 
   const [notices, setNotices] = useState<Notice[]>([]);
-  const [role, setRole] = useState<'user' | 'moderator' | 'admin' | null>(null);
+  const [role, setRole] = useState<UserRole | null>(null);
   const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'broadcast' | 'popup' | 'standard'>('all');
+  const [filterType, setFilterType] = useState<FilterType>('all');
   const [loading, setLoading] = useState(true);
 
   // Modal / Form state
@@ -42,7 +54,7 @@ export default function NoticesPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isBroadcast, setIsBroadcast] = useState(false);
-  const [broadcastType, setBroadcastType] = useState<'info' | 'warning' | 'error' | 'success'>('info');
+  const [broadcastType, setBroadcastType] = useState<BroadcastType>('info');
   const [isPopup, setIsPopup] = useState(false);
   const [expiresAt, setExpiresAt] = useState('');
   const [targetPage, setTargetPage] = useState('all');
@@ -344,7 +356,7 @@ export default function NoticesPage() {
       </section>
 
       {/* Notices list */}
-      {loading ? (
+      {loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-60">
           {[1, 2, 3].map((item) => (
             <div key={item} className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--bg-border)] p-6 flex flex-col gap-4 h-[220px]">
@@ -355,13 +367,15 @@ export default function NoticesPage() {
             </div>
           ))}
         </div>
-      ) : filteredNotices.length === 0 ? (
+      )}
+      {!loading && filteredNotices.length === 0 && (
         <div className="bg-[var(--bg-surface)] rounded-2xl p-12 border border-[var(--bg-border)] text-center max-w-md mx-auto my-12 shadow-sm">
           <div className="text-4xl mb-4">📢</div>
           <h2 className="font-display text-xl text-[var(--text-primary)] font-bold mb-2">No Notices Found</h2>
           <p className="font-body text-sm text-[var(--text-secondary)] mb-6">There are no active notices or announcements fitting this search.</p>
         </div>
-      ) : (
+      )}
+      {!loading && filteredNotices.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredNotices.map((n) => {
             const dateStr = new Date(n.created_at).toLocaleDateString('en-US', {
@@ -385,6 +399,15 @@ export default function NoticesPage() {
               cardAccent = 'border-violet-500/40 shadow-[0_4px_16px_rgba(139,92,246,0.06)]';
             }
 
+            let broadcastBadgeClass = 'bg-[var(--empire-gold)]/10 text-[var(--empire-gold)]';
+            if (n.broadcast_type === 'error') {
+              broadcastBadgeClass = 'bg-red-500/10 text-red-500';
+            } else if (n.broadcast_type === 'warning') {
+              broadcastBadgeClass = 'bg-orange-500/10 text-orange-500';
+            } else if (n.broadcast_type === 'success') {
+              broadcastBadgeClass = 'bg-teal-500/10 text-teal-500';
+            }
+
             return (
               <article
                 key={n.id}
@@ -400,15 +423,7 @@ export default function NoticesPage() {
                     )}
                     {n.is_broadcast && (
                       <span
-                        className={`px-2 py-0.5 rounded-md font-display font-bold text-[10px] uppercase tracking-wider ${
-                          n.broadcast_type === 'error'
-                            ? 'bg-red-500/10 text-red-500'
-                            : n.broadcast_type === 'warning'
-                            ? 'bg-orange-500/10 text-orange-500'
-                            : n.broadcast_type === 'success'
-                            ? 'bg-teal-500/10 text-teal-500'
-                            : 'bg-[var(--empire-gold)]/10 text-[var(--empire-gold)]'
-                        }`}
+                        className={`px-2 py-0.5 rounded-md font-display font-bold text-[10px] uppercase tracking-wider ${broadcastBadgeClass}`}
                       >
                         {n.broadcast_type} Broadcast
                       </span>

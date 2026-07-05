@@ -73,11 +73,12 @@ const parseLocation = (loc: any) => {
 
 const createCatIcon = (status: string, isVerified: boolean) => {
   // Emerald for verified, crimson for unverified stray
-  const color = isVerified
-    ? '#006a63' // Deep Emerald Teal
-    : status === 'tnr'
-    ? '#f28c38' // Sunlit Amber
-    : '#ba1a1a'; // Bold Crimson
+  let color = '#ba1a1a'; // Bold Crimson fallback
+  if (isVerified) {
+    color = '#006a63'; // Deep Emerald Teal
+  } else if (status === 'tnr') {
+    color = '#f28c38'; // Sunlit Amber
+  }
 
   return L.divIcon({
     html: `
@@ -103,7 +104,12 @@ const createCatIcon = (status: string, isVerified: boolean) => {
 };
 
 const createEventIcon = (status: string) => {
-  const color = status === 'open' ? '#944a00' : status === 'pending' ? '#f28c38' : '#ba1a1a';
+  let color = '#ba1a1a';
+  if (status === 'open') {
+    color = '#944a00';
+  } else if (status === 'pending') {
+    color = '#f28c38';
+  }
   return L.divIcon({
     html: `
       <div style="

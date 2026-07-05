@@ -25,6 +25,26 @@ interface LandingPageCat {
   profiles: { display_name: string | null } | null;
 }
 
+function buildWeatherUrl(): Promise<{ url: string; userLocated: boolean }> {
+  if (typeof window === 'undefined' || !('geolocation' in navigator)) {
+    return Promise.resolve({ url: '/api/weather', userLocated: false });
+  }
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const cityParam = encodeURIComponent('Your Location');
+        resolve({
+          url: `/api/weather?lat=${latitude.toFixed(4)}&lng=${longitude.toFixed(4)}&city=${cityParam}`,
+          userLocated: true,
+        });
+      },
+      () => resolve({ url: '/api/weather', userLocated: false }),
+      { timeout: 4000 }
+    );
+  });
+}
+
 const InteractiveCat = dynamic(() => import('@/components/ui/InteractiveCat'), { ssr: false });
 
 const FALLBACK_CATS = [
@@ -258,26 +278,6 @@ export default function LandingPage() {
 
     async function fetchLiveAlert() {
       // Build weather URL — try browser geolocation first, fall back to random cat shelter
-      async function buildWeatherUrl(): Promise<{ url: string; userLocated: boolean }> {
-        if (!('geolocation' in navigator)) {
-          return { url: '/api/weather', userLocated: false };
-        }
-        return new Promise((resolve) => {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              const { latitude, longitude } = pos.coords;
-              // Reverse-geocode city with a free nominatim call (server-side nominatim is fine client-side for display)
-              const cityParam = encodeURIComponent('Your Location');
-              resolve({
-                url: `/api/weather?lat=${latitude.toFixed(4)}&lng=${longitude.toFixed(4)}&city=${cityParam}`,
-                userLocated: true,
-              });
-            },
-            () => resolve({ url: '/api/weather', userLocated: false }),
-            { timeout: 4000 }
-          );
-        });
-      }
 
       try {
         const { url, userLocated } = await buildWeatherUrl();
@@ -503,7 +503,7 @@ export default function LandingPage() {
                   <span>Start Mapping</span>
                 </Link>
                 <Link href="/cats" className="border-2 border-[var(--bg-border)] text-[var(--empire-gold)] hover:bg-[var(--bg-elevated)] px-8 py-4 rounded-xl font-semibold shadow-sm transition-all duration-300 flex items-center gap-2 no-underline transform hover:-translate-y-0.5 active:translate-y-0">
-                  Explore Directory
+                  <span>Explore Directory</span>
                   <span className="material-symbols-outlined text-base">arrow_forward</span>
                 </Link>
               </div>
@@ -566,8 +566,9 @@ export default function LandingPage() {
                 </div>
                 <h3 className="font-display text-lg font-bold text-[var(--empire-cream)]">2. Log</h3>
                 <p className="font-body text-sm text-[var(--text-secondary)] leading-relaxed">
-                  Drop a pin on our map, add details, and earn <span className="text-[var(--empire-gold)] font-bold">+10 pts</span> for your contribution!
-                </p>
+                  Drop a pin on our map, add details, and earn <span className="text-[var(--empire-gold)] font-bold">+10 pts</span>
+              <span>for your contribution!</span>
+            </p>
               </div>
               <div className="premium-glass-card p-8 border border-[var(--empire-gold)]/15 shadow-ambient text-center flex flex-col items-center space-y-4 hover:scale-102 transition-all duration-300 reveal-fade-in delay-400 md:translate-y-8">
                 <div className="w-20 h-20 bg-[var(--empire-gold)]/15 text-[var(--empire-gold)] rounded-full flex items-center justify-center mb-2 shadow-md transform -rotate-3">

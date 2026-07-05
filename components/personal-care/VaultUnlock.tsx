@@ -19,6 +19,36 @@ export default function VaultUnlock({ onUnlock }: VaultUnlockProps) {
   const [error, setError] = useState('');
   const [encryptedConfig, setEncryptedConfig] = useState<string | null>(null);
 
+  const tryLegacyMigration = async (encryptedKeys: string, su: any): Promise<string | null> => {
+    const legacyKey = localStorage.getItem('meownet_vault_key');
+    if (!legacyKey) return null;
+    try {
+      await decryptData(encryptedKeys, legacyKey);
+      if (su) {
+        const encryptedPassphrase = await encryptData(legacyKey, su.id);
+        localStorage.setItem('meownet_vault_token', encryptedPassphrase);
+      }
+      localStorage.removeItem('meownet_vault_key');
+      return legacyKey;
+    } catch {
+      localStorage.removeItem('meownet_vault_key');
+      return null;
+    }
+  };
+
+  const tryAutoUnlock = async (encryptedKeys: string, su: any): Promise<string | null> => {
+    const cachedToken = localStorage.getItem('meownet_vault_token');
+    if (!cachedToken || !su) return null;
+    try {
+      const decryptedPassphrase = await decryptData(cachedToken, su.id) as string;
+      await decryptData(encryptedKeys, decryptedPassphrase);
+      return decryptedPassphrase;
+    } catch {
+      localStorage.removeItem('meownet_vault_token');
+      return null;
+    }
+  };
+
   useEffect(() => {
     async function checkVaultState() {
       try {
@@ -30,34 +60,16 @@ export default function VaultUnlock({ onUnlock }: VaultUnlockProps) {
           const supabase = createClient();
           const { data: { user: su } } = await supabase.auth.getUser();
 
-          // 1. Migrate legacy cleartext key if it exists
-          const legacyKey = localStorage.getItem('meownet_vault_key');
-          if (legacyKey) {
-            try {
-              await decryptData(res.data.encrypted_keys, legacyKey);
-              if (su) {
-                const encryptedPassphrase = await encryptData(legacyKey, su.id);
-                localStorage.setItem('meownet_vault_token', encryptedPassphrase);
-              }
-              localStorage.removeItem('meownet_vault_key');
-              onUnlock(legacyKey);
-              return;
-            } catch {
-              localStorage.removeItem('meownet_vault_key');
-            }
+          const migratedKey = await tryLegacyMigration(res.data.encrypted_keys, su);
+          if (migratedKey) {
+            onUnlock(migratedKey);
+            return;
           }
 
-          // 2. Try auto-unlock using the encrypted session token
-          const cachedToken = localStorage.getItem('meownet_vault_token');
-          if (cachedToken && su) {
-            try {
-              const decryptedPassphrase = await decryptData(cachedToken, su.id) as string;
-              await decryptData(res.data.encrypted_keys, decryptedPassphrase);
-              onUnlock(decryptedPassphrase);
-              return;
-            } catch {
-              localStorage.removeItem('meownet_vault_token');
-            }
+          const autoUnlockedKey = await tryAutoUnlock(res.data.encrypted_keys, su);
+          if (autoUnlockedKey) {
+            onUnlock(autoUnlockedKey);
+            return;
           }
         } else {
           setIsFirstTime(true);
@@ -72,6 +84,66 @@ export default function VaultUnlock({ onUnlock }: VaultUnlockProps) {
     checkVaultState();
   }, [onUnlock]);
 
+  const handleFirstTimeSetup = async (): Promise<boolean> => {
+    if (passphrase !== confirmPassphrase) {
+      setError('Passwords do not match.');
+      return false;
+    }
+
+    if (passphrase.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return false;
+    }
+
+    const initialConfig = {
+      geminiKey: '',
+      openaiKey: '',
+      anthropicKey: '',
+      preferredProvider: 'gemini',
+      preferredModel: 'gemini-1.5-flash',
+      initialized: true,
+    };
+
+    const ciphertext = await encryptData(initialConfig, passphrase);
+    const saveRes = await savePrivateConfig(ciphertext);
+
+    if (!saveRes.success) {
+      setError(saveRes.error || 'Failed to initialize secure vault.');
+      return false;
+    }
+
+    const supabase = createClient();
+    const { data: { user: su } } = await supabase.auth.getUser();
+    if (su) {
+      const encryptedPassphrase = await encryptData(passphrase, su.id);
+      localStorage.setItem('meownet_vault_token', encryptedPassphrase);
+    }
+    localStorage.removeItem('meownet_vault_key');
+    return true;
+  };
+
+  const handleExistingUnlock = async (): Promise<boolean> => {
+    if (!encryptedConfig) {
+      setError('Secure vault payload missing.');
+      return false;
+    }
+
+    try {
+      await decryptData(encryptedConfig, passphrase);
+      const supabase = createClient();
+      const { data: { user: su } } = await supabase.auth.getUser();
+      if (su) {
+        const encryptedPassphrase = await encryptData(passphrase, su.id);
+        localStorage.setItem('meownet_vault_token', encryptedPassphrase);
+      }
+      localStorage.removeItem('meownet_vault_key');
+      return true;
+    } catch {
+      setError('Incorrect password. Cryptographic decryption failed.');
+      return false;
+    }
+  };
+
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!passphrase) return;
@@ -79,68 +151,11 @@ export default function VaultUnlock({ onUnlock }: VaultUnlockProps) {
     setError('');
 
     try {
-      if (isFirstTime) {
-        if (passphrase !== confirmPassphrase) {
-          setError('Passwords do not match.');
-          setIsLoading(false);
-          return;
-        }
-
-        if (passphrase.length < 8) {
-          setError('Password must be at least 8 characters.');
-          setIsLoading(false);
-          return;
-        }
-
-        // Initialize empty settings object encrypted with the new password
-        const initialConfig = {
-          geminiKey: '',
-          openaiKey: '',
-          anthropicKey: '',
-          preferredProvider: 'gemini',
-          preferredModel: 'gemini-1.5-flash',
-          initialized: true,
-        };
-
-        const ciphertext = await encryptData(initialConfig, passphrase);
-        const saveRes = await savePrivateConfig(ciphertext);
-
-        if (!saveRes.success) {
-          setError(saveRes.error || 'Failed to initialize secure vault.');
-          setIsLoading(false);
-          return;
-        }
-
-        const supabase = createClient();
-        const { data: { user: su } } = await supabase.auth.getUser();
-        if (su) {
-          const encryptedPassphrase = await encryptData(passphrase, su.id);
-          localStorage.setItem('meownet_vault_token', encryptedPassphrase);
-        }
-        localStorage.removeItem('meownet_vault_key');
+      const success = isFirstTime 
+        ? await handleFirstTimeSetup() 
+        : await handleExistingUnlock();
+      if (success) {
         onUnlock(passphrase);
-      } else {
-        if (!encryptedConfig) {
-          setError('Secure vault payload missing.');
-          setIsLoading(false);
-          return;
-        }
-
-        // Validate password by trying to decrypt
-        try {
-          await decryptData(encryptedConfig, passphrase);
-          const supabase = createClient();
-          const { data: { user: su } } = await supabase.auth.getUser();
-          if (su) {
-            const encryptedPassphrase = await encryptData(passphrase, su.id);
-            localStorage.setItem('meownet_vault_token', encryptedPassphrase);
-          }
-          localStorage.removeItem('meownet_vault_key');
-          onUnlock(passphrase);
-        } catch {
-          setError('Incorrect password. Cryptographic decryption failed.');
-          setIsLoading(false);
-        }
       }
     } catch {
       setError('An encryption error occurred.');
@@ -156,6 +171,15 @@ export default function VaultUnlock({ onUnlock }: VaultUnlockProps) {
         <p className="font-body text-xs text-[var(--text-primary)] opacity-60">Verifying secure keys…</p>
       </div>
     );
+  }
+
+  let buttonContent;
+  if (isLoading) {
+    buttonContent = <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />;
+  } else if (isFirstTime) {
+    buttonContent = 'Setup Vault';
+  } else {
+    buttonContent = 'Unlock Vault';
   }
 
   return (
@@ -242,13 +266,7 @@ export default function VaultUnlock({ onUnlock }: VaultUnlockProps) {
             background: 'linear-gradient(135deg, var(--empire-gold), #f97316)',
           }}
         >
-          {isLoading ? (
-            <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-          ) : isFirstTime ? (
-            'Setup Vault'
-          ) : (
-            'Unlock Vault'
-          )}
+          {buttonContent}
         </button>
       </form>
     </div>

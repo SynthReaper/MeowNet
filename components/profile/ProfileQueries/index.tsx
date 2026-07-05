@@ -29,6 +29,14 @@ interface Props {
   readonly initialQueries: Query[];
 }
 
+
+// SonarQube Style Helpers (Resolving Nested Ternaries)
+const queryStatusBadgeClass = (status: string) => {
+  if (status === 'closed') return 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20';
+  if (status === 'solved' || status === 'resolved') return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+  return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+};
+
 export default function ProfileQueries({ initialQueries }: Props) {
   const [queries, setQueries] = useState<Query[]>(initialQueries);
   const [message, setMessage] = useState('');
@@ -161,30 +169,27 @@ export default function ProfileQueries({ initialQueries }: Props) {
           </p>
         ) : (
           <div className="max-h-[300px] overflow-y-auto pr-1 flex flex-col gap-3">
-            {filteredQueries.map((q) => (
-              <button
-                key={q.id}
-                type="button"
-                onClick={() => router.push(`/support/${q.id}`)}
-                className="w-full text-left p-3 bg-[var(--bg-elevated)] rounded-xl border border-[var(--bg-border)]/15 flex flex-col gap-2 cursor-pointer hover:bg-[var(--bg-border)]/20 transition-colors group"
-              >
-                <div className="flex justify-between items-start gap-2">
-                  <span className="font-body text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[10px]">{q.target_type === 'message' ? 'chat' : 'help'}</span>
-                    <span>{q.target_type === 'message' ? 'Message Report' : 'General Query'}</span>
-                  </span>
-                  <span
-                    className={`px-1.5 py-0.5 rounded-full font-body text-[8px] font-bold uppercase tracking-wider border ${
-                      q.status === 'closed'
-                        ? 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20'
-                        : q.status === 'solved'
-                        ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-                        : 'bg-amber-500/10 text-amber-600 border-amber-500/20'
-                    }`}
-                  >
-                    {q.status}
-                  </span>
-                </div>
+            {filteredQueries.map((q) => {
+              const targetIcon = q.target_type === 'message' ? 'chat' : 'help';
+              const targetLabel = q.target_type === 'message' ? 'Message Report' : 'General Query';
+              return (
+                <button
+                  key={q.id}
+                  type="button"
+                  onClick={() => router.push(`/support/${q.id}`)}
+                  className="w-full text-left p-3 bg-[var(--bg-elevated)] rounded-xl border border-[var(--bg-border)]/15 flex flex-col gap-2 cursor-pointer hover:bg-[var(--bg-border)]/20 transition-colors group"
+                >
+                  <div className="flex justify-between items-start gap-2">
+                    <span className="font-body text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[10px]">{targetIcon}</span>
+                      <span>{targetLabel}</span>
+                    </span>
+                    <span
+                      className={`px-1.5 py-0.5 rounded-full font-body text-[8px] font-bold uppercase tracking-wider border ${queryStatusBadgeClass(q.status)}`}
+                    >
+                      {q.status}
+                    </span>
+                  </div>
                 <p className="font-body text-xs text-[var(--text-primary)] truncate leading-relaxed">
                   {q.message}
                 </p>
@@ -197,7 +202,7 @@ export default function ProfileQueries({ initialQueries }: Props) {
                   </span>
                 </div>
               </button>
-            ))}
+            ); })}
           </div>
         )}
       </div>

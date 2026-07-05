@@ -41,14 +41,14 @@ export default async function SafetyWatchPage() {
               className="flex-1 bg-[var(--life-teal)] hover:opacity-90 text-white font-body font-bold text-sm px-6 py-3.5 rounded-xl no-underline flex items-center justify-center gap-2 transition-all shadow-md"
             >
               <span className="material-symbols-outlined text-sm">login</span>
-              Sign In
+              <span>Sign In</span>
             </Link>
             <Link
               href="/auth/signup"
               className="flex-1 border-2 border-[var(--empire-gold)] text-[var(--empire-gold)] hover:bg-[var(--empire-gold)]/10 font-body font-bold text-sm px-6 py-3.5 rounded-xl no-underline flex items-center justify-center gap-2 transition-all"
             >
               <span className="material-symbols-outlined text-sm">person_add</span>
-              Join Free
+              <span>Join Free</span>
             </Link>
           </div>
           <p className="font-body text-xs text-[var(--empire-cream)]/30">

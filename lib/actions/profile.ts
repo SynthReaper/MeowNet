@@ -11,57 +11,72 @@ export interface UpdateProfileResult {
   error?: string;
 }
 
+async function handleAvatarUpload(
+  supabase: any,
+  userId: string,
+  avatarFile: File
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  if (avatarFile.size > 5 * 1024 * 1024) return { success: false, error: 'photo_too_large' };
+  const rawBuffer = Buffer.from(await avatarFile.arrayBuffer());
+  const { validateImageBuffer, stripExifAndNormalize } = await import('@/lib/security/exif');
+  if (!validateImageBuffer(rawBuffer)) return { success: false, error: 'invalid_image_format' };
+  
+  const { buffer: cleanBuffer } = await stripExifAndNormalize(rawBuffer);
+
+  const fileName = `avatars/${userId}-${Date.now()}.jpg`;
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from('MeowNet')
+    .upload(fileName, cleanBuffer, { contentType: 'image/jpeg', upsert: true });
+  if (uploadError) return { success: false, error: 'upload_failed' };
+
+  const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(uploadData.path);
+  return { success: true, url: publicUrl };
+}
+
 export async function updateProfile(formData: FormData): Promise<UpdateProfileResult> {
   try {
     const supabase = await createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return { success: false, error: 'unauthorized' };
 
-    const displayName = formData.get('displayName') as string | null;
     let avatarUrl = formData.get('avatarUrl') as string | null;
 
     const avatarFile = formData.get('avatarFile') as File | null;
     if (avatarFile && avatarFile.size > 0) {
-      if (avatarFile.size > 5 * 1024 * 1024) return { success: false, error: 'photo_too_large' };
-      const rawBuffer = Buffer.from(await avatarFile.arrayBuffer());
-      const { validateImageBuffer, stripExifAndNormalize } = await import('@/lib/security/exif');
-      if (!validateImageBuffer(rawBuffer)) return { success: false, error: 'invalid_image_format' };
-      
-      const { buffer: cleanBuffer } = await stripExifAndNormalize(rawBuffer);
-
-      const fileName = `avatars/${user.id}-${Date.now()}.jpg`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('MeowNet')
-        .upload(fileName, cleanBuffer, { contentType: 'image/jpeg', upsert: true });
-      if (uploadError) return { success: false, error: 'upload_failed' };
-
-      const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(uploadData.path);
-      avatarUrl = publicUrl;
+      const uploadRes = await handleAvatarUpload(supabase, user.id, avatarFile);
+      if (!uploadRes.success) return { success: false, error: uploadRes.error };
+      avatarUrl = uploadRes.url || null;
     }
 
-    const bio = formData.get('bio') as string | null;
-    const preferredRole = formData.get('preferredRole') as string | null;
-    const locationNeighborhood = formData.get('locationNeighborhood') as string | null;
-    const contactPhone = formData.get('contactPhone') as string | null;
+    const textFields = ['displayName', 'bio', 'preferredRole', 'locationNeighborhood', 'contactPhone'] as const;
+    const dbFieldNames: Record<string, string> = {
+      displayName: 'display_name',
+      bio: 'bio',
+      preferredRole: 'preferred_role',
+      locationNeighborhood: 'location_neighborhood',
+      contactPhone: 'contact_phone'
+    };
+    const maxLengths: Record<string, number> = {
+      displayName: 100,
+      bio: 500,
+      preferredRole: 100,
+      locationNeighborhood: 100,
+      contactPhone: 20
+    };
 
     const updates: Record<string, string | null> = {};
-    if (displayName !== null) {
-      updates.display_name = sanitizeText(displayName.trim(), 100);
-    }
     if (avatarUrl !== null) {
       updates.avatar_url = sanitizeText(avatarUrl.trim(), 1000);
     }
-    if (bio !== null) {
-      updates.bio = bio.trim() ? sanitizeText(bio.trim(), 500) : null;
-    }
-    if (preferredRole !== null) {
-      updates.preferred_role = preferredRole.trim() ? sanitizeText(preferredRole.trim(), 100) : null;
-    }
-    if (locationNeighborhood !== null) {
-      updates.location_neighborhood = locationNeighborhood.trim() ? sanitizeText(locationNeighborhood.trim(), 100) : null;
-    }
-    if (contactPhone !== null) {
-      updates.contact_phone = contactPhone.trim() ? sanitizeText(contactPhone.trim(), 20) : null;
+
+    for (const f of textFields) {
+      const val = formData.get(f) as string | null;
+      if (val !== null) {
+        const trimmed = val.trim();
+        const dbField = dbFieldNames[f];
+        const maxLen = maxLengths[f];
+        updates[dbField] = trimmed ? sanitizeText(trimmed, maxLen) : null;
+      }
     }
 
     const { error } = await supabase

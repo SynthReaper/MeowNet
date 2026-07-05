@@ -60,6 +60,143 @@ const ModeratorHotspotsMap = dynamic(() => import('@/components/map/ModeratorHot
 import AdminGamificationClient from '@/components/empire/AdminGamificationClient';
 
 
+
+
+type UserRole = 'user' | 'moderator' | 'admin';
+
+const getApplicationStatusClass = (status: string) => {
+  if (status === 'pending') {
+    return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+  }
+  if (status === 'approved') {
+    return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+  }
+  return 'bg-red-500/10 text-red-400 border border-red-500/20';
+};
+
+const renderProfileStatusAlert = (profile: Profile) => {
+  const isExpired = !!(profile.password_expires_at && new Date(profile.password_expires_at) < new Date());
+  const isUsagesExceeded = !!(profile.max_usages !== null && profile.max_usages !== undefined &&
+    (profile.usages_count ?? 0) >= profile.max_usages);
+  
+  if (isExpired || isUsagesExceeded) {
+    return (
+      <div className="text-center font-body text-xs py-2 px-4 rounded-xl border bg-red-500/10 text-red-400 border-red-500/20 font-bold">
+        {isExpired
+          ? `⚠️ Account Expired on: ${new Date(profile.password_expires_at!).toLocaleString()}`
+          : `⚠️ Account locked: usage limit of ${profile.max_usages} reached.`}
+      </div>
+    );
+  }
+  
+  if (profile.password_expires_at) {
+    return (
+      <div className="text-center font-body text-xs py-2 px-4 rounded-xl border bg-amber-500/10 text-amber-400 border-amber-500/20">
+        ⏳ Trial Timer Expires on: {new Date(profile.password_expires_at).toLocaleString()}
+      </div>
+    );
+  }
+  
+  return null;
+};
+
+const getProfileToggleText = (actionLoading: string | null, isEnabled: boolean) => {
+  if (actionLoading === 'toggle-enable') return 'Processing...';
+  return isEnabled ? 'Disable Profile' : 'Enable Profile';
+};
+
+const getCatVerifyText = (actionLoadingId: string | null, catId: string, isVerified: boolean) => {
+  if (actionLoadingId === `cat-verify-${catId}`) return 'Processing...';
+  return isVerified ? 'Unverify Sighting' : 'Verify Sighting';
+};
+
+const getApplicationStatusLabel = (status: string) => {
+  if (status === 'pending') {
+    return (
+      <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-amber-500/10 text-amber-500 border border-amber-500/20">
+        Pending
+      </span>
+    );
+  }
+  if (status === 'approved') {
+    return (
+      <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        Approved
+      </span>
+    );
+  }
+  return (
+    <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-red-500/10 text-red-400 border-red-500/20">
+      Rejected
+    </span>
+  );
+};
+
+const getApplicationCardClass = (status: string) => {
+  if (status === 'pending') {
+    return 'border-amber-200/40 bg-amber-50/5';
+  }
+  if (status === 'approved') {
+    return 'border-teal-200/40 bg-teal-50/5';
+  }
+  return 'border-red-200/40 bg-red-50/5';
+};
+
+const getEventStatusClass = (status: string) => {
+  if (status === 'open') {
+    return 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600';
+  }
+  if (status === 'pending') {
+    return 'bg-amber-500/10 border-amber-500/25 text-amber-600';
+  }
+  return 'bg-red-500/10 border-red-500/25 text-red-500';
+};
+
+const getQueryStatusClass = (status: string) => {
+  if (status === 'closed') {
+    return 'bg-zinc-500/10 border-zinc-500/25 text-zinc-500';
+  }
+  if (status === 'solved') {
+    return 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600 animate-pulse';
+  }
+  if (status === 'resolved') {
+    return 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600';
+  }
+  return 'bg-amber-500/10 border-amber-500/25 text-amber-600';
+};
+
+const getActivityIcon = (type: string) => {
+  if (type === 'chat') return 'chat';
+  if (type === 'cat') return 'pets';
+  if (type === 'event') return 'event';
+  return 'military_tech';
+};
+
+const getSettingStatusText = (isUpdating: boolean, value: boolean) => {
+  if (isUpdating) return 'Updating...';
+  return value ? 'Active / Enabled' : 'Inactive / Disabled';
+};
+
+const getCatStatusClass = (status: string) => {
+  if (status === 'stray') {
+    return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+  }
+  if (status === 'adopted') {
+    return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+  }
+  return 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+};
+
+const getEventStatusLabelClass = (status: string) => {
+  if (status === 'scheduled') {
+    return 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+  }
+  if (status === 'completed') {
+    return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+  }
+  return 'bg-red-500/10 text-red-400 border border-red-500/20';
+};
+
 export interface Profile {
   id: string;
   display_name: string | null;
@@ -481,7 +618,7 @@ export default function AdminDashboardClient({
                                 onChange={(e) =>
                                   handleRoleChange(
                                     profile.id,
-                                    e.target.value as 'user' | 'moderator' | 'admin'
+                                    e.target.value as UserRole
                                   )
                                 }
                                 className="bg-[var(--bg-elevated)] border border-[var(--bg-border)] text-[var(--empire-cream)]/90 rounded-lg py-1 px-2.5 font-body text-xs font-semibold cursor-pointer outline-none transition-all disabled:opacity-50"
@@ -520,12 +657,7 @@ export default function AdminDashboardClient({
                     return (
                       <div
                         key={app.id}
-                        className={`rounded-2xl border transition-all ${app.status === 'pending'
-                            ? 'border-amber-200/40 bg-amber-50/5'
-                            : app.status === 'approved'
-                              ? 'border-teal-200/40 bg-teal-50/5'
-                              : 'border-red-200/40 bg-red-50/5'
-                          }`}
+                        className={`rounded-2xl border transition-all ${getApplicationCardClass(app.status)}`}
                       >
                         {/* Application Header Row */}
                         <div className="flex items-center gap-4 p-4 flex-wrap">
@@ -547,14 +679,7 @@ export default function AdminDashboardClient({
                           </div>
 
                           {/* Status Badge */}
-                          <span className={`px-2.5 py-1 rounded-full font-body text-[9px] font-bold uppercase tracking-wider shrink-0 ${app.status === 'pending'
-                              ? 'bg-amber-50 text-amber-600 border border-amber-200'
-                              : app.status === 'approved'
-                                ? 'bg-teal-50 text-teal-600 border border-teal-200'
-                                : 'bg-red-50 text-red-600 border border-red-200'
-                            }`}>
-                            {app.status}
-                          </span>
+                          {getApplicationStatusLabel(app.status)}
 
                           {/* Expand toggle */}
                           <button
@@ -992,7 +1117,7 @@ export default function AdminDashboardClient({
                               : 'bg-emerald-500/10 border-emerald-500/35 text-emerald-600 hover:bg-emerald-500/20'
                             }`}
                         >
-                          {actionLoadingId === `cat-verify-${cat.id}` ? 'Processing...' : (cat.is_verified ? 'Revoke' : 'Verify')}
+                          {cat.is_verified ? 'Unverify Sighting' : 'Verify Sighting'}
                         </button>
                       </div>
                     </div>
@@ -1095,12 +1220,7 @@ export default function AdminDashboardClient({
                           </td>
                           <td className="py-4 px-4 font-body text-xs">
                             <span
-                              className={`px-2 py-0.5 border text-[9px] font-bold uppercase rounded-md ${event.status === 'open'
-                                  ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600'
-                                  : event.status === 'pending'
-                                    ? 'bg-amber-500/10 border-amber-500/25 text-amber-600'
-                                    : 'bg-red-500/10 border-red-500/25 text-red-500'
-                                }`}
+                              className={`px-2 py-0.5 border text-[9px] font-bold uppercase rounded-md ${getEventStatusClass(event.status)}`}
                             >
                               {event.status}
                             </span>
@@ -1227,14 +1347,7 @@ export default function AdminDashboardClient({
                                 Query #{q.id.slice(0, 8)}
                               </span>
                               <span
-                                className={`px-2 py-0.5 border text-[9px] font-bold uppercase rounded-md ${q.status === 'closed'
-                                    ? 'bg-zinc-500/10 border-zinc-500/25 text-zinc-500'
-                                    : q.status === 'solved'
-                                      ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600 animate-pulse'
-                                      : q.status === 'resolved'
-                                        ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-600'
-                                        : 'bg-amber-500/10 border-amber-500/25 text-amber-600'
-                                  }`}
+                                className={`px-2 py-0.5 border text-[9px] font-bold uppercase rounded-md ${getQueryStatusClass(q.status)}`}
                               >
                                 {q.status}
                               </span>
@@ -1293,45 +1406,46 @@ export default function AdminDashboardClient({
                           </div>
                         ) : (
                           q.status === 'pending' && (
-                            <div role="presentation" className="flex gap-2.5 justify-end pt-3 border-t border-[var(--bg-border)]/15" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                              {resolvingQueryId === q.id ? (
-                                <div className="w-full flex flex-col gap-2">
-                                  <textarea
-                                    value={queryResolutionText}
-                                    onChange={(e) => setQueryResolutionText(e.target.value)}
-                                    placeholder="Enter query response/resolution note..."
-                                    className="w-full bg-[var(--bg-surface)] border border-[var(--bg-border)]/50 rounded-xl p-2.5 font-body text-xs text-[var(--empire-cream)] outline-none"
-                                  />
-                                  <div className="flex gap-2 justify-end">
-                                    <button
-                                      disabled={actionLoadingId === `query-resolve-${q.id}`}
-                                      onClick={() => handleResolveQuery(q.id)}
-                                      className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-body text-[10px] font-bold uppercase cursor-pointer disabled:opacity-50"
-                                    >
-                                      {actionLoadingId === `query-resolve-${q.id}` ? 'Resolving...' : 'Resolve'}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setResolvingQueryId(null)}
-                                      className="px-3 py-1.5 bg-[var(--bg-border)] hover:bg-[var(--bg-border)]/65 text-[var(--empire-cream)]/75 rounded-lg font-body text-[10px] font-bold uppercase cursor-pointer"
-                                    >
-                                      Cancel
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <button
-                                  disabled={actionLoadingId !== null}
-                                  onClick={() => {
-                                    setResolvingQueryId(q.id);
-                                    setQueryResolutionText('');
-                                  }}
-                                  className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/35 text-emerald-600 hover:bg-emerald-500/20 text-[10px] font-bold uppercase rounded-lg cursor-pointer transition-all disabled:opacity-50"
-                                >
-                                  ✓ Mark Resolved
-                                </button>
-                              )}
-                            </div>
+                             <div className="flex gap-2.5 justify-end pt-3 border-t border-[var(--bg-border)]/15">
+                               {resolvingQueryId === q.id ? (
+                                 <div className="w-full flex flex-col gap-2">
+                                   <textarea
+                                     value={queryResolutionText}
+                                     onChange={(e) => setQueryResolutionText(e.target.value)}
+                                     placeholder="Enter query response/resolution note..."
+                                     className="w-full bg-[var(--bg-surface)] border border-[var(--bg-border)]/50 rounded-xl p-2.5 font-body text-xs text-[var(--empire-cream)] outline-none"
+                                   />
+                                   <div className="flex gap-2 justify-end">
+                                     <button
+                                       disabled={actionLoadingId === `query-resolve-${q.id}`}
+                                       onClick={(e) => { e.stopPropagation(); handleResolveQuery(q.id); }}
+                                       className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-body text-[10px] font-bold uppercase cursor-pointer disabled:opacity-50"
+                                     >
+                                       {actionLoadingId === `query-resolve-${q.id}` ? 'Resolving...' : 'Resolve'}
+                                     </button>
+                                     <button
+                                       type="button"
+                                       onClick={(e) => { e.stopPropagation(); setResolvingQueryId(null); }}
+                                       className="px-3 py-1.5 bg-[var(--bg-border)] hover:bg-[var(--bg-border)]/65 text-[var(--empire-cream)]/75 rounded-lg font-body text-[10px] font-bold uppercase cursor-pointer"
+                                     >
+                                       Cancel
+                                     </button>
+                                   </div>
+                                 </div>
+                               ) : (
+                                 <button
+                                   disabled={actionLoadingId !== null}
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                     setResolvingQueryId(q.id);
+                                     setQueryResolutionText('');
+                                   }}
+                                   className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/35 text-emerald-600 hover:bg-emerald-500/20 text-[10px] font-bold uppercase rounded-lg cursor-pointer transition-all disabled:opacity-50"
+                                 >
+                                   ✓ Mark Resolved
+                                 </button>
+                               )}
+                             </div>
                           )
                         )}
                       </div>
@@ -1517,7 +1631,7 @@ export default function AdminDashboardClient({
                     <div key={act.id} className="flex gap-3 items-start p-3 bg-[var(--bg-elevated)]/35 border border-[var(--bg-border)]/20 rounded-xl hover:border-[var(--empire-gold)]/30 transition-all">
                       <div className="w-8 h-8 rounded-lg bg-[var(--bg-surface)] flex items-center justify-center text-[var(--empire-gold)] border border-[var(--bg-border)]/50 shrink-0">
                         <span className="material-symbols-outlined text-lg">
-                          {act.type === 'chat' ? 'chat' : act.type === 'cat' ? 'pets' : act.type === 'event' ? 'event' : 'military_tech'}
+                          {getActivityIcon(act.type)}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0 font-body text-xs text-[var(--empire-cream)]">
@@ -1590,7 +1704,7 @@ export default function AdminDashboardClient({
                                 : 'bg-red-500/15 border-red-500/30 text-red-500 hover:bg-red-500/20'
                               }`}
                           >
-                            {isUpdatingSetting ? 'Updating...' : setting.value ? 'Active / Enabled' : 'Inactive / Disabled'}
+                            {getSettingStatusText(isUpdatingSetting, setting.value)}
                           </button>
                         ) : (
                           <div className="flex items-center gap-2">
@@ -1692,10 +1806,7 @@ export default function AdminDashboardClient({
                           <td className="py-3 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">{cat.name || 'Unnamed'}</td>
                           <td className="py-3 px-4 font-body text-xs text-[var(--empire-cream)]/70">{cat.breed_estimate || 'Unknown'}</td>
                           <td className="py-3 px-4">
-                            <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[9px] font-bold uppercase tracking-wider ${cat.status === 'stray' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                                cat.status === 'adopted' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                                  'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                              }`}>{cat.status}</span>
+                            <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[9px] font-bold uppercase tracking-wider ${getCatStatusClass(cat.status)}`}>{cat.status}</span>
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex gap-1">
@@ -1780,10 +1891,7 @@ export default function AdminDashboardClient({
                         <tr key={ev.id} className="border-b border-[var(--bg-border)]/20 hover:bg-[var(--bg-elevated)]/10">
                           <td className="py-3 px-4 font-body text-xs font-bold text-[var(--empire-cream)]">{ev.title}</td>
                           <td className="py-3 px-4">
-                            <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[9px] font-bold uppercase tracking-wider ${ev.status === 'scheduled' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
-                                ev.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                                  'bg-red-500/10 text-red-400 border border-red-500/20'
-                              }`}>{ev.status}</span>
+                            <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[9px] font-bold uppercase tracking-wider ${getEventStatusClass(ev.status)}`}>{ev.status}</span>
                           </td>
                           <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/70">{ev.capacity} volunteers max</td>
                           <td className="py-3 px-4 font-data text-xs text-[var(--empire-cream)]/65">{formatUTCDate(ev.event_time)}</td>
@@ -1928,7 +2036,7 @@ export default function AdminDashboardClient({
   const [loadingManageData, setLoadingManageData] = useState(false);
   const [manageError, setManageError] = useState<string | null>(null);
   const [manageSuccess, setManageSuccess] = useState<string | null>(null);
-  const [editingCat, setEditingCat] = useState<any | null>(null);
+  const [editingCat, setEditingCat] = useState<any>(null);
   const [catForm, setCatForm] = useState<any>({ name: '', breed_estimate: '', status: '', health_notes: '' });
 
 
@@ -2323,7 +2431,7 @@ export default function AdminDashboardClient({
           .eq('id', userId)
           .maybeSingle() as unknown as { data: Profile | null };
         if (data) {
-          handleOpenProfileModal(data as Profile);
+          handleOpenProfileModal(data);
         } else {
           showNotification('error', 'Profile not found.');
         }
@@ -2387,8 +2495,8 @@ export default function AdminDashboardClient({
     }, 800);
   };
 
-  const [selectedCat, setSelectedCat] = useState<any | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [selectedCat, setSelectedCat] = useState<any>(null);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [queryModal, setQueryModal] = useState<{
     open: boolean;
     targetType: 'cat' | 'event' | 'profile';
@@ -2483,7 +2591,7 @@ export default function AdminDashboardClient({
         const res = await resolveModeratorQuery(queryId, queryResolutionText || undefined);
         if (res.success) {
           const updated = queries.map((q) =>
-            q.id === queryId ? ({ ...q, status: 'resolved', response: queryResolutionText || null } as any) : q
+            q.id === queryId ? ({ ...q, status: 'resolved', response: queryResolutionText || null }) : q
           );
           setQueries(updated);
           setResolvingQueryId(null);
@@ -2611,8 +2719,8 @@ export default function AdminDashboardClient({
     } else {
       setEditExpiryDate('');
     }
-    setEditMaxUsages(p.max_usages !== null && p.max_usages !== undefined ? p.max_usages : '');
-    setEditUsagesCount(p.usages_count !== null && p.usages_count !== undefined ? p.usages_count : 0);
+    setEditMaxUsages(p.max_usages ?? '');
+    setEditUsagesCount(p.usages_count ?? 0);
 
     logAuditAction('view_profile', p.id, `Admin viewed profile details of user ${p.display_name ?? p.id}`);
 
@@ -3180,7 +3288,7 @@ export default function AdminDashboardClient({
       {/* Selected Volunteer Profile Modal */}
       {selectedProfile && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
-          <div role="presentation" aria-hidden="true" className="fixed inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setSelectedProfile(null)} onKeyDown={() => setSelectedProfile(null)} />
+          <div aria-hidden="true" className="fixed inset-0 bg-black/75 backdrop-blur-sm" onClick={() => setSelectedProfile(null)} onKeyDown={() => setSelectedProfile(null)} />
           <div className="relative w-full max-w-3xl bg-[var(--bg-surface)] border border-[var(--bg-border)]/50 shadow-[0_0_50px_rgba(212,163,89,0.15)] rounded-2xl overflow-hidden z-10 p-6 flex flex-col gap-5 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start border-b border-[var(--bg-border)]/20 pb-3">
               <div>
@@ -3220,19 +3328,7 @@ export default function AdminDashboardClient({
               </div>
             </div>
 
-            {((selectedProfile.password_expires_at && new Date(selectedProfile.password_expires_at) < new Date()) ||
-              (selectedProfile.max_usages !== null && selectedProfile.max_usages !== undefined &&
-                (selectedProfile.usages_count ?? 0) >= selectedProfile.max_usages)) ? (
-              <div className="text-center font-body text-xs py-2 px-4 rounded-xl border bg-red-500/10 text-red-400 border-red-500/20 font-bold">
-                {selectedProfile.password_expires_at && new Date(selectedProfile.password_expires_at) < new Date()
-                  ? `⚠️ Account Expired on: ${new Date(selectedProfile.password_expires_at).toLocaleString()}`
-                  : `⚠️ Account locked: usage limit of ${selectedProfile.max_usages} reached.`}
-              </div>
-            ) : selectedProfile.password_expires_at ? (
-              <div className="text-center font-body text-xs py-2 px-4 rounded-xl border bg-amber-500/10 text-amber-400 border-amber-500/20">
-                ⏳ Trial Timer Expires on: {new Date(selectedProfile.password_expires_at).toLocaleString()}
-              </div>
-            ) : null}
+            {renderProfileStatusAlert(selectedProfile)}
 
             <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-4">
@@ -3403,8 +3499,7 @@ export default function AdminDashboardClient({
                             {profileActivity.cats.map((c) => (
                               <li key={c.id} className="flex justify-between items-center text-[10px] bg-[var(--bg-elevated)]/30 px-2 py-1 rounded border border-[var(--bg-border)]/20">
                                 <span className="font-semibold truncate max-w-[150px]">{c.name || 'Unnamed Cat'}</span>
-                                <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${c.status === 'stray' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                  }`}>{c.status}</span>
+                                <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase ${getCatStatusClass(c.status)}`}>{c.status}</span>
                               </li>
                             ))}
                           </ul>
@@ -3445,10 +3540,7 @@ export default function AdminDashboardClient({
                               <li key={a.id} className="flex flex-col gap-1 text-[10px] bg-[var(--bg-elevated)]/30 px-2.5 py-1.5 rounded border border-[var(--bg-border)]/20">
                                 <div className="flex justify-between items-center">
                                   <span className="text-[9px] text-[var(--empire-cream)]/50">{formatUTCDate(a.created_at)}</span>
-                                  <span className={`px-1 rounded text-[8px] font-bold uppercase ${a.status === 'pending' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                                      a.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                                        'bg-red-500/10 text-red-400 border border-red-500/20'
-                                    }`}>{a.status}</span>
+                                  <span className={`px-1 rounded text-[8px] font-bold uppercase ${getApplicationStatusClass(a.status)}`}>{a.status}</span>
                                 </div>
                                 <p className="italic text-[9px] text-[var(--empire-cream)]/75 mt-0.5 line-clamp-2">&quot;{a.reason}&quot;</p>
                               </li>
@@ -3494,7 +3586,7 @@ export default function AdminDashboardClient({
                         : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20'
                       }`}
                   >
-                    {actionLoading === 'toggle-enable' ? 'Processing...' : (selectedProfile.is_enabled ? 'Disable Profile' : 'Enable Profile')}
+                    {getProfileToggleText(actionLoading, selectedProfile.is_enabled)}
                   </button>
                   <button
                     type="button"
@@ -3531,7 +3623,7 @@ export default function AdminDashboardClient({
       {/* Add User Dialog */}
       {isAddUserOpen && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div role="presentation" aria-hidden="true" className="fixed inset-0" onClick={() => setIsAddUserOpen(false)} onKeyDown={() => setIsAddUserOpen(false)} />
+          <div aria-hidden="true" className="fixed inset-0" onClick={() => setIsAddUserOpen(false)} onKeyDown={() => setIsAddUserOpen(false)} />
           <div
             className="relative w-full max-w-2xl bg-[var(--bg-surface)] rounded-3xl border border-[var(--bg-border)] shadow-[0_25px_60px_rgba(0,0,0,0.4)] overflow-hidden z-10 p-6 sm:p-8 flex flex-col gap-6 max-h-[90vh] overflow-y-auto"
             style={{ boxShadow: 'var(--shadow-card)' }}
@@ -3789,7 +3881,7 @@ export default function AdminDashboardClient({
       {/* Edit Cat sighting Modal */}
       {editingCat && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div role="presentation" aria-hidden="true" className="fixed inset-0" onClick={() => setEditingCat(null)} onKeyDown={() => setEditingCat(null)} />
+          <div aria-hidden="true" className="fixed inset-0" onClick={() => setEditingCat(null)} onKeyDown={() => setEditingCat(null)} />
           <div className="relative w-full max-w-md bg-[var(--bg-surface)] border border-[var(--bg-border)]/50 shadow-[0_0_50px_rgba(212,163,89,0.15)] rounded-2xl overflow-hidden z-10 p-6 flex flex-col gap-5">
             <div className="flex justify-between items-start border-b border-[var(--bg-border)]/20 pb-3">
               <div>
@@ -3878,7 +3970,7 @@ export default function AdminDashboardClient({
       {/* DETAILED CAT MODAL */}
       {selectedCat && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div role="presentation" aria-hidden="true" className="fixed inset-0" onClick={() => setSelectedCat(null)} onKeyDown={() => setSelectedCat(null)} />
+          <div aria-hidden="true" className="fixed inset-0" onClick={() => setSelectedCat(null)} onKeyDown={() => setSelectedCat(null)} />
           <div className="relative bg-[var(--bg-surface)] rounded-2xl border border-[var(--bg-border)]/50 shadow-ambient max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 z-10 flex flex-col gap-6">
             <div className="flex justify-between items-start gap-4 border-b border-[var(--bg-border)]/20 pb-4">
               <div>
@@ -4029,7 +4121,7 @@ export default function AdminDashboardClient({
                     : 'bg-emerald-500/10 border-emerald-500/35 text-emerald-600 hover:bg-emerald-500/20'
                   }`}
               >
-                {actionLoadingId === `cat-verify-${selectedCat.id}` ? 'Processing...' : (selectedCat.is_verified ? 'Unverify Sighting' : 'Verify Sighting')}
+                {getCatVerifyText(actionLoadingId, selectedCat.id, selectedCat.is_verified)}
               </button>
 
               {selectedCat.owner_id && (
@@ -4067,7 +4159,7 @@ export default function AdminDashboardClient({
       {/* EDIT & DETAIL TNR EVENT MODAL */}
       {selectedEvent && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div role="presentation" aria-hidden="true" className="fixed inset-0" onClick={() => { setSelectedEvent(null); setEditEventOpen(false); }} onKeyDown={() => { setSelectedEvent(null); setEditEventOpen(false); }} />
+          <div aria-hidden="true" className="fixed inset-0" onClick={() => { setSelectedEvent(null); setEditEventOpen(false); }} onKeyDown={() => { setSelectedEvent(null); setEditEventOpen(false); }} />
           <div className="relative bg-[var(--bg-surface)] rounded-2xl border border-[var(--bg-border)]/50 shadow-ambient max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 z-10 flex flex-col gap-6">
             <div className="flex justify-between items-start gap-4 border-b border-[var(--bg-border)]/20 pb-4">
               <div>
@@ -4238,7 +4330,7 @@ export default function AdminDashboardClient({
       {/* RAISE QUERY MODAL */}
       {queryModal?.open && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div role="presentation" aria-hidden="true" className="fixed inset-0" onClick={() => { setQueryModal(null); setQueryMessage(''); }} onKeyDown={() => { setQueryModal(null); setQueryMessage(''); }} />
+          <div aria-hidden="true" className="fixed inset-0" onClick={() => { setQueryModal(null); setQueryMessage(''); }} onKeyDown={() => { setQueryModal(null); setQueryMessage(''); }} />
           <div className="relative bg-[var(--bg-surface)] rounded-2xl border border-[var(--bg-border)] max-w-md w-full p-6 shadow-2xl z-10 flex flex-col gap-4">
             <div>
               <h3 className="font-display text-base font-bold text-[var(--empire-cream)] flex items-center gap-2">
