@@ -48,6 +48,8 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
   - Gated neuter request approvals to prevent self-approving certificate requests, and restricted signature checks to require `NEUTER_HMAC_SECRET`.
   - Upgraded the FastAPI ML service secret verification to a fail-closed authentication scheme when `ML_SERVICE_SECRET` is missing.
 - **Volunteer Hour/Skill Verification Hardening**: Created database migration `0005_harden_volunteer_security.sql` to restrict insertion and updates on `volunteer_skills` and `volunteer_hours` tables, preventing regular users from self-verifying or forging hours logs.
+- **Supplies Inventory Security Hardening**: Created the `decrement_supply_quantity` atomic RPC function inside [0007_security_hardening.sql](file:///e:/CODES/MeowNet/supabase/migrations/0007_security_hardening.sql) and revoked public/authenticated execution rights, routing the fulfillment action securely through the server service role client.
+- **CI Workflow Template Injection Remediation**: Hardened status checks in [.github/workflows/ci.yml](file:///e:/CODES/MeowNet/.github/workflows/ci.yml) by moving GitHub contexts into explicit step-level `env` variables, preventing shell injection vulnerabilities.
 
 
 ### Fixed

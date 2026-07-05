@@ -340,6 +340,10 @@ A second targeted CodeQL audit was performed on 2026-07-02 (v0.8.1). Three addit
 A third targeted CodeQL audit was performed on 2026-07-04 (v0.8.2). One finding was remediated:
 - **Overly Permissive Regular Expression Range (Medium — #41)**: Escaped the hyphens inside the DOMPurify `ALLOWED_URI_REGEXP` custom parameter within `lib/security/url.ts`. Previously, the hyphen inside `[^a-z+.-:]` was unescaped and positioned between `.` and `:`, resulting in a range representing all characters from code 46 to 58 (which includes `/` and digits `0-9`). Escaping the hyphens restricts the class strictly to the characters `+`, `.`, `-`, and `:`.
 
+A fourth targeted Aikido security audit was performed on 2026-07-05 (v0.9.0). Two additional findings were remediated:
+- **CI Workflow Template Injection (#163)**: Hardened status checks in `.github/workflows/ci.yml` by moving GitHub context fields (such as `secrets.GITHUB_TOKEN`, `github.repository`, and `job.status`) into explicit step-level `env` variables, preventing shell command injection.
+- **Supplies Inventory Double-Decrement Concurrency (#164)**: Created the `decrement_supply_quantity` atomic RPC function inside [0007_security_hardening.sql](../supabase/migrations/0007_security_hardening.sql) and revoked public/authenticated execution rights, routing the fulfillment action securely through the server service role client.
+
 ---
 
 ## Vulnerability Disclosure

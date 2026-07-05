@@ -60,16 +60,22 @@ jobs:
 
       - name: Report status check
         if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          COMMIT_SHA: ${{ env.COMMIT_SHA }}
+          RUN_ID: ${{ github.run_id }}
+          JOB_STATUS: ${{ job.status }}
         run: |
           STATE="success"
-          if [ "${{ job.status }}" = "failure" ] || [ "${{ job.status }}" = "cancelled" ]; then
+          if [ "$JOB_STATUS" = "failure" ] || [ "$JOB_STATUS" = "cancelled" ]; then
             STATE="failure"
           fi
           curl -X POST \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/statuses/${{ env.COMMIT_SHA }} \
-            -d "{\"state\":\"$STATE\",\"target_url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"description\":\"Next.js status: ${{ job.status }}\",\"context\":\"Next.js — Lint + Types + Build\"}"
+            https://api.github.com/repos/$REPO/statuses/$COMMIT_SHA \
+            -d "{\"state\":\"$STATE\",\"target_url\":\"https://github.com/$REPO/actions/runs/$RUN_ID\",\"description\":\"Next.js status: $JOB_STATUS\",\"context\":\"Next.js — Lint + Types + Build\"}"
 
   # --- Job 2: Python ML ---------------------------------------------------------
   ml:
@@ -104,16 +110,22 @@ jobs:
 
       - name: Report status check
         if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          COMMIT_SHA: ${{ env.COMMIT_SHA }}
+          RUN_ID: ${{ github.run_id }}
+          JOB_STATUS: ${{ job.status }}
         run: |
           STATE="success"
-          if [ "${{ job.status }}" = "failure" ] || [ "${{ job.status }}" = "cancelled" ]; then
+          if [ "$JOB_STATUS" = "failure" ] || [ "$JOB_STATUS" = "cancelled" ]; then
             STATE="failure"
           fi
           curl -X POST \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/statuses/${{ env.COMMIT_SHA }} \
-            -d "{\"state\":\"$STATE\",\"target_url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"description\":\"Python ML status: ${{ job.status }}\",\"context\":\"Python ML — Install + Syntax Check\"}"
+            https://api.github.com/repos/$REPO/statuses/$COMMIT_SHA \
+            -d "{\"state\":\"$STATE\",\"target_url\":\"https://github.com/$REPO/actions/runs/$RUN_ID\",\"description\":\"Python ML status: $JOB_STATUS\",\"context\":\"Python ML — Install + Syntax Check\"}"
 
   # --- Job 3: Secret Scan -------------------------------------------------------
   secret-scan:
@@ -143,16 +155,22 @@ jobs:
 
       - name: Report status check
         if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          COMMIT_SHA: ${{ env.COMMIT_SHA }}
+          RUN_ID: ${{ github.run_id }}
+          JOB_STATUS: ${{ job.status }}
         run: |
           STATE="success"
-          if [ "${{ job.status }}" = "failure" ] || [ "${{ job.status }}" = "cancelled" ]; then
+          if [ "$JOB_STATUS" = "failure" ] || [ "$JOB_STATUS" = "cancelled" ]; then
             STATE="failure"
           fi
           curl -X POST \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/statuses/${{ env.COMMIT_SHA }} \
-            -d "{\"state\":\"$STATE\",\"target_url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"description\":\"Secret Scan status: ${{ job.status }}\",\"context\":\"Secret Scan\"}"
+            https://api.github.com/repos/$REPO/statuses/$COMMIT_SHA \
+            -d "{\"state\":\"$STATE\",\"target_url\":\"https://github.com/$REPO/actions/runs/$RUN_ID\",\"description\":\"Secret Scan status: $JOB_STATUS\",\"context\":\"Secret Scan\"}"
 
   # --- Job 4: Docker Build (ML) -------------------------------------------------
   docker-ml:
@@ -172,16 +190,22 @@ jobs:
 
       - name: Report status check
         if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          COMMIT_SHA: ${{ env.COMMIT_SHA }}
+          RUN_ID: ${{ github.run_id }}
+          JOB_STATUS: ${{ job.status }}
         run: |
           STATE="success"
-          if [ "${{ job.status }}" = "failure" ] || [ "${{ job.status }}" = "cancelled" ]; then
+          if [ "$JOB_STATUS" = "failure" ] || [ "$JOB_STATUS" = "cancelled" ]; then
             STATE="failure"
           fi
           curl -X POST \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/statuses/${{ env.COMMIT_SHA }} \
-            -d "{\"state\":\"$STATE\",\"target_url\":\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"description\":\"Docker ML status: ${{ job.status }}\",\"context\":\"Docker — ML Service Build\"}"
+            https://api.github.com/repos/$REPO/statuses/$COMMIT_SHA \
+            -d "{\"state\":\"$STATE\",\"target_url\":\"https://github.com/$REPO/actions/runs/$RUN_ID\",\"description\":\"Docker ML status: $JOB_STATUS\",\"context\":\"Docker — ML Service Build\"}"
 
   # --- Job 5: Docs Consistency --------------------------------------------------
   docs-check:
