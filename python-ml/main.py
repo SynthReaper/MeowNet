@@ -43,7 +43,9 @@ ML_SERVICE_SECRET = os.environ.get("ML_SERVICE_SECRET", "")
 
 def verify_service_secret(request: Request) -> None:
     """Next.js API proxy passes X-Service-Secret; reject all other callers."""
-    if ML_SERVICE_SECRET and request.headers.get("X-Service-Secret") != ML_SERVICE_SECRET:
+    if not ML_SERVICE_SECRET:
+        raise HTTPException(status_code=500, detail="Internal server error: service secret is not configured")
+    if request.headers.get("X-Service-Secret") != ML_SERVICE_SECRET:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 

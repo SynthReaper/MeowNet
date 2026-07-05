@@ -133,7 +133,7 @@ export async function updateCourseProgress(enrollmentId: string, progress: numbe
 
     const updates: Record<string, unknown> = { progress: parsed.data.progress };
     if (parsed.data.progress >= 100) {
-      updates.completed_at = new Date().toISOString();
+      return { success: false, error: 'Course completion is only allowed by passing the quiz.' };
     }
 
     await supabase
@@ -204,7 +204,11 @@ export async function completeQuiz(
     const passed = score >= 70;
 
     if (passed) {
-      await updateCourseProgress(enrollmentId, 100);
+      await supabase
+        .from('course_enrollments' as never)
+        .update({ progress: 100, completed_at: new Date().toISOString() } as never)
+        .eq('id', enrollmentId)
+        .eq('user_id', user.id);
 
       // Award points (idempotent via makeActionKey)
       const admin = createServiceClient();

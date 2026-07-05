@@ -132,7 +132,7 @@ Browser
   |
   +-- Supabase (PostgreSQL + PostGIS)
   |     +-- Auth            -- email/password + Google/GitHub + direct creds
-  |     +-- Database        -- cats, events, profiles, gamification (7 migrations)
+  |     +-- Database        -- cats, events, profiles, gamification (10 migrations)
   |     +-- Storage         -- Cat photos (EXIF stripped before upload)
   |     +-- Realtime        -- Live cat map + community chat + guilds
   |     +-- system_settings -- Dynamic key-value configuration store
@@ -208,7 +208,7 @@ MeowNet/
 |   +-- docker-compose.yml
 |   +-- main.py
 +-- supabase/
-|   +-- migrations/         # 0001-0005 & fix migrations (including personal care, security tables, and audit trigger fixes)
+|   +-- migrations/         # 0001-0007 & fix migrations (including personal care, security tables, and audit trigger fixes)
 |   +-- seed.sql
 +-- proxy.ts                # Next.js middleware (auth guard + maintenance gate)
 ```
@@ -247,7 +247,7 @@ MeowNet/
 git clone https://github.com/SynthReaper/MeowNet.git && cd MeowNet
 npm install
 cp .env.example .env.local          # Fill in your Supabase + Clerk keys
-npx supabase db push                 # Apply migrations (0001-0005 + fixes)
+npx supabase db push                 # Apply migrations (0001-0007 + fixes)
 npm run dev                          # Start at localhost:3000
 ```
 

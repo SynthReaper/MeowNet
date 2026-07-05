@@ -296,9 +296,15 @@ export default function ModeratorDashboardClient({
       (q.response || '').replace(/"/g, '""'),
       fmtDateTime(q.created_at)
     ]);
+    const sanitizeCsvValue = (val: string) => {
+      if (val.startsWith('=') || val.startsWith('+') || val.startsWith('-') || val.startsWith('@')) {
+        return `'${val}`;
+      }
+      return val;
+    };
     const csvContent = [
       headers.join(','),
-      ...rows.map(r => r.map(val => `"${val}"`).join(','))
+      ...rows.map(r => r.map(val => `"${sanitizeCsvValue(val)}"`).join(','))
     ].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

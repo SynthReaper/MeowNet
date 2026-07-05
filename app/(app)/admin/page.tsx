@@ -1,6 +1,6 @@
 // Developed by SynthReaper — https://github.com/SynthReaper/MeowNet
 import type { Metadata } from 'next';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import {
   getAdminDashboardStats,
@@ -44,6 +44,8 @@ export default async function AdminPage() {
     redirect('/cats');
   }
 
+  const serviceClient = createServiceClient();
+
   // Fetch initial dashboard stats, profiles, compliance audits, applications, logs, settings, and moderator/gamification data
   const [
     stats,
@@ -78,7 +80,7 @@ export default async function AdminPage() {
       .select('id, target_type, target_id, moderator_id, volunteer_id, message, status, response, created_at')
       .order('created_at', { ascending: false })
       .then(res => res, () => ({ data: [], error: null })),
-    supabase.from('trivia_questions' as never).select('*').order('created_at', { ascending: true }),
+    serviceClient.from('trivia_questions' as never).select('*').order('created_at', { ascending: true }),
     supabase.from('bingo_task_templates' as never).select('*').order('created_at', { ascending: true }),
     supabase.from('guilds' as never).select('*').order('points', { ascending: false })
   ]);

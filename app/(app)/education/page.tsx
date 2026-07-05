@@ -18,11 +18,21 @@ export default async function EducationPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
 
+  // Get user role to filter unpublished courses
+  const { data: profile } = await supabase
+    .from('profiles' as never)
+    .select('role')
+    .eq('id', user.id)
+    .single() as { data: { role: string | null } | null };
+
+  const isStaff = profile?.role === 'admin' || profile?.role === 'moderator';
+
   // Query educational courses
-  const { data: courses } = await supabase
-    .from('courses' as never)
-    .select('*')
-    .order('title') as unknown as { data: any[] | null };
+  let coursesQuery = supabase.from('courses' as never).select('*');
+  if (!isStaff) {
+    coursesQuery = coursesQuery.eq('published', true);
+  }
+  const { data: courses } = await coursesQuery.order('title') as unknown as { data: any[] | null };
 
   // Query my progress
   const { data: enrollments } = await supabase

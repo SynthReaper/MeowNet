@@ -404,6 +404,7 @@ export default function Navbar() {
     localStorage.removeItem('cached_avatar');
     localStorage.removeItem('cached_role');
     localStorage.removeItem('meownet_vault_token');
+    localStorage.removeItem('meownet_vault_salt');
     localStorage.removeItem('meownet_vault_key');
     const supabase = createClient();
     await supabase.auth.signOut();

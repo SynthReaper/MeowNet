@@ -26,7 +26,10 @@ export default function VaultUnlock({ onUnlock, onBypass }: VaultUnlockProps) {
     try {
       await decryptData(encryptedKeys, legacyKey);
       if (su) {
-        const encryptedPassphrase = await encryptData(legacyKey, su.id);
+        const saltBytes = window.crypto.getRandomValues(new Uint8Array(16));
+        const saltBase64 = btoa(String.fromCharCode(...saltBytes));
+        localStorage.setItem('meownet_vault_salt', saltBase64);
+        const encryptedPassphrase = await encryptData(legacyKey, su.id, saltBase64);
         localStorage.setItem('meownet_vault_token', encryptedPassphrase);
       }
       localStorage.removeItem('meownet_vault_key');
@@ -39,13 +42,15 @@ export default function VaultUnlock({ onUnlock, onBypass }: VaultUnlockProps) {
 
   const tryAutoUnlock = async (encryptedKeys: string, su: any): Promise<string | null> => {
     const cachedToken = localStorage.getItem('meownet_vault_token');
+    const salt = localStorage.getItem('meownet_vault_salt');
     if (!cachedToken || !su) return null;
     try {
-      const decryptedPassphrase = await decryptData(cachedToken, su.id) as string;
+      const decryptedPassphrase = await decryptData(cachedToken, su.id, salt || undefined) as string;
       await decryptData(encryptedKeys, decryptedPassphrase);
       return decryptedPassphrase;
     } catch {
       localStorage.removeItem('meownet_vault_token');
+      localStorage.removeItem('meownet_vault_salt');
       return null;
     }
   };
@@ -116,7 +121,10 @@ export default function VaultUnlock({ onUnlock, onBypass }: VaultUnlockProps) {
     const supabase = createClient();
     const { data: { user: su } } = await supabase.auth.getUser();
     if (su) {
-      const encryptedPassphrase = await encryptData(passphrase, su.id);
+      const saltBytes = window.crypto.getRandomValues(new Uint8Array(16));
+      const saltBase64 = btoa(String.fromCharCode(...saltBytes));
+      localStorage.setItem('meownet_vault_salt', saltBase64);
+      const encryptedPassphrase = await encryptData(passphrase, su.id, saltBase64);
       localStorage.setItem('meownet_vault_token', encryptedPassphrase);
     }
     localStorage.removeItem('meownet_vault_key');
@@ -134,7 +142,10 @@ export default function VaultUnlock({ onUnlock, onBypass }: VaultUnlockProps) {
       const supabase = createClient();
       const { data: { user: su } } = await supabase.auth.getUser();
       if (su) {
-        const encryptedPassphrase = await encryptData(passphrase, su.id);
+        const saltBytes = window.crypto.getRandomValues(new Uint8Array(16));
+        const saltBase64 = btoa(String.fromCharCode(...saltBytes));
+        localStorage.setItem('meownet_vault_salt', saltBase64);
+        const encryptedPassphrase = await encryptData(passphrase, su.id, saltBase64);
         localStorage.setItem('meownet_vault_token', encryptedPassphrase);
       }
       localStorage.removeItem('meownet_vault_key');

@@ -164,7 +164,7 @@ export default async function ModeratorLoginPage({
       </div>
       <div className="flex flex-col gap-2">
         <Link 
-          href="/auth/moderator-login?email=judge-user@meownet.org&password=JudgeUser2026!"
+          href="/auth/moderator-login?method=db"
           className="p-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/45 hover:border-[var(--empire-gold)]/40 hover:bg-[var(--bg-border)]/20 transition-all cursor-pointer block text-left no-underline"
         >
           <div className="font-body text-[9px] font-bold text-[var(--empire-cream)]/40 uppercase tracking-wider mb-1 flex items-center gap-1">🧑 Standard Volunteer (Autofill)</div>
@@ -172,7 +172,7 @@ export default async function ModeratorLoginPage({
           <div className="font-body text-xs text-[var(--empire-cream)]/60">JudgeUser2026!</div>
         </Link>
         <Link 
-          href="/auth/moderator-login?email=judge-submod@meownet.org&password=JudgeSubMod2026!"
+          href="/auth/moderator-login?method=db"
           className="p-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/45 hover:border-[var(--empire-gold)]/40 hover:bg-[var(--bg-border)]/20 transition-all cursor-pointer block text-left no-underline"
         >
           <div className="font-body text-[9px] font-bold text-[var(--empire-cream)]/40 uppercase tracking-wider mb-1 flex items-center gap-1">🛡️ Sub-Moderator (Autofill)</div>
@@ -243,7 +243,7 @@ export default async function ModeratorLoginPage({
             </div>
             <div className="flex flex-col gap-2">
               <Link 
-                href="/auth/moderator-login?email=judge-user@meownet.org&password=JudgeUser2026!"
+                href="/auth/moderator-login?method=db"
                 className="p-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/40 hover:border-[var(--empire-gold)]/45 hover:bg-[var(--bg-border)]/20 transition-all cursor-pointer block text-left no-underline"
               >
                 <div className="font-body text-[9px] font-bold text-[var(--empire-cream)]/45 uppercase tracking-wider mb-1 flex items-center gap-1">🧑 Standard Volunteer (Autofill)</div>
@@ -251,7 +251,7 @@ export default async function ModeratorLoginPage({
                 <div className="font-body text-xs text-[var(--empire-cream)]/65">JudgeUser2026!</div>
               </Link>
               <Link 
-                href="/auth/moderator-login?email=judge-submod@meownet.org&password=JudgeSubMod2026!"
+                href="/auth/moderator-login?method=db"
                 className="p-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--bg-border)]/40 hover:border-[var(--empire-gold)]/45 hover:bg-[var(--bg-border)]/20 transition-all cursor-pointer block text-left no-underline"
               >
                 <div className="font-body text-[9px] font-bold text-[var(--empire-cream)]/45 uppercase tracking-wider mb-1 flex items-center gap-1">🛡️ Sub-Moderator (Autofill)</div>

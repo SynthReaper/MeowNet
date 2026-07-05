@@ -129,12 +129,13 @@ const resolvePassphrase = async (): Promise<string | null> => {
   let phrase = localStorage.getItem('meownet_vault_key');
   if (!phrase) {
     const cachedToken = localStorage.getItem('meownet_vault_token');
+    const salt = localStorage.getItem('meownet_vault_salt');
     if (cachedToken) {
       try {
         const supabase = createClient();
         const { data: { user: su } } = await supabase.auth.getUser();
         if (su) {
-          phrase = (await decryptData(cachedToken, su.id)) as string;
+          phrase = (await decryptData(cachedToken, su.id, salt || undefined)) as string;
         }
       } catch {}
     }
@@ -191,7 +192,10 @@ export default function HelperWidget() {
           const supabase = createClient();
           const { data: { user: su } } = await supabase.auth.getUser();
           if (su) {
-            const encKey = await encryptData(phrase, su.id);
+            const saltBytes = window.crypto.getRandomValues(new Uint8Array(16));
+            const saltBase64 = btoa(String.fromCharCode(...saltBytes));
+            localStorage.setItem('meownet_vault_salt', saltBase64);
+            const encKey = await encryptData(phrase, su.id, saltBase64);
             localStorage.setItem('meownet_vault_token', encKey);
           }
         } catch {}
@@ -237,7 +241,10 @@ export default function HelperWidget() {
           const supabase = createClient();
           const { data: { user: su } } = await supabase.auth.getUser();
           if (su) {
-            const encryptedPassphrase = await encryptData(legacyKey, su.id);
+            const saltBytes = window.crypto.getRandomValues(new Uint8Array(16));
+            const saltBase64 = btoa(String.fromCharCode(...saltBytes));
+            localStorage.setItem('meownet_vault_salt', saltBase64);
+            const encryptedPassphrase = await encryptData(legacyKey, su.id, saltBase64);
             localStorage.setItem('meownet_vault_token', encryptedPassphrase);
           }
           localStorage.removeItem('meownet_vault_key');
@@ -250,16 +257,18 @@ export default function HelperWidget() {
 
       // 2. Try auto-unlock using the encrypted session token
       const cachedToken = localStorage.getItem('meownet_vault_token');
+      const salt = localStorage.getItem('meownet_vault_salt');
       if (cachedToken) {
         try {
           const supabase = createClient();
           const { data: { user: su } } = await supabase.auth.getUser();
           if (su) {
-            const decryptedPassphrase = await decryptData(cachedToken, su.id) as string;
+            const decryptedPassphrase = await decryptData(cachedToken, su.id, salt || undefined) as string;
             handleUnlockWithPassphrase(decryptedPassphrase);
           }
         } catch {
           localStorage.removeItem('meownet_vault_token');
+          localStorage.removeItem('meownet_vault_salt');
         }
       }
     }
@@ -418,6 +427,7 @@ Provide helpful, expert, and practical cat care advice based on the data.
   const handleLockHelper = () => {
     localStorage.removeItem('meownet_vault_key');
     localStorage.removeItem('meownet_vault_token');
+    localStorage.removeItem('meownet_vault_salt');
     setIsUnlocked(false);
     setApiKey('');
     setMessages([]);

@@ -19,8 +19,23 @@ export async function GET(req: NextRequest) {
   if (status) query = query.eq('status', status);
   if (severity) query = query.eq('severity', severity);
 
-  const { data: incidents } = await query as unknown as { data: unknown[] | null };
-  return NextResponse.json({ incidents: incidents ?? [] });
+  const { data: profile } = await supabase
+    .from('profiles' as never)
+    .select('role')
+    .eq('id', user.id)
+    .single() as { data: { role: string | null } | null };
+
+  const isStaff = profile?.role === 'admin' || profile?.role === 'moderator';
+
+  const { data: incidents } = await query as unknown as { data: any[] | null };
+
+  const cleanIncidents = (incidents ?? []).map((inc: any) => {
+    if (isStaff) return inc;
+    const { dispatch_notes, internal_status, ...rest } = inc;
+    return rest;
+  });
+
+  return NextResponse.json({ incidents: cleanIncidents });
 }
 
 export async function POST(req: NextRequest) {

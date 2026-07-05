@@ -57,12 +57,12 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
  * Encrypts an object client-side using a user-provided password.
  * Output format: Base64(salt + iv + ciphertext)
  */
-export async function encryptData(data: unknown, passphrase: string): Promise<string> {
+export async function encryptData(data: unknown, passphrase: string, customSalt?: string): Promise<string> {
   const enc = new TextEncoder();
   const jsonStr = JSON.stringify(data);
   const dataBytes = enc.encode(jsonStr);
 
-  const salt = window.crypto.getRandomValues(new Uint8Array(SALT_LEN));
+  const salt = customSalt ? base64ToUint8Array(customSalt) : window.crypto.getRandomValues(new Uint8Array(SALT_LEN));
   const iv = window.crypto.getRandomValues(new Uint8Array(IV_LEN));
   const key = await deriveKey(passphrase, salt);
 
@@ -84,14 +84,14 @@ export async function encryptData(data: unknown, passphrase: string): Promise<st
 /**
  * Decrypts a base64 ciphertext string client-side using the password.
  */
-export async function decryptData(encryptedBase64: string, passphrase: string): Promise<unknown> {
+export async function decryptData(encryptedBase64: string, passphrase: string, customSalt?: string): Promise<unknown> {
   try {
     const combined = base64ToUint8Array(encryptedBase64);
     
     // Extract salt, iv, and ciphertext
-    const salt = combined.slice(0, SALT_LEN);
-    const iv = combined.slice(SALT_LEN, SALT_LEN + IV_LEN);
-    const ciphertext = combined.slice(SALT_LEN + IV_LEN);
+    const salt = customSalt ? base64ToUint8Array(customSalt) : combined.slice(0, SALT_LEN);
+    const iv = customSalt ? combined.slice(0, IV_LEN) : combined.slice(SALT_LEN, SALT_LEN + IV_LEN);
+    const ciphertext = customSalt ? combined.slice(IV_LEN) : combined.slice(SALT_LEN + IV_LEN);
 
     const key = await deriveKey(passphrase, salt);
     

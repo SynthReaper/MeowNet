@@ -69,7 +69,7 @@ npm install -g supabase
 # Link to your remote project
 npx supabase link --project-ref YOUR_PROJECT_REF
 
-# Apply all 2 migrations (0001–0002)
+# Apply all 10 migrations (0001–0007 + fixes)
 npx supabase db push
 ```
 

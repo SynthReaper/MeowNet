@@ -24,7 +24,7 @@ export interface BingoCard {
   id: string;
   user_id: string;
   week_start: string;
-  squares: Array<{ label: string; type: string; completed: boolean }>;
+  squares: Array<{ label: string; type: string; completed: boolean; pending_verification?: boolean }>;
   completed_squares: number;
   is_bingo_achieved: boolean;
 }
@@ -173,7 +173,8 @@ async function fetchActiveQuestion(
   questionId: string
 ): Promise<DBTriviaQuestion | null> {
   try {
-    const { data: dbQuestion, error: qError } = await supabase
+    const serviceClient = createServiceClient();
+    const { data: dbQuestion, error: qError } = await serviceClient
       .from('trivia_questions' as never)
       .select('*')
       .eq('id', questionId)
@@ -366,7 +367,7 @@ async function verifyBingoSquare(
     return !!(count && count > 0);
   }
 
-  if (squareType === 'view_map' || squareType === 'check_weather' || squareType === 'read_notice') {
+  if (squareType === 'view_map' || squareType === 'check_weather' || squareType === 'read_notice' || squareType === 'free') {
     return true;
   }
 
@@ -391,7 +392,7 @@ async function verifyBingoSquare(
     return !!(count && count > 0);
   }
 
-  return true;
+  return false;
 }
 
 export async function claimBingoSquare(squareIndex: number) {
@@ -411,8 +412,8 @@ export async function claimBingoSquare(squareIndex: number) {
       return { success: false, error: 'invalid_index' };
     }
 
-    if (squares[idx].completed) {
-      return { success: false, error: 'already_completed' };
+    if (squares[idx].completed || squares[idx].pending_verification) {
+      return { success: false, error: 'already_completed_or_pending' };
     }
 
     // Verify the square task is completed
@@ -421,6 +422,36 @@ export async function claimBingoSquare(squareIndex: number) {
 
     if (!isVerified) {
       return { success: false, error: `Verification failed. You haven't completed the task: "${square.label}" yet.` };
+    }
+
+    // Check if the square type is an unverified manual claim
+    const unverifiedTypes = ['view_map', 'check_weather', 'read_notice'];
+    const isUnverified = unverifiedTypes.includes(square.type);
+
+    if (isUnverified) {
+      // Mark as pending_verification
+      squares[idx].pending_verification = true;
+
+      // Update the card in DB without awarding points or setting completed = true
+      const { data: updatedCard, error: updateError } = await supabase
+        .from('bingo_cards' as never)
+        .update({
+          squares,
+        } as never)
+        .eq('id', card.id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      revalidatePath('/empire');
+      return {
+        success: true,
+        card: updatedCard as BingoCard,
+        pointsAwarded: 0,
+        bingoAchieved: false,
+        pendingVerification: true
+      };
     }
 
     // Toggle complete
@@ -481,6 +512,94 @@ export async function claimBingoSquare(squareIndex: number) {
       pointsAwarded,
       bingoAchieved: bingoJustAchieved
     };
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function approveBingoSquare(cardId: string, squareIndex: number): Promise<{ success: boolean; error?: string }> {
+  const { supabase, user } = await getAuthUser();
+  if (!user) return { success: false, error: 'unauthorized' };
+
+  // Verify staff role
+  const { data: profile } = await supabase
+    .from('profiles' as never)
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  const userRole = (profile as any)?.role;
+  if (userRole !== 'admin' && userRole !== 'moderator') {
+    return { success: false, error: 'forbidden' };
+  }
+
+  try {
+    const { data: card, error: fetchErr } = await supabase
+      .from('bingo_cards' as never)
+      .select('*')
+      .eq('id', cardId)
+      .single() as { data: BingoCard | null; error: any };
+
+    if (fetchErr || !card) return { success: false, error: 'card_not_found' };
+
+    const squares = [...card.squares];
+    const idx = Number(squareIndex);
+    if (isNaN(idx) || idx < 0 || idx >= squares.length) {
+      return { success: false, error: 'invalid_index' };
+    }
+
+    if (squares[idx].completed) {
+      return { success: false, error: 'already_completed' };
+    }
+
+    // Mark as completed and remove pending_verification
+    squares[idx].completed = true;
+    if ('pending_verification' in squares[idx]) {
+      delete squares[idx].pending_verification;
+    }
+
+    // Check for bingo
+    const isWinningPosition = (sqs: any[]) => {
+      const checks = [
+        [0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11, 12, 13, 14], [15, 16, 17, 18, 19], [20, 21, 22, 23, 24],
+        [0, 5, 10, 15, 20], [1, 6, 11, 16, 21], [2, 7, 12, 17, 22], [3, 8, 13, 18, 23], [4, 9, 14, 19, 24],
+        [0, 6, 12, 18, 24], [4, 8, 12, 16, 20]
+      ];
+      return checks.some(line => line.every(idx => sqs[idx].completed));
+    };
+
+    const hasBingo = isWinningPosition(squares);
+    const completedCount = squares.filter(s => s.completed).length;
+
+    let pointsAwarded = 0;
+    let bingoJustAchieved = false;
+
+    if (hasBingo && !card.is_bingo_achieved) {
+      bingoJustAchieved = true;
+      const admin = createServiceClient();
+      const actionKey = makeActionKey(card.user_id, 'BINGO_COMPLETED', card.id);
+      pointsAwarded = 50;
+
+      await (admin as any).rpc('award_points', {
+        p_user_id: card.user_id,
+        p_activity: 'BINGO_COMPLETED',
+        p_points: pointsAwarded,
+        p_related_id: card.id,
+        p_action_key: actionKey,
+      });
+    }
+
+    await supabase
+      .from('bingo_cards' as never)
+      .update({
+        squares,
+        completed_squares: completedCount,
+        is_bingo_achieved: card.is_bingo_achieved || bingoJustAchieved
+      } as never)
+      .eq('id', card.id);
+
+    revalidatePath('/empire');
+    return { success: true };
   } catch (err: any) {
     return { success: false, error: err.message };
   }
@@ -726,6 +845,24 @@ export async function purchaseSanctuaryUpgrade(upgradeType: 'shelter_bed' | 'kib
   if (!user) return { success: false, error: 'unauthorized' };
 
   try {
+    // 2. Fetch sanctuary
+    const sanctuaryRes = await getSanctuary();
+    if (!sanctuaryRes.success || !sanctuaryRes.sanctuary) {
+      return { success: false, error: sanctuaryRes.error || 'sanctuary_not_found' };
+    }
+    const sanctuary = sanctuaryRes.sanctuary;
+
+    // Calculate level & cost server-side to prevent tampering
+    const { data: existingUpgrades } = await supabase
+      .from('colony_tycoon_upgrades' as never)
+      .select('*')
+      .eq('sanctuary_id', sanctuary.id)
+      .eq('upgrade_type', upgradeType);
+
+    const level = (existingUpgrades?.length ?? 0) + 1;
+    const baseCosts = { shelter_bed: 20, kibble_feeder: 35, first_aid: 50, play_area: 75 };
+    const serverCost = baseCosts[upgradeType] * level;
+
     // 1. Fetch user profiles points
     const { data: dbProfile, error: profileError } = await supabase
       .from('profiles' as never)
@@ -735,31 +872,14 @@ export async function purchaseSanctuaryUpgrade(upgradeType: 'shelter_bed' | 'kib
 
     if (profileError || !dbProfile) return { success: false, error: 'profile_not_found' };
     const profile = dbProfile as { empire_points: number };
-    if (profile.empire_points < cost) return { success: false, error: 'insufficient_points' };
-
-    // 2. Fetch sanctuary
-    const sanctuaryRes = await getSanctuary();
-    if (!sanctuaryRes.success || !sanctuaryRes.sanctuary) {
-      return { success: false, error: sanctuaryRes.error || 'sanctuary_not_found' };
-    }
-    const sanctuary = sanctuaryRes.sanctuary;
-
-    // 3. Calculate level
-    const { data: existingUpgrades } = await supabase
-      .from('colony_tycoon_upgrades' as never)
-      .select('*')
-      .eq('sanctuary_id', sanctuary.id)
-      .eq('upgrade_type', upgradeType);
-
-    const level = (existingUpgrades?.length ?? 0) + 1;
-
+    if (profile.empire_points < serverCost) return { success: false, error: 'insufficient_points' };
     // 4. Deduct points via award_points RPC (negative points)
     const admin = createServiceClient();
     const actionKey = makeActionKey(user.id, 'TYCOON_UPGRADE', `${upgradeType}:${level}:${Date.now()}`);
     const { error: awardError } = await (admin as any).rpc('award_points', {
       p_user_id: user.id,
       p_activity: 'TYCOON_UPGRADE',
-      p_points: -cost,
+      p_points: -serverCost,
       p_related_id: sanctuary.id,
       p_action_key: actionKey,
     });
@@ -775,7 +895,7 @@ export async function purchaseSanctuaryUpgrade(upgradeType: 'shelter_bed' | 'kib
         sanctuary_id: sanctuary.id,
         upgrade_type: upgradeType,
         level,
-        cost_points: cost
+        cost_points: serverCost
       } as never);
 
     if (insertError) {
@@ -784,7 +904,7 @@ export async function purchaseSanctuaryUpgrade(upgradeType: 'shelter_bed' | 'kib
       await (admin as any).rpc('award_points', {
         p_user_id: user.id,
         p_activity: 'TYCOON_UPGRADE',
-        p_points: cost,
+        p_points: serverCost,
         p_related_id: sanctuary.id,
         p_action_key: revertKey,
       });

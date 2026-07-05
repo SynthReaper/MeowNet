@@ -11,6 +11,27 @@ export async function GET(req: NextRequest) {
   const chapterId = url.searchParams.get('chapterId');
   if (!chapterId) return NextResponse.json({ error: 'Missing chapterId parameter' }, { status: 400 });
 
+  const { data: profile } = await supabase
+    .from('profiles' as never)
+    .select('role')
+    .eq('id', user.id)
+    .single() as { data: { role: string | null } | null };
+
+  const isStaff = profile?.role === 'admin' || profile?.role === 'moderator';
+
+  if (!isStaff) {
+    const { data: membership } = await supabase
+      .from('chapter_members' as never)
+      .select('user_id')
+      .eq('chapter_id', chapterId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+  }
+
   const data = await getChapterMembers(chapterId);
   return NextResponse.json({ members: data });
 }

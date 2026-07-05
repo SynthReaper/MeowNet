@@ -1,6 +1,6 @@
 # MeowNet Database Documentation
 
-> Last updated: 2026-07-05 · v0.9.0 · Migrations: 0001–0006 + Fixes (Consolidated + Personal Care + Social Impact + Security Hardening + Audit Trigger Fixes + Volunteer Credentials Workflow)
+> Last updated: 2026-07-05 · v0.9.0 · Migrations: 0001–0007 + Fixes (Consolidated + Personal Care + Social Impact + Security Hardening + Audit Trigger Fixes + Volunteer Credentials Workflow)
 
 ---
 
@@ -119,6 +119,8 @@ Auth schema (Supabase managed)
 | 0059 | `0059_get_user_by_email.sql` | SECURITY DEFINER helper get_user_by_email to bypass internal auth schema constraints |
 | 0060 | `20260705173419_fix_audit_triggers.sql` | Empty boilerplate migration |
 | 0061 | `20260705173420_fix_audit_triggers.sql` | Redefined trigger functions to fallback to system cats admin on nonexistent profiles to prevent foreign key errors |
+| 0062 | `0007_security_hardening.sql` | Consolidated security hardening trigger functions, RLS policies, and RPC grants |
+| 0063 | `20260705175800_fix_audit_cats_null_name.sql` | Fixed null safety on cat audit logging and wrapped in exception handlers |
 
 ---
 

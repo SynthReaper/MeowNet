@@ -126,22 +126,30 @@ export default async function ColonyDetailPage({
   } catch {}
 
   let medicalLogs: any[] = [];
-  try {
-    const { data } = await supabase
-      .from('colony_medical_logs' as never)
-      .select('id, log_type, notes, created_at, profiles:recorded_by(display_name)')
-      .eq('colony_id', id)
-      .order('created_at', { ascending: false });
-    if (data) {
-      medicalLogs = data.map((row: any) => ({
-        id: row.id,
-        log_type: row.log_type,
-        notes: row.notes,
-        created_at: row.created_at,
-        recorded_by: row.profiles?.display_name || 'Anonymous Rescuer'
-      }));
-    }
-  } catch {}
+  const isColonyManagerOrStaff = !!(user && (
+    user.id === colony.caretaker_id ||
+    user.id === colony.created_by ||
+    userRole === 'admin' ||
+    userRole === 'moderator'
+  ));
+  if (isColonyManagerOrStaff) {
+    try {
+      const { data } = await supabase
+        .from('colony_medical_logs' as never)
+        .select('id, log_type, notes, created_at, profiles:recorded_by(display_name)')
+        .eq('colony_id', id)
+        .order('created_at', { ascending: false });
+      if (data) {
+        medicalLogs = data.map((row: any) => ({
+          id: row.id,
+          log_type: row.log_type,
+          notes: row.notes,
+          created_at: row.created_at,
+          recorded_by: row.profiles?.display_name || 'Anonymous Rescuer'
+        }));
+      }
+    } catch {}
+  }
 
   let fundBalance = 0;
   try {

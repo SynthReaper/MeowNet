@@ -65,7 +65,7 @@ export async function logCat(formData: FormData): Promise<LogCatResult> {
     const { buffer: cleanBuffer } = await stripExifAndNormalize(rawBuffer);
 
     // 4. Upload to Supabase Storage
-    const fileName = `${user.id}/${Date.now()}.jpg`;
+    const fileName = `${user.id.replace(/[\\/.]/g, '_')}/${Date.now()}.jpg`;
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('MeowNet')
       .upload(fileName, cleanBuffer, { contentType: 'image/jpeg', upsert: false });
@@ -200,7 +200,7 @@ async function handleCatPhotoUpload(
   if (!validateImageBuffer(rawBuffer)) return { error: 'invalid_image_format' };
   const { buffer: cleanBuffer } = await stripExifAndNormalize(rawBuffer);
 
-  const fileName = `${userId}/${Date.now()}.jpg`;
+  const fileName = `${userId.replace(/[\\/.]/g, '_')}/${Date.now()}.jpg`;
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from('MeowNet')
     .upload(fileName, cleanBuffer, { contentType: 'image/jpeg', upsert: false });
@@ -415,38 +415,20 @@ export async function donateToFund(
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return { success: false, error: 'unauthorized' };
 
-    // Check if donor has enough points in profiles
-    const { data: profile } = await supabase
-      .from('profiles' as never)
-      .select('empire_points')
-      .eq('id', user.id)
-      .maybeSingle() as unknown as { data: { empire_points: number } | null };
+    // Execute atomic donation RPC in DB
+    const { error: rpcError } = await (supabase as any).rpc('donate_to_fund', {
+      p_fund_id: fundId,
+      p_amount_points: amountPoints,
+      p_is_anonymous: isAnonymous,
+      p_donor_id: user.id
+    });
 
-    if (!profile || profile.empire_points < amountPoints) {
-      return { success: false, error: 'insufficient_points' };
-    }
-
-    // Insert donation
-    const { error: donationError } = await supabase.from('fund_donations' as never).insert({
-      fund_id: fundId,
-      donor_id: user.id,
-      amount_points: amountPoints,
-      is_anonymous: isAnonymous
-    } as never);
-
-    if (donationError) {
-      console.error('donateToFund insert error:', donationError.message);
+    if (rpcError) {
+      console.error('donateToFund RPC error:', rpcError.message);
+      if (rpcError.message.includes('Insufficient points')) {
+        return { success: false, error: 'insufficient_points' };
+      }
       return { success: false, error: 'failed_to_donate' };
-    }
-
-    // Deduct points from donor's profile
-    const { error: deductError } = await supabase.from('profiles' as never).update({
-      empire_points: profile.empire_points - amountPoints
-    } as never).eq('id', user.id);
-
-    if (deductError) {
-      console.error('donateToFund deduct error:', deductError.message);
-      return { success: false, error: 'failed_to_deduct_points' };
     }
 
     revalidatePath('/empire');
@@ -455,6 +437,68 @@ export async function donateToFund(
   } catch (err) {
     console.error('donateToFund exception:', err);
     return { success: false, error: 'internal_error' };
+  }
+}
+
+export async function getLocalMappers(lat: number, lng: number): Promise<string[]> {
+  try {
+    const supabase = await createServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const serviceClient = createServiceClient();
+    const { data: catsData, error } = await serviceClient
+      .from('cats' as never)
+      .select('owner_id, location')
+      .limit(1000);
+
+    if (error || !catsData) return [];
+
+    // Helper to calculate distance
+    const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+      const R = 6371; // Radius of the earth in km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    };
+
+    const localOwners = new Set<string>();
+    catsData.forEach((row: any) => {
+      let catLat = 0;
+      let catLng = 0;
+      const loc = row.location;
+
+      if (loc && typeof loc === 'object') {
+        const geojson = loc as { type?: string; coordinates?: number[] };
+        if (geojson.type === 'Point' && Array.isArray(geojson.coordinates) && geojson.coordinates.length >= 2) {
+          catLng = geojson.coordinates[0];
+          catLat = geojson.coordinates[1];
+        }
+      } else if (typeof loc === 'string') {
+        const match = /POINT\(([^ ]+) ([^ )]+)\)/.exec(loc);
+        if (match) {
+          catLng = parseFloat(match[1]);
+          catLat = parseFloat(match[2]);
+        }
+      }
+
+      if (catLat !== 0 && catLng !== 0) {
+        const dist = getDistance(lat, lng, catLat, catLng);
+        if (dist <= 100) {
+          localOwners.add(row.owner_id);
+        }
+      }
+    });
+
+    return Array.from(localOwners);
+  } catch (err) {
+    console.error('getLocalMappers error:', err);
+    return [];
   }
 }
 

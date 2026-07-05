@@ -64,6 +64,15 @@ export async function signUpForEvent(eventId: string) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return { success: false, error: 'unauthorized' };
 
+    // Security: verify event is open for signups server-side
+    const { data: event } = await supabase
+      .from('tnr_events' as never)
+      .select('status')
+      .eq('id', eventId)
+      .maybeSingle() as unknown as { data: { status: string } | null };
+    if (!event) return { success: false, error: 'event_not_found' };
+    if (event.status !== 'open') return { success: false, error: 'event_not_open' };
+
     const { error } = await supabase.from('event_signups').insert({ event_id: eventId, user_id: user.id } as never);
     if (error) {
       if (error.code === '23505') return { success: false, error: 'already_signed_up' };
@@ -96,6 +105,15 @@ export async function markEventAttended(eventId: string, attendeeId: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const canManage = await (admin as any).rpc('can_manage_event', { p_event_id: eventId, p_user_id: user.id });
     if (!canManage.data) return { success: false, error: 'not_organizer' };
+
+    // Security: verify attendeeId is actually signed up for this event before awarding points
+    const { data: signup } = await supabase
+      .from('event_signups' as never)
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('user_id', attendeeId)
+      .maybeSingle() as unknown as { data: { id: string } | null };
+    if (!signup) return { success: false, error: 'attendee_not_signed_up' };
 
     await supabase.from('event_signups').update({ attended: true } as never).eq('event_id', eventId).eq('user_id', attendeeId);
 

@@ -2,7 +2,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import AdminGamificationClient from '@/components/empire/AdminGamificationClient';
 
 export const metadata: Metadata = {
@@ -31,9 +31,10 @@ export default async function AdminGamificationPage() {
     redirect('/cats');
   }
 
+  const serviceClient = createServiceClient();
   // Fetch lists from database
   const [triviaRes, bingoRes, guildsRes] = await Promise.all([
-    supabase.from('trivia_questions' as never).select('*').order('created_at', { ascending: true }),
+    serviceClient.from('trivia_questions' as never).select('*').order('created_at', { ascending: true }),
     supabase.from('bingo_task_templates' as never).select('*').order('created_at', { ascending: true }),
     supabase.from('guilds' as never).select('*').order('points', { ascending: false })
   ]);

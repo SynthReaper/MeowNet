@@ -7,6 +7,7 @@ import { createServerClient, createServiceClient } from '@/lib/supabase/server';
 import { type ActionResponse } from './admin';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
+import { sanitizeText } from '@/lib/security/sanitize';
 
 export interface Channel {
   id: string;
@@ -223,23 +224,32 @@ export async function postCommunityMessage(
       .eq('id', realChannelId)
       .maybeSingle() as unknown as { data: { slug: string } | null };
 
-    if (channelData?.slug === 'management') {
-      const { data: caller } = await supabase
-        .from('profiles' as never)
-        .select('role')
-        .eq('id', user.id)
-        .maybeSingle() as unknown as { data: { role: string } | null };
+    const { data: caller } = await supabase
+      .from('profiles' as never)
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle() as unknown as { data: { role: string } | null };
 
-      if (caller?.role !== 'moderator' && caller?.role !== 'admin') {
+    const isStaff = caller?.role === 'moderator' || caller?.role === 'admin';
+
+    if (channelData?.slug === 'management') {
+      if (!isStaff) {
         return { success: false, error: 'Only staff can post in the Staff HQ channel.' };
       }
+    }
+
+    let msg = sanitizeText(trimmed);
+    if (!isStaff) {
+      msg = msg.replace(/\[SYSTEM_HVAC_ALERT\]/g, '')
+               .replace(/\[SYSTEM_DISPATCH_ALERT\]/g, '')
+               .replace(/\[SYSTEM_DISPATCH\]/g, '');
     }
 
     const { error } = await supabase
       .from('community_messages' as never)
       .insert({
         user_id: user.id,
-        message: trimmed,
+        message: msg,
         channel_id: realChannelId,
         parent_id: parentId || null,
       } as never);
@@ -300,10 +310,17 @@ export async function editCommunityMessage(
       }
     }
 
+    let sanitizedText = sanitizeText(trimmed);
+    if (!isStaff) {
+      sanitizedText = sanitizedText.replace(/\[SYSTEM_HVAC_ALERT\]/g, '')
+                                   .replace(/\[SYSTEM_DISPATCH_ALERT\]/g, '')
+                                   .replace(/\[SYSTEM_DISPATCH\]/g, '');
+    }
+
     const { error } = await supabase
       .from('community_messages' as never)
       .update({
-        message: trimmed,
+        message: sanitizedText,
         edited_at: new Date().toISOString(),
       } as never)
       .eq('id', messageId);
@@ -447,12 +464,54 @@ export async function sendDirectMessage(
     const trimmed = messageText.trim();
     if (!trimmed && !mediaUrl) return { success: false, error: 'Message cannot be empty.' };
 
+    // Security: DM approval check server-side
+    // Check if the receiver has sent any message to the sender (meaning receiver approved/replied)
+    const { data: receiverDMs } = await supabase
+      .from('direct_messages' as never)
+      .select('id')
+      .eq('sender_id', receiverId)
+      .eq('receiver_id', user.id)
+      .limit(1) as unknown as { data: { id: string }[] | null };
+
+    const receiverApproved = receiverDMs && receiverDMs.length > 0;
+
+    if (!receiverApproved) {
+      // Receiver has not sent any message back.
+      // Has sender already sent a message to the receiver?
+      const { data: senderDMs } = await supabase
+        .from('direct_messages' as never)
+        .select('id')
+        .eq('sender_id', user.id)
+        .eq('receiver_id', receiverId)
+        .limit(1) as unknown as { data: { id: string }[] | null };
+
+      if (senderDMs && senderDMs.length > 0) {
+        return { success: false, error: 'DM request pending receiver approval.' };
+      }
+    }
+
+    // Get sender/staff details to determine if we strip system alerts
+    const { data: caller } = await supabase
+      .from('profiles' as never)
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle() as unknown as { data: { role: string } | null };
+
+    const isStaff = caller?.role === 'moderator' || caller?.role === 'admin';
+
+    let msg = sanitizeText(trimmed);
+    if (!isStaff) {
+      msg = msg.replace(/\[SYSTEM_HVAC_ALERT\]/g, '')
+               .replace(/\[SYSTEM_DISPATCH_ALERT\]/g, '')
+               .replace(/\[SYSTEM_DISPATCH\]/g, '');
+    }
+
     const { data, error } = await supabase
       .from('direct_messages' as never)
       .insert({
         sender_id: user.id,
         receiver_id: receiverId,
-        message: trimmed,
+        message: msg,
         media_url: mediaUrl || null,
         media_type: mediaType || null,
         is_read: false
@@ -1134,10 +1193,25 @@ export async function editDirectMessage(
       return { success: false, error: 'Messages can only be edited within 15 minutes of sending.' };
     }
 
+    const { data: caller } = await supabase
+      .from('profiles' as never)
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle() as unknown as { data: { role: string | null } | null };
+
+    const isStaff = caller?.role === 'moderator' || caller?.role === 'admin';
+
+    let sanitizedText = sanitizeText(trimmed);
+    if (!isStaff) {
+      sanitizedText = sanitizedText.replace(/\[SYSTEM_HVAC_ALERT\]/g, '')
+                                   .replace(/\[SYSTEM_DISPATCH_ALERT\]/g, '')
+                                   .replace(/\[SYSTEM_DISPATCH\]/g, '');
+    }
+
     const { error } = await supabase
       .from('direct_messages' as never)
       .update({
-        message: trimmed,
+        message: sanitizedText,
         edited_at: new Date().toISOString(),
       } as never)
       .eq('id', messageId);

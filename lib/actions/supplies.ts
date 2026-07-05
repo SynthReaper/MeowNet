@@ -196,16 +196,20 @@ export async function fulfillSupplyRequest(requestId: string): Promise<ActionRes
 
     if (!req || req.status !== 'approved') return { success: false, error: 'Request not approved' };
 
-    // Decrement supply quantity
+    // Decrement supply quantity using RPC (atomic)
     await (supabase as any).rpc('decrement_supply_quantity', {
       p_supply_id: req.supply_id,
       p_quantity: req.quantity_requested,
     });
 
-    await supabase
+    // Mark as fulfilled only if still 'approved' to guard against concurrent double-fulfill
+    const { error: markErr } = await supabase
       .from('supply_requests' as never)
       .update({ status: 'fulfilled' } as never)
-      .eq('id', requestId) as unknown as { error: unknown };
+      .eq('id', requestId)
+      .eq('status', 'approved') as unknown as { error: { message: string } | null };
+
+    if (markErr) return { success: false, error: 'concurrent_fulfill_detected' };
 
     revalidatePath('/supplies');
     return { success: true };

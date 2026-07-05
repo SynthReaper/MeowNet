@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { createClient } from '@/lib/supabase/client';
+import { getLocalMappers } from '@/lib/actions/cats';
 
 interface LeaderboardEntry {
   readonly id: string; display_name: string | null; avatar_url: string | null;
@@ -62,54 +63,15 @@ export default function Leaderboard({ entries: initialEntries, currentUserId }: 
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
 
-          // Fetch all cats to resolve local coordinates
-          const supabase = createClient();
-          const { data: catsData } = await supabase
-            .from('cats' as never)
-            .select('owner_id, location')
-            .limit(1000);
-
-          if (!catsData) {
-            setLocalUserIds([]);
-            setLocating(false);
-            return;
-          }
-
-          const localOwners = new Set<string>();
-
-          catsData.forEach((row: any) => {
-            let catLat = 0;
-            let catLng = 0;
-            const loc = row.location;
-
-            if (loc && typeof loc === 'object') {
-              const geojson = loc as { type?: string; coordinates?: number[] };
-              if (geojson.type === 'Point' && Array.isArray(geojson.coordinates) && geojson.coordinates.length >= 2) {
-                catLng = geojson.coordinates[0];
-                catLat = geojson.coordinates[1];
-              }
-            } else if (typeof loc === 'string') {
-              const match = /POINT\(([^ ]+) ([^ )]+)\)/.exec(loc);
-              if (match) {
-                catLng = parseFloat(match[1]);
-                catLat = parseFloat(match[2]);
-              }
-            }
-
-            if (catLat !== 0 && catLng !== 0) {
-              const dist = getDistance(lat, lng, catLat, catLng);
-              if (dist <= 100) { // within 100km radius
-                localOwners.add(row.owner_id);
-              }
-            }
-          });
+          const localOwners = await getLocalMappers(lat, lng);
+          const localOwnersSet = new Set<string>(localOwners);
 
           // Always include the current user so they see themselves
           if (currentUserId) {
-            localOwners.add(currentUserId);
+            localOwnersSet.add(currentUserId);
           }
 
-          setLocalUserIds(Array.from(localOwners));
+          setLocalUserIds(Array.from(localOwnersSet));
         } catch (err) {
           console.error(err);
           setLocError('Failed to scan local sightings');

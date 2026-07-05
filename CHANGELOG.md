@@ -29,6 +29,24 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 - **AI Helper Keyless Bypass**: Added a "Use Server Defaults" bypass option to `VaultUnlock` and `HelperWidget`, allowing users to chat with the AI helper companion using server-side environment keys without setting up or entering a master password.
 
 ### Security
+- **Consolidated Security Hardening Trigger Functions & RLS**: Created database migration `0007_security_hardening.sql` enforcing triggers and RLS policies across user signups, fuzzed cat locations, transactional donation lock guards, profile update locks, DM updates check triggers, medical log recorders, event capacity serialize locks, channel member signature checks, moderator application reviews, direct messaging reactions, trivia answers SELECT grants, audit log restrictions, and points RPC execute revokes.
+- **Client-Side Zero-Knowledge Encryption Salt Integration**: Upgraded the client-side session token encryption mechanism in `encryption.ts` to derive AES-GCM-256 keys using PBKDF2 with SHA-256 and a random 16-byte salt (`meownet_vault_salt`) stored inside browser `localStorage` alongside the token (`meownet_vault_token`), replacing the weak public `user.id` key derivation. Added salt management, manual lock cleanup, and auto-unlock routines to `VaultUnlock`, `HelperWidget`, `HelperPage`, and `Navbar`.
+- **Educational Trivia Answers Protection**: Restricted direct SQL SELECT on `correct_index` of `trivia_questions` for public and authenticated users. Modified server gamification actions to use the service-role client to fetch active questions and question lists.
+- **Credential Leak & Info Exposure Remediations**:
+  - Stripped `location` queries from the local leaderboard filter in `Leaderboard` to prevent client-side distance scanning that leaks cat coordinates.
+  - Stripped hardcoded email and password credentials pre-fills from `moderator-login` pages.
+  - Gated educational academy courses queries to filter unpublished courses for non-staff callers.
+  - Stripped `correct_answer` fields from course content quizzes in `/api/education/courses` for non-staff.
+  - Stripped staff-only internal tracking fields (`dispatch_notes`, `internal_status`) from `/api/emergency/incidents` for non-staff.
+  - Gated chapter member list queries in `/api/chapters/members` to verify the caller is staff or a chapter member.
+  - Wrapped colony medical logs in `colonies/[id]/page.tsx` to only render if the caller is caretaker, creator, or staff.
+  - Masked anonymous fund creator display names on the Empire community fund feed.
+  - Restricted map coordinate queries to 3 items and forced fuzzed coordinates for unauthenticated users.
+  - Added CSV cell value sanitization in `AdminDashboardClient` and `ModeratorDashboardClient` to prefix values starting with formula characters (`=`, `+`, `-`, `@`) with a single quote.
+- **Validation & EXIF Stripping Extensions**:
+  - Extended EXIF metadata removal in `exif.ts` to support WebP and AVIF image formats, and added magic bytes verification.
+  - Gated neuter request approvals to prevent self-approving certificate requests, and restricted signature checks to require `NEUTER_HMAC_SECRET`.
+  - Upgraded the FastAPI ML service secret verification to a fail-closed authentication scheme when `ML_SERVICE_SECRET` is missing.
 - **Volunteer Hour/Skill Verification Hardening**: Created database migration `0005_harden_volunteer_security.sql` to restrict insertion and updates on `volunteer_skills` and `volunteer_hours` tables, preventing regular users from self-verifying or forging hours logs.
 
 

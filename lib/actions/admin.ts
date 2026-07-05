@@ -4,6 +4,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createServerClient, createServiceClient } from '@/lib/supabase/server';
+import { sanitizeText } from '@/lib/security/sanitize';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface ActionResponse {
@@ -414,6 +415,20 @@ export async function raiseModeratorQuery(
       return { success: false, error: 'Unauthorized' };
     }
 
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(volunteerId)) {
+      return { success: false, error: 'Invalid volunteer ID format.' };
+    }
+
+    const { data: volunteerExists } = await supabase
+      .from('profiles' as never)
+      .select('id')
+      .eq('id', volunteerId)
+      .maybeSingle() as unknown as { data: { id: string } | null };
+
+    if (!volunteerExists) {
+      return { success: false, error: 'Volunteer not found.' };
+    }
+
     const { error } = await supabase
       .from('moderator_queries' as never)
       .insert({
@@ -479,6 +494,18 @@ export async function resolveModeratorQuery(queryId: string, responseText?: stri
 
     if (caller?.role !== 'moderator' && caller?.role !== 'admin') {
       return { success: false, error: 'Unauthorized' };
+    }
+
+    const { data: query } = await supabase
+      .from('moderator_queries' as never)
+      .select('status')
+      .eq('id', queryId)
+      .maybeSingle() as unknown as { data: { status: string } | null };
+
+    if (!query) return { success: false, error: 'Query not found' };
+
+    if (query.status === 'escalated' && caller?.role !== 'admin') {
+      return { success: false, error: 'Forbidden: only admins can resolve escalated queries.' };
     }
 
     const { error } = await supabase
@@ -967,6 +994,7 @@ export async function updateProfileByStaff(
     max_usages?: number | null;
     usages_count?: number;
     is_enabled?: boolean;
+    role?: string;
   },
   newPassword?: string
 ): Promise<ActionResponse> {
@@ -1002,9 +1030,28 @@ export async function updateProfileByStaff(
       return { success: false, error: pwdRes.error };
     }
 
+    // Build explicit allowlist to prevent mass assignment
+    const allowedData: Record<string, any> = {};
+    if (data.display_name !== undefined) allowedData.display_name = sanitizeText(data.display_name);
+    if (data.bio !== undefined) allowedData.bio = sanitizeText(data.bio);
+    if (data.preferred_role !== undefined) allowedData.preferred_role = sanitizeText(data.preferred_role);
+    if (data.location_neighborhood !== undefined) allowedData.location_neighborhood = sanitizeText(data.location_neighborhood);
+    if (data.contact_phone !== undefined) allowedData.contact_phone = sanitizeText(data.contact_phone);
+    if (data.password_expires_at !== undefined) allowedData.password_expires_at = data.password_expires_at;
+    if (data.max_usages !== undefined) allowedData.max_usages = data.max_usages;
+    if (data.usages_count !== undefined) allowedData.usages_count = data.usages_count;
+    if (data.is_enabled !== undefined) allowedData.is_enabled = data.is_enabled;
+
+    if (data.role !== undefined) {
+      if (caller.role !== 'admin') {
+        return { success: false, error: 'Only admins can modify user roles.' };
+      }
+      allowedData.role = data.role;
+    }
+
     const { error } = await serviceClient
       .from('profiles' as never)
-      .update(data as never)
+      .update(allowedData as never)
       .eq('id', targetUserId);
 
     if (error) return { success: false, error: error.message };
@@ -1280,10 +1327,14 @@ export async function getAuditLogs() {
       throw new Error('Unauthorized');
     }
 
-    const query = supabase
+    let query = supabase
       .from('staff_audit_logs' as never)
       .select('id, actor_id, actor_role, action, target_id, details, created_at, profiles:profiles!actor_id(display_name)' as never)
       .order('created_at', { ascending: false });
+
+    if (caller?.role === 'moderator') {
+      query = query.neq('actor_role', 'admin');
+    }
 
     const { data, error } = await query;
     if (error) throw new Error(error.message);
@@ -1420,12 +1471,18 @@ export async function getUserActivitySummary(targetUserId: string): Promise<{
       .eq('user_id', targetUserId);
 
     // 4. Staff audit logs associated with this user (either actor or target)
-    const { data: auditLogs } = await serviceClient
+    let auditLogsQuery = serviceClient
       .from('staff_audit_logs' as never)
       .select('id, action, details, created_at, actor_role')
       .or(`actor_id.eq.${targetUserId},target_id.eq.${targetUserId}`)
       .order('created_at', { ascending: false })
       .limit(10);
+
+    if (caller?.role === 'moderator') {
+      auditLogsQuery = auditLogsQuery.neq('actor_role', 'admin');
+    }
+
+    const { data: auditLogs } = await auditLogsQuery;
 
     // 5. Moderator application history
     const { data: applications } = await serviceClient

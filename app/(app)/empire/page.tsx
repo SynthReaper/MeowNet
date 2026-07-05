@@ -37,7 +37,7 @@ export default async function EmpirePage() {
     role?: string;
   }>;
   const leaderboard = allEntries.filter((e) => !e.role || (e.role !== 'admin' && e.role !== 'moderator'));
-  const funds = (fundsRes.data ?? []) as any[];
+  const fundsData = (fundsRes.data ?? []) as any[];
   const user = userRes.data.user;
   const userId = user?.id;
 
@@ -50,6 +50,18 @@ export default async function EmpirePage() {
 
   const userRole = profileData?.role ?? 'user';
   const isStaff = userRole === 'admin' || userRole === 'moderator';
+
+  // Hide anonymous fund creator info for non-staff / non-owner
+  const funds = fundsData.map((f) => {
+    if (f.is_anonymous && !isStaff && f.created_by !== userId) {
+      return {
+        ...f,
+        created_by: null,
+        profiles: null,
+      };
+    }
+    return f;
+  });
 
   // ── STAFF HQ PATH ──────────────────────────────────────────────────────────
   if (isStaff && userId) {

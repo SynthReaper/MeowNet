@@ -16,7 +16,7 @@ Browser
   │
   ├── Supabase (PostgreSQL + PostGIS)
   │     ├── Auth     — email/password + Google/GitHub OAuth + direct credentials
-  │     ├── Database — cats, events, profiles, personal_cats, user_private_config (3 migrations)
+  │     ├── Database — cats, events, profiles, personal_cats, user_private_config (10 migrations)
   │     ├── Storage  — Cat photos (EXIF stripped before write)
   │     ├── Realtime — Live cat map, chat, guilds subscriptions
   │     └── system_settings — Dynamic key-value configuration store

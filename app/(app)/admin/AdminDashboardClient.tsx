@@ -3051,7 +3051,13 @@ export default function AdminDashboardClient({
       (q.response || '').replace(/"/g, '""'),
       formatUTCDateTime(q.created_at)
     ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.map(val => `"${val}"`).join(','))].join('\n');
+    const sanitizeCsvValue = (val: string) => {
+      if (val.startsWith('=') || val.startsWith('+') || val.startsWith('-') || val.startsWith('@')) {
+        return `'${val}`;
+      }
+      return val;
+    };
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.map(val => `"${sanitizeCsvValue(val)}"`).join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);

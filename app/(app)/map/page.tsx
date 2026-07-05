@@ -54,11 +54,17 @@ export default function MapPage() {
   const isUserLoggedIn = isSignedIn || !!supabaseUser;
 
   const fetchCats = useCallback(async () => {
-    const { data, error } = await supabase
+    let query = supabase
       .from('cats')
-      .select('id, status, name, breed_estimate, photo_url, location, location_privacy, health_notes, created_at')
-      .limit(200)
-      .order('created_at', { ascending: false });
+      .select('id, status, name, breed_estimate, photo_url, location, location_privacy, health_notes, created_at');
+
+    if (!isUserLoggedIn) {
+      query = query.limit(3);
+    } else {
+      query = query.limit(200);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       console.error('fetchCats error:', error);
@@ -84,7 +90,7 @@ export default function MapPage() {
         }
       }
 
-      if (row.location_privacy !== 'exact') {
+      if (!isUserLoggedIn || row.location_privacy !== 'exact') {
         const fuzzed = fuzzCoordinates(lat, lng);
         lat = fuzzed.lat;
         lng = fuzzed.lng;

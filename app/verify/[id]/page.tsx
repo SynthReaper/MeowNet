@@ -6,7 +6,10 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 function verifyCryptoSignature(userId: string, catId: string, clinic: string, date: string, signature: string): boolean {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'meownet-salt-2026';
+  const secret = process.env.NEUTER_HMAC_SECRET;
+  if (!secret) {
+    throw new Error('NEUTER_HMAC_SECRET configuration is missing.');
+  }
   const data = `${userId}:${catId}:${clinic}:${date}`;
   const expected = crypto.createHmac('sha256', secret).update(data).digest('hex');
   return expected === signature;

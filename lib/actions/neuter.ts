@@ -13,7 +13,10 @@ async function getAuthUser() {
 
 // Generate secure signature
 function generateCryptoSignature(userId: string, catId: string, clinic: string, date: string): string {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'meownet-salt-2026';
+  const secret = process.env.NEUTER_HMAC_SECRET;
+  if (!secret) {
+    throw new Error('NEUTER_HMAC_SECRET is not configured on the server.');
+  }
   const data = `${userId}:${catId}:${clinic}:${date}`;
   return crypto.createHmac('sha256', secret).update(data).digest('hex');
 }
@@ -93,6 +96,14 @@ export async function verifyNeuterRequest(proofId: string, approve: boolean) {
       .single();
 
     if (fetchError || !proof) return { success: false, error: 'Request not found' };
+
+    if ((proof as any).status !== 'pending') {
+      return { success: false, error: 'Request is no longer pending' };
+    }
+
+    if ((proof as any).user_id === user.id) {
+      return { success: false, error: 'Self-approval of sterilization requests is prohibited.' };
+    }
 
     const status = approve ? 'verified' : 'rejected';
     const { error: updateError } = await supabase

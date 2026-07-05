@@ -18,6 +18,34 @@ export async function GET(req: NextRequest) {
   if (category) query = query.eq('category', category);
   if (difficulty) query = query.eq('difficulty', difficulty);
 
-  const { data: courses } = await query as unknown as { data: unknown[] | null };
-  return NextResponse.json({ courses: courses ?? [] });
+  const { data: profile } = await supabase
+    .from('profiles' as never)
+    .select('role')
+    .eq('id', user.id)
+    .single() as { data: { role: string | null } | null };
+
+  const isStaff = profile?.role === 'admin' || profile?.role === 'moderator';
+
+  const { data: courses } = await query as unknown as { data: any[] | null };
+
+  const cleanCourses = (courses ?? []).map((c: any) => {
+    if (isStaff) return c;
+    if (c && c.content && Array.isArray(c.content.quizzes)) {
+      const cleanQuizzes = c.content.quizzes.map((q: any) => {
+        if (!q) return q;
+        const { correct_answer, ...rest } = q;
+        return rest;
+      });
+      return {
+        ...c,
+        content: {
+          ...c.content,
+          quizzes: cleanQuizzes
+        }
+      };
+    }
+    return c;
+  });
+
+  return NextResponse.json({ courses: cleanCourses });
 }

@@ -28,7 +28,7 @@ Server          Auth check on every API route + Server Action
                 No secrets in client bundle
                 External APIs proxied server-side only
 ─────────────────────────────────────────────────────
-Database        Row-Level Security on every table (5 migrations)
+Database        Row-Level Security on every table (10 migrations)
                 SECURITY DEFINER for privileged ops
                 Location fuzzing trigger (BEFORE INSERT)
                 Role escalation prevention trigger
@@ -52,9 +52,12 @@ Infrastructure  CSP, HSTS, X-Frame-Options headers
 |--------|---------|
 | User impersonates another | Supabase JWT validated server-side on every request. RLS binds `auth.uid()` to rows. |
 | Admin endpoint accessed by non-admin | Every Server Action re-reads `role` from DB — no client-trusted claims. |
-| ML service called without authorization | `X-Service-Secret` header required; missing = 401. |
+| ML service called without authorization | `X-Service-Secret` header required. Authentication fails-closed returning HTTP 500 if the secret is not configured in the host environment. |
 | Direct credential user forges sign-in count | `usages_count` incremented only by `SECURITY DEFINER` trigger — no client write path. |
 | Crafted `key` param injected into `updateSystemSetting` | Server-side `ALLOWED_SETTING_KEYS` Set allowlist — only 5 known keys accepted; all others rejected. |
+| Non-staff caller accesses quiz answer keys or unpublished course materials | Quizzes `/api/education/courses` and courses page endpoints filter out unpublished courses and strip `correct_answer` fields for non-staff callers. |
+| Non-staff caller accesses dispatcher incident tracking details | Endpoint `/api/emergency/incidents` strips staff-internal tracking fields (`dispatch_notes`, `internal_status`) unless the user has a staff role. |
+| Non-member caller reads regional chapter rosters | Chapter members endpoint `/api/chapters/members` verifies chapter membership or staff status before returning list. |
 
 ### T — Tampering
 
@@ -63,9 +66,10 @@ Infrastructure  CSP, HSTS, X-Frame-Options headers
 | Cat location modified to expose exact colony GPS | Location fuzzing trigger fires `BEFORE INSERT` — exact coordinates never stored. |
 | Points double-awarded via retry | `action_key UNIQUE` in `point_log` — `ON CONFLICT DO NOTHING`. |
 | User upgrades own role | `check_role_update` trigger rejects self-escalation unless caller is `admin` or `service_role`. |
-| EXIF GPS data in uploaded photos | `sharp` WASM strips all EXIF metadata client-side before upload. |
+| EXIF GPS data in uploaded photos | `sharp` strips all EXIF metadata server-side before storage upload, supporting JPEG, PNG, WebP, and AVIF formats with magic bytes verification. |
 | Malicious file disguised as image in community upload | Server-side MIME allowlist rejects any type not in `{image/*, video/mp4, video/webm, video/ogg, application/pdf}` before buffer is read. |
 | Admin delete called with non-UUID string (IDOR attempt) | UUID regex guard `/^[0-9a-f]{8}-…-[0-9a-f]{12}$/i` on all four admin delete functions — malformed IDs rejected before DB call. |
+| Self-approval of sterilization verification or forgery of cryptographic signature | The server action blocks self-approval by checking the requester ID against the verifier ID. Cryptographic signatures are verified via SHA-256 HMAC against `NEUTER_HMAC_SECRET` with zero default fallback. |
 
 ### R — Repudiation
 
@@ -80,6 +84,7 @@ Infrastructure  CSP, HSTS, X-Frame-Options headers
 | Threat | Control |
 |--------|---------|
 | Cat colony exact GPS exposed | PostGIS `ST_SnapToGrid(0.005°)` fuzz → ≈500m radius uncertainty. |
+| Cat location leakage via weekly leaderboard queries | The weekly leaderboard's proximity sorting is processed server-side via `getLocalMappers`, returning only mapper IDs and entirely omitting coordinate details from the client payload. |
 | Camera/device metadata in photos | EXIF strip before Supabase Storage write. |
 | Supabase service_role key in bundle | CI gitleaks scan; `SUPABASE_SERVICE_ROLE` never in `NEXT_PUBLIC_*`. |
 | ML API key exposed in client | All ML calls proxied through `/api/ai/breed` — key is server env var only. |
@@ -88,7 +93,7 @@ Infrastructure  CSP, HSTS, X-Frame-Options headers
 | User data cross-contamination | RLS `WHERE user_id = auth.uid()` on all user data tables. |
 | HTML tag injection through text fields | `sanitizeText()` applies 3-pass linear O(N) scan strip then HTML-encodes `< > & " ' \`` — nested/malformed tags neutralised. |
 | Crafted `model` param in AI proxy triggers SSRF | Server-side allowlist on `POST /api/ai/personal-helper` rejects any model string not in the approved set before URL construction. |
-| Vault passphrase exposed in plaintext `localStorage` | Passphrase cached as AES-GCM-256 ciphertext (`meownet_vault_token`) keyed to the Supabase `user.id`. Cleartext `meownet_vault_key` is migrated and deleted on first load. |
+| Vault passphrase exposed in plaintext `localStorage` | Passphrase cached as AES-GCM-256 ciphertext (`meownet_vault_token`) using a key derived from the user's Supabase UUID (`user.id`) and a random salt (`meownet_vault_salt`) via PBKDF2 with 100,000 iterations of SHA-256. |
 
 ### D — Denial of Service
 
@@ -397,7 +402,7 @@ MeowNet provides a fully private Personal Care Center and Personal AI Helper usi
    - The JSON document is serialized, then encrypted client-side using `AES-GCM` with a cryptographically secure random 12-byte Initialization Vector (IV).
    - The salt (16 bytes) and IV (12 bytes) are prepended to the ciphertext and encoded in Base64.
 3. **Encrypted Storage**: The Base64 string is transmitted to the database via authenticated Server Actions. Database administrators and host servers can only see the Base64 ciphertext string, keeping health details completely private.
-4. **Encrypted Session Token**: On successful vault unlock, the plaintext passphrase is immediately re-encrypted in the browser using `AES-GCM-256` keyed to the authenticated user's Supabase UUID (`user.id`), and stored in `localStorage` under the key `meownet_vault_token`. On page load, the token is decrypted using the live user UUID to provide seamless auto-unlock without ever persisting the passphrase in plaintext. Any pre-existing cleartext `meownet_vault_key` is migrated to the encrypted token format and deleted on first load.
+4. **Encrypted Session Token**: On successful vault unlock, a random 16-byte salt is generated and stored in `localStorage` as `meownet_vault_salt`. The master passphrase is then encrypted using an AES-GCM-256 key derived via `PBKDF2(user.id, salt, 100000, SHA-256)` and cached in `localStorage` under the key `meownet_vault_token`. On page load, the token is decrypted using the live user UUID and the stored salt to provide seamless auto-unlock without ever persisting the passphrase in plaintext. Any legacy pre-existing cleartext keys are migrated to this secure salted token format on first load.
 5. **API Key Proxy Routing**:
    - To interact with Gemini, OpenAI, or Anthropic, the client decrypts the API key in the browser and sends it over HTTPS in the payload to `/api/ai/personal-helper`.
    - The server processes the request in-memory, forwards it to the provider, returns the output, and discards the key immediately. Keys are never saved or cached on the server.
