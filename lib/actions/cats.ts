@@ -71,7 +71,7 @@ export async function logCat(formData: FormData): Promise<LogCatResult> {
       .upload(fileName, cleanBuffer, { contentType: 'image/jpeg', upsert: false });
     if (uploadError) return { success: false, error: 'upload_failed' };
 
-    const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(uploadData.path);
+    const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(fileName);
 
     // 5. Insert cat record using PostGIS point
     const { data: cat, error: insertError } = await supabase
@@ -206,7 +206,7 @@ async function handleCatPhotoUpload(
     .upload(fileName, cleanBuffer, { contentType: 'image/jpeg', upsert: false });
   if (uploadError) return { error: 'upload_failed' };
 
-  const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(uploadData.path);
+  const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(fileName);
   return { photoUrl: publicUrl };
 }
 

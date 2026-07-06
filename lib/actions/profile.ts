@@ -29,7 +29,7 @@ async function handleAvatarUpload(
     .upload(fileName, cleanBuffer, { contentType: 'image/jpeg', upsert: true });
   if (uploadError) return { success: false, error: 'upload_failed' };
 
-  const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(uploadData.path);
+  const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(fileName);
   return { success: true, url: publicUrl };
 }
 

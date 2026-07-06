@@ -977,7 +977,7 @@ export async function uploadChatMedia(formData: FormData): Promise<ActionRespons
 
     if (uploadError) return { success: false, error: uploadError.message };
 
-    const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(uploadData.path);
+    const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(fileName);
     const mediaType = getMediaType(file.type);
 
     return { success: true, url: publicUrl, type: mediaType };
