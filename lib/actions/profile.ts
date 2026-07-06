@@ -26,7 +26,7 @@ async function handleAvatarUpload(
   const fileName = `avatars/${userId}-${Date.now()}.jpg`;
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from('MeowNet')
-    .upload(fileName, cleanBuffer, { contentType: 'image/jpeg', upsert: true });
+    .upload(fileName, new Blob([new Uint8Array(cleanBuffer)], { type: 'image/jpeg' }), { contentType: 'image/jpeg', upsert: true });
   if (uploadError) return { success: false, error: 'upload_failed' };
 
   const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(fileName);

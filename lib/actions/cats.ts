@@ -68,7 +68,7 @@ export async function logCat(formData: FormData): Promise<LogCatResult> {
     const fileName = `${user.id.replace(/[\\/.]/g, '_')}/${Date.now()}.jpg`;
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('MeowNet')
-      .upload(fileName, cleanBuffer, { contentType: 'image/jpeg', upsert: false });
+      .upload(fileName, new Blob([new Uint8Array(cleanBuffer)], { type: 'image/jpeg' }), { contentType: 'image/jpeg', upsert: false });
     if (uploadError) return { success: false, error: 'upload_failed' };
 
     const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(fileName);
@@ -113,6 +113,7 @@ export async function logCat(formData: FormData): Promise<LogCatResult> {
       p_action_key: actionKey,
     });
 
+    revalidatePath(`/cats/${(cat as { id: string }).id}`);
     revalidatePath('/map');
     revalidatePath('/cats');
     revalidatePath('/empire');
@@ -203,7 +204,7 @@ async function handleCatPhotoUpload(
   const fileName = `${userId.replace(/[\\/.]/g, '_')}/${Date.now()}.jpg`;
   const { data: uploadData, error: uploadError } = await supabase.storage
     .from('MeowNet')
-    .upload(fileName, cleanBuffer, { contentType: 'image/jpeg', upsert: false });
+    .upload(fileName, new Blob([new Uint8Array(cleanBuffer)], { type: 'image/jpeg' }), { contentType: 'image/jpeg', upsert: false });
   if (uploadError) return { error: 'upload_failed' };
 
   const { data: { publicUrl } } = supabase.storage.from('MeowNet').getPublicUrl(fileName);

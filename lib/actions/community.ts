@@ -973,7 +973,7 @@ export async function uploadChatMedia(formData: FormData): Promise<ActionRespons
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('MeowNet')
-      .upload(fileName, buffer, { contentType, upsert: true });
+      .upload(fileName, new Blob([new Uint8Array(buffer)], { type: contentType }), { contentType, upsert: true });
 
     if (uploadError) return { success: false, error: uploadError.message };
 
