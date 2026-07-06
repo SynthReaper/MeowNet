@@ -12,14 +12,22 @@ export const metadata: Metadata = {
 export default async function EditCatPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const { id } = await params;
   const { userId: clerkUserId } = await auth();
-  if (!clerkUserId) {
+  const supabase = await createServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!clerkUserId && !user) {
     redirect('/auth/login');
   }
 
-  const supabase = await createServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    redirect('/auth/login');
+    return (
+      <div className="w-full min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center px-4">
+        <div className="w-12 h-12 rounded-full border-4 border-[var(--empire-gold)] border-t-transparent animate-spin" />
+        <h2 className="font-display text-xl font-bold text-[var(--empire-cream)]">Connecting secure session…</h2>
+        <p className="font-body text-sm text-[var(--empire-cream)]/60 max-w-sm">
+          Please wait while we synchronize your MeowNet credentials with our database.
+        </p>
+      </div>
+    );
   }
 
   const { data: cat, error } = await supabase.from('cats' as never).select('*').eq('id', id).single() as { data: any, error: any };

@@ -16,7 +16,7 @@ export default async function NewEventPage() {
   const supabase = await createServerClient();
   const { data: { user: supabaseUser } } = await supabase.auth.getUser();
 
-  if (!clerkUserId) {
+  if (!clerkUserId && !supabaseUser) {
     redirect('/auth/login');
   }
 

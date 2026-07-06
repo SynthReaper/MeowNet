@@ -31,7 +31,7 @@
 
 > ### Judge Credentials
 >
-> **Recommended:** Use the **[Staff Portal](https://meownet-sr.vercel.app/auth/moderator-login)** — judge credential cards are pre-loaded at the bottom. Clicking any card auto-switches to **Database Direct** mode (no OTP, no Clerk, instant access).
+> **Recommended:** Use the **[Staff Portal](https://meownet-sr.vercel.app/auth/moderator-login)** — judge credential cards are pre-loaded at the bottom. Clicking any card auto-switches to **Database Direct** mode and pre-fills the login form (no OTP, no Clerk, instant access).
 >
 > | Role | Email | Password |
 > |------|-------|----------|

@@ -70,7 +70,7 @@ export default async function ProfilePage() {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!clerkUserId) {
+  if (!clerkUserId && !user) {
     redirect('/auth/login');
   }
 

@@ -6,6 +6,10 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 
 ## [Unreleased]
 
+### Fixed
+- **Judge Credentials Autofill**: Fixed missing query parameters (`email`, `password`) in the moderator-login preloaded credentials links, allowing them to correctly switch and auto-fill the login form.
+- **Database Direct Redirects**: Corrected router checks on auth-gated subroutes (`/cats/new`, `/profile`, `/events/new`, `/cats/[id]/edit`) to prevent logged-in Database Direct users from being incorrectly redirected to the Clerk login screen.
+
 ### Planned (Future Expansion)
 
 - **Winter Weather Micro-Shelter Allocator**: Hypothermia warning indicators, location allocation suggestions, and insulative R-value trackings.

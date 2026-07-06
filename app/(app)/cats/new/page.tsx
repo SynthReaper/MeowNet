@@ -15,7 +15,7 @@ export default async function LogCatPage() {
   const supabase = await createServerClient();
   const { data: { user: supabaseUser } } = await supabase.auth.getUser();
 
-  if (!clerkUserId) {
+  if (!clerkUserId && !supabaseUser) {
     redirect('/auth/login');
   }
 
