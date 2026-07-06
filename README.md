@@ -222,7 +222,7 @@ MeowNet/
 | **EXIF Stripping** | `sharp` WASM strips GPS metadata client-side before any upload |
 | **Zero-Knowledge Encryption** | In-browser AES-GCM-256 + PBKDF2 local key derivation for private cat logs & user AI keys |
 | **Location Fuzzing** | PostGIS `ST_SnapToGrid(0.005°)` — colony GPS never stored raw |
-| **Auth Bridge** | Clerk sessions sync to Supabase; direct credential accounts isolated |
+| **Auth Bridge** | Clerk sessions sync to Supabase; direct credential accounts isolated with onboarding redirection support |
 | **GDPR Erasure** | Cascade `DELETE` removes all user data and signs out all sessions |
 | **Points Idempotency** | `action_key UNIQUE` in `point_log` — points awarded exactly once |
 | **ML Auth** | `X-Service-Secret` header + slowapi rate limiting (10/min breed) |

@@ -80,7 +80,7 @@ export default function OnboardingClient() {
 
   // Wait for Supabase AuthBridge to complete and get session
   useEffect(() => {
-    if (!clerkLoaded || !clerkUser) return;
+    if (!clerkLoaded) return;
 
     let retryCount = 0;
     const maxRetries = 10;
@@ -106,9 +106,9 @@ export default function OnboardingClient() {
             setNeighborhood(profile.location_neighborhood || '');
             setPhone(profile.contact_phone || '');
           } else {
-            setDisplayName(clerkUser?.fullName || clerkUser?.username || '');
+            setDisplayName(clerkUser?.fullName || clerkUser?.username || sbUser.email?.split('@')[0] || '');
           }
-        } else if (retryCount < maxRetries) {
+        } else if (clerkUser && retryCount < maxRetries) {
           retryCount++;
           setTimeout(checkSupabaseSession, 800);
         } else {

@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import OnboardingClient from './OnboardingClient';
+import { createServerClient } from '@/lib/supabase/server';
 
 export const metadata: Metadata = {
   title: 'Onboarding | MeowNet',
@@ -12,8 +13,11 @@ export const metadata: Metadata = {
 };
 
 export default async function OnboardingPage() {
-  const { userId } = await auth();
-  if (!userId) {
+  const { userId: clerkUserId } = await auth();
+  const supabase = await createServerClient();
+  const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+
+  if (!clerkUserId && !supabaseUser) {
     redirect('/auth/login');
   }
 

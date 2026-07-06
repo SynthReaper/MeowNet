@@ -66,7 +66,23 @@ export default function AuthForm({ mode }: AuthFormProps) {
         if (signInError) {
           setError(ERROR_MAP[signInError.message] ?? signInError.message);
         } else {
-          router.push('/cats');
+          // Check if user has completed onboarding
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await (supabase
+              .from('profiles' as never)
+              .select('preferred_role')
+              .eq('id', user.id)
+              .maybeSingle() as any);
+
+            if (!profile?.preferred_role) {
+              router.push('/auth/onboarding');
+            } else {
+              router.push('/cats');
+            }
+          } else {
+            router.push('/cats');
+          }
           router.refresh();
         }
       }
