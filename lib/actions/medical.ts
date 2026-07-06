@@ -35,15 +35,19 @@ export async function createMedicalLog(colonyId: string, logType: 'vaccine' | 'p
     if (error) throw error;
 
     // Award volunteer points for registering a medical action (+15 XP)
-    const admin = createServiceClient();
-    const actionKey = makeActionKey(user.id, 'MEDICAL_LOG', `${colonyId}:${logType}:${Date.now()}`);
-    await (admin as any).rpc('award_points', {
-      p_user_id: user.id,
-      p_activity: 'MEDICAL_LOG',
-      p_points: 15,
-      p_related_id: colonyId,
-      p_action_key: actionKey,
-    });
+    try {
+      const admin = createServiceClient();
+      const actionKey = makeActionKey(user.id, 'MEDICAL_LOG', `${colonyId}:${logType}:${Date.now()}`);
+      await (admin as any).rpc('award_points', {
+        p_user_id: user.id,
+        p_activity: 'MEDICAL_LOG',
+        p_points: 15,
+        p_related_id: colonyId,
+        p_action_key: actionKey,
+      });
+    } catch (pointsErr) {
+      console.error('Failed to award points for medical log:', pointsErr);
+    }
 
     // Log to system audit trail
     await (supabase as any).rpc('log_system_activity', {

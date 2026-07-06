@@ -118,15 +118,19 @@ export async function verifyNeuterRequest(proofId: string, approve: boolean) {
 
     // If verified, reward volunteer with a "TNR Champion" badge or Empire Points (+50 XP)
     if (approve) {
-      const admin = createServiceClient();
-      const actionKey = `neuter-verify:${(proof as any).cat_id}:${Date.now()}`;
-      await (admin as any).rpc('award_points', {
-        p_user_id: (proof as any).user_id,
-        p_activity: 'NEUTER_PROOF',
-        p_points: 50,
-        p_related_id: (proof as any).cat_id,
-        p_action_key: actionKey
-      });
+      try {
+        const admin = createServiceClient();
+        const actionKey = `neuter-verify:${(proof as any).cat_id}:${Date.now()}`;
+        await (admin as any).rpc('award_points', {
+          p_user_id: (proof as any).user_id,
+          p_activity: 'NEUTER_PROOF',
+          p_points: 50,
+          p_related_id: (proof as any).cat_id,
+          p_action_key: actionKey
+        });
+      } catch (pointsErr) {
+        console.error('Failed to award points for neuter verification:', pointsErr);
+      }
 
       // Update cat status in DB to adoption-ready/sterilized
       await supabase

@@ -101,17 +101,22 @@ export async function logCat(formData: FormData): Promise<LogCatResult> {
     if (insertError || !cat) return { success: false, error: 'insert_failed' };
 
     // 6. Award points via service_role (RLS bypass required)
-    const admin = createServiceClient();
-    const actionKey = makeActionKey(user.id, 'CAT_LOGGED', (cat as { id: string }).id);
-    const customPoints = await getSystemSetting<number>('CAT_LOG_POINTS_AWARDED', POINT_VALUES.CAT_LOGGED);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (admin as any).rpc('award_points', {
-      p_user_id: user.id,
-      p_activity: 'CAT_LOGGED',
-      p_points: customPoints,
-      p_related_id: (cat as { id: string }).id,
-      p_action_key: actionKey,
-    });
+    let customPoints: number = POINT_VALUES.CAT_LOGGED;
+    try {
+      const admin = createServiceClient();
+      const actionKey = makeActionKey(user.id, 'CAT_LOGGED', (cat as { id: string }).id);
+      customPoints = await getSystemSetting<number>('CAT_LOG_POINTS_AWARDED', POINT_VALUES.CAT_LOGGED);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (admin as any).rpc('award_points', {
+        p_user_id: user.id,
+        p_activity: 'CAT_LOGGED',
+        p_points: customPoints,
+        p_related_id: (cat as { id: string }).id,
+        p_action_key: actionKey,
+      });
+    } catch (pointsErr) {
+      console.error('Failed to award points for logging cat:', pointsErr);
+    }
 
     revalidatePath(`/cats/${(cat as { id: string }).id}`);
     revalidatePath('/map');
@@ -133,16 +138,20 @@ export async function markCatAdopted(catId: string): Promise<{ success: boolean;
     const { error } = await supabase.from('cats').update({ status: 'adopted' } as never).eq('id', catId).eq('owner_id', user.id);
     if (error) return { success: false, error: 'update_failed' };
 
-    const admin = createServiceClient();
-    const actionKey = makeActionKey(user.id, 'CAT_MARKED_ADOPTED', catId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (admin as any).rpc('award_points', {
-      p_user_id: user.id,
-      p_activity: 'CAT_MARKED_ADOPTED',
-      p_points: POINT_VALUES.CAT_MARKED_ADOPTED,
-      p_related_id: catId,
-      p_action_key: actionKey,
-    });
+    try {
+      const admin = createServiceClient();
+      const actionKey = makeActionKey(user.id, 'CAT_MARKED_ADOPTED', catId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (admin as any).rpc('award_points', {
+        p_user_id: user.id,
+        p_activity: 'CAT_MARKED_ADOPTED',
+        p_points: POINT_VALUES.CAT_MARKED_ADOPTED,
+        p_related_id: catId,
+        p_action_key: actionKey,
+      });
+    } catch (pointsErr) {
+      console.error('Failed to award points for marking cat adopted:', pointsErr);
+    }
 
     revalidatePath(`/cats/${catId}`);
     revalidatePath('/empire');
@@ -311,17 +320,21 @@ export async function lendAPaw(catId: string, pledges: string[], isAnonymous: bo
       return { success: false, error: 'failed_to_save_pledge' };
     }
 
-    // Award points
-    const admin = createServiceClient();
-    const actionKey = makeActionKey(user.id, 'LEND_A_PAW', catId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (admin as any).rpc('award_points', {
-      p_user_id: user.id,
-      p_activity: 'LEND_A_PAW',
-      p_points: POINT_VALUES.LEND_A_PAW,
-      p_related_id: catId,
-      p_action_key: actionKey,
-    });
+    try {
+      // Award points
+      const admin = createServiceClient();
+      const actionKey = makeActionKey(user.id, 'LEND_A_PAW', catId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (admin as any).rpc('award_points', {
+        p_user_id: user.id,
+        p_activity: 'LEND_A_PAW',
+        p_points: POINT_VALUES.LEND_A_PAW,
+        p_related_id: catId,
+        p_action_key: actionKey,
+      });
+    } catch (pointsErr) {
+      console.error('Failed to award points for lending a paw:', pointsErr);
+    }
 
     revalidatePath(`/cats/${catId}`);
     revalidatePath('/empire');

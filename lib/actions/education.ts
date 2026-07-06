@@ -211,15 +211,19 @@ export async function completeQuiz(
         .eq('user_id', user.id);
 
       // Award points (idempotent via makeActionKey)
-      const admin = createServiceClient();
-      const actionKey = makeActionKey(user.id, 'QUIZ_PASSED', enrollmentId);
-      await (admin as any).rpc('award_points', {
-        p_user_id: user.id,
-        p_activity: 'QUIZ_PASSED',
-        p_points: POINT_VALUES.QUIZ_PASSED,
-        p_related_id: enrollmentId,
-        p_action_key: actionKey,
-      });
+      try {
+        const admin = createServiceClient();
+        const actionKey = makeActionKey(user.id, 'QUIZ_PASSED', enrollmentId);
+        await (admin as any).rpc('award_points', {
+          p_user_id: user.id,
+          p_activity: 'QUIZ_PASSED',
+          p_points: POINT_VALUES.QUIZ_PASSED,
+          p_related_id: enrollmentId,
+          p_action_key: actionKey,
+        });
+      } catch (pointsErr) {
+        console.error('Failed to award points for quiz pass:', pointsErr);
+      }
     }
 
     revalidatePath('/education');

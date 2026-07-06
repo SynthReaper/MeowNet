@@ -417,16 +417,20 @@ export async function verifyHours(hoursId: string): Promise<ActionResponse> {
       .eq('id', hoursId) as unknown as { error: unknown };
 
     // Award points (idempotent via makeActionKey)
-    const admin = createServiceClient();
-    const actionKey = makeActionKey(hoursEntry.user_id, 'HOURS_LOGGED', hoursId);
-    const calculatedPoints = Math.round(Number(hoursEntry.hours) * 10);
-    await (admin as any).rpc('award_points', {
-      p_user_id: hoursEntry.user_id,
-      p_activity: 'HOURS_LOGGED',
-      p_points: calculatedPoints,
-      p_related_id: hoursId,
-      p_action_key: actionKey,
-    });
+    try {
+      const admin = createServiceClient();
+      const actionKey = makeActionKey(hoursEntry.user_id, 'HOURS_LOGGED', hoursId);
+      const calculatedPoints = Math.round(Number(hoursEntry.hours) * 10);
+      await (admin as any).rpc('award_points', {
+        p_user_id: hoursEntry.user_id,
+        p_activity: 'HOURS_LOGGED',
+        p_points: calculatedPoints,
+        p_related_id: hoursId,
+        p_action_key: actionKey,
+      });
+    } catch (pointsErr) {
+      console.error('Failed to award points for hours verification:', pointsErr);
+    }
 
     revalidatePath('/admin/volunteers');
     return { success: true };

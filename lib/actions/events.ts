@@ -41,13 +41,17 @@ export async function createEvent(formData: FormData) {
       .single();
     if (error || !event) return { success: false, error: 'insert_failed' };
 
-    const admin = createServiceClient();
-    const actionKey = makeActionKey(user.id, 'EVENT_CREATED', (event as { id: string }).id);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (admin as any).rpc('award_points', {
-      p_user_id: user.id, p_activity: 'EVENT_CREATED',
-      p_points: POINT_VALUES.EVENT_CREATED, p_related_id: (event as { id: string }).id, p_action_key: actionKey,
-    });
+    try {
+      const admin = createServiceClient();
+      const actionKey = makeActionKey(user.id, 'EVENT_CREATED', (event as { id: string }).id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (admin as any).rpc('award_points', {
+        p_user_id: user.id, p_activity: 'EVENT_CREATED',
+        p_points: POINT_VALUES.EVENT_CREATED, p_related_id: (event as { id: string }).id, p_action_key: actionKey,
+      });
+    } catch (pointsErr) {
+      console.error('Failed to award points for event creation:', pointsErr);
+    }
 
     revalidatePath('/events');
     revalidatePath('/map');
@@ -79,13 +83,17 @@ export async function signUpForEvent(eventId: string) {
       return { success: false, error: 'signup_failed' };
     }
 
-    const admin = createServiceClient();
-    const actionKey = makeActionKey(user.id, 'EVENT_SIGNUP', eventId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (admin as any).rpc('award_points', {
-      p_user_id: user.id, p_activity: 'EVENT_SIGNUP',
-      p_points: POINT_VALUES.EVENT_SIGNUP, p_related_id: eventId, p_action_key: actionKey,
-    });
+    try {
+      const admin = createServiceClient();
+      const actionKey = makeActionKey(user.id, 'EVENT_SIGNUP', eventId);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (admin as any).rpc('award_points', {
+        p_user_id: user.id, p_activity: 'EVENT_SIGNUP',
+        p_points: POINT_VALUES.EVENT_SIGNUP, p_related_id: eventId, p_action_key: actionKey,
+      });
+    } catch (pointsErr) {
+      console.error('Failed to award points for event signup:', pointsErr);
+    }
 
     revalidatePath(`/events/${eventId}`);
     revalidatePath('/empire');
@@ -117,13 +125,18 @@ export async function markEventAttended(eventId: string, attendeeId: string) {
 
     await supabase.from('event_signups').update({ attended: true } as never).eq('event_id', eventId).eq('user_id', attendeeId);
 
-    const actionKey = makeActionKey(attendeeId, 'EVENT_ATTENDED', eventId);
-    const customPoints = await getSystemSetting<number>('TNR_POINTS_AWARDED', POINT_VALUES.EVENT_ATTENDED);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (admin as any).rpc('award_points', {
-      p_user_id: attendeeId, p_activity: 'EVENT_ATTENDED',
-      p_points: customPoints, p_related_id: eventId, p_action_key: actionKey,
-    });
+    let customPoints: number = POINT_VALUES.EVENT_ATTENDED;
+    try {
+      const actionKey = makeActionKey(attendeeId, 'EVENT_ATTENDED', eventId);
+      customPoints = await getSystemSetting<number>('TNR_POINTS_AWARDED', POINT_VALUES.EVENT_ATTENDED);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (admin as any).rpc('award_points', {
+        p_user_id: attendeeId, p_activity: 'EVENT_ATTENDED',
+        p_points: customPoints, p_related_id: eventId, p_action_key: actionKey,
+      });
+    } catch (pointsErr) {
+      console.error('Failed to award points for event attendance:', pointsErr);
+    }
 
     revalidatePath(`/events/${eventId}`);
     revalidatePath('/empire');
