@@ -9,6 +9,13 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
 ### Added
 - **Database Direct Onboarding Integration**: Connected Database Direct (email/password) users to the interactive welcome guide. If a direct DB user logs in for the first time (i.e. `preferred_role` is not yet set in their profile), they are now redirected to `/auth/onboarding` to customize their name, neighborhood, bio, and role preferences.
 
+### Security
+- **Dependabot & NPM Audit Vulnerability Remediation**: Resolved 8 Dependabot security advisories and npm audit alerts:
+  - Upgraded `next` and `eslint-config-next` from `16.2.9` to `16.3.1` (mitigating SSRF in rewrites & Server Actions, DoS in App Router and SVG image optimization, middleware/proxy bypass in Turbopack, cache confusion, and unbounded Server Action payload).
+  - Upgraded `dompurify` from `^3.4.11` to `^3.4.13` (patching IN_PLACE hook subtree execution XSS and CUSTOM_ELEMENT_HANDLING bypass).
+  - Upgraded `postcss` override to `^8.5.26` (patching path traversal and sourceMappingURL map file disclosure).
+  - Patched transitive dependencies `nanoid` (indefinite loops), `js-yaml` (quadratic CPU consumption), `brace-expansion` (exponential-time DoS), and `sharp` (libvips CVEs) achieving 0 vulnerabilities across 503 audited packages.
+
 ### Fixed
 - **Storage Public URL Generation & Payload Corruption**: Resolved a bug in server actions (`cats.ts`, `profile.ts`, `community.ts`) where `supabase.storage.from(...).getPublicUrl(uploadData.path)` was generating broken image links due to duplicate bucket names in self-hosted or proxy environments. Replaced `uploadData.path` with the locally declared `fileName` parameter, and wrapped binary Node `Buffer` payloads in native web `Blob` objects via `Uint8Array` casting, resolving Vercel-specific image content corruption.
 - **Judge Credentials Autofill**: Fixed missing query parameters (`email`, `password`) in the moderator-login preloaded credentials links, allowing them to correctly switch and auto-fill the login form.
