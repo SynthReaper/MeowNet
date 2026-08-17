@@ -660,9 +660,9 @@ ALTER TABLE public.research_data_requests ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "research_requests_insert_public"
   ON public.research_data_requests FOR INSERT
   WITH CHECK (
-    organization_name IS NOT NULL AND
-    contact_email IS NOT NULL AND
-    purpose IS NOT NULL AND
+    researcher_email IS NOT NULL AND
+    institution IS NOT NULL AND
+    research_purpose IS NOT NULL AND
     status = 'pending'
   );
 
