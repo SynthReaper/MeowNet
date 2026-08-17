@@ -15,6 +15,12 @@ All notable changes to MeowNet are documented here. We follow [Semantic Versioni
   - Upgraded `dompurify` from `^3.4.11` to `^3.4.13` (patching IN_PLACE hook subtree execution XSS and CUSTOM_ELEMENT_HANDLING bypass).
   - Upgraded `postcss` override to `^8.5.26` (patching path traversal and sourceMappingURL map file disclosure).
   - Patched transitive dependencies `nanoid` (indefinite loops), `js-yaml` (quadratic CPU consumption), `brace-expansion` (exponential-time DoS), and `sharp` (libvips CVEs) achieving 0 vulnerabilities across 503 audited packages.
+- **Supabase Database Linter Remediation**: Resolved all database security linter warnings and errors (`security_definer_view`, `rls_disabled_in_public`, `function_search_path_mutable`, `rls_policy_always_true`, and `anon/authenticated_security_definer_function_executable`):
+  - Created migration `0008_fix_database_linter_issues.sql` and updated `0002_production_schema.sql` to define `public.leaderboard_weekly` and `public.impact_summary` views `WITH (security_invoker = true)`, enforcing querying user RLS and permissions.
+  - Enabled Row-Level Security on PostGIS `public.spatial_ref_sys` with a public read policy (`allow_read_spatial_ref_sys`) across `0001_extensions.sql` and `0008_fix_database_linter_issues.sql`.
+  - Added fixed `SET search_path = public` on 9 functions with mutable search paths (`get_displayable_location`, `prevent_meownet_bucket_modification`, `check_notice_write`, `get_actor_role`, `trigger_audit_*`).
+  - Hardened `research_requests_insert_public` policy on `public.research_data_requests` to validate required fields and enforce `status = 'pending'`.
+  - Revoked public/anon/authenticated `EXECUTE` privileges on 32 trigger and internal SECURITY DEFINER functions, closing unauthenticated PostgREST `/rest/v1/rpc/*` exposure.
 
 ### Fixed
 - **Storage Public URL Generation & Payload Corruption**: Resolved a bug in server actions (`cats.ts`, `profile.ts`, `community.ts`) where `supabase.storage.from(...).getPublicUrl(uploadData.path)` was generating broken image links due to duplicate bucket names in self-hosted or proxy environments. Replaced `uploadData.path` with the locally declared `fileName` parameter, and wrapped binary Node `Buffer` payloads in native web `Blob` objects via `Uint8Array` casting, resolving Vercel-specific image content corruption.

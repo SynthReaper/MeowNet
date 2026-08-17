@@ -500,7 +500,7 @@ DROP MATERIALIZED VIEW IF EXISTS public.leaderboard_weekly;
 DROP MATERIALIZED VIEW IF EXISTS public.impact_summary;
 
 -- 3. Recreate public.leaderboard_weekly as a standard VIEW for real-time calculations
-CREATE OR REPLACE VIEW public.leaderboard_weekly AS
+CREATE OR REPLACE VIEW public.leaderboard_weekly WITH (security_invoker = true) AS
 SELECT
   p.id,
   p.display_name,
@@ -519,7 +519,7 @@ GROUP BY p.id, p.display_name, p.avatar_url, p.weekly_points;
 GRANT SELECT ON public.leaderboard_weekly TO authenticated, anon;
 
 -- 4. Recreate public.impact_summary as a standard VIEW for real-time dashboard statistics
-CREATE OR REPLACE VIEW public.impact_summary AS
+CREATE OR REPLACE VIEW public.impact_summary WITH (security_invoker = true) AS
 SELECT
   COUNT(*)::INTEGER                                   AS total_cats,
   COUNT(*) FILTER (WHERE status = 'tnr_needed')::INTEGER AS tnr_count,

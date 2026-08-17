@@ -121,6 +121,7 @@ Auth schema (Supabase managed)
 | 0061 | `20260705173420_fix_audit_triggers.sql` | Redefined trigger functions to fallback to system cats admin on nonexistent profiles to prevent foreign key errors |
 | 0062 | `0007_security_hardening.sql` | Consolidated security hardening trigger functions, RLS policies, and RPC grants |
 | 0063 | `20260705175800_fix_audit_cats_null_name.sql` | Fixed null safety on cat audit logging and wrapped in exception handlers |
+| 0064 | `0008_fix_database_linter_issues.sql` | Remediates Supabase database linter errors: security_invoker = true on views and enables RLS on spatial_ref_sys |
 
 ---
 
@@ -431,8 +432,13 @@ Extends the credentials verification model to support a request-and-review appli
   - `proof` `TEXT`: Links to certificates or clinic references.
   - `status` `TEXT`: Credential state constraint (`'pending'`, `'query_raised'`, `'verified'`, or `'rejected'`).
   - `mod_query` `TEXT`: Written clarification request raised by moderators.
-  - `volunteer_response` `TEXT`: Follow-up details submitted by the volunteer.
-- **RLS Update Policy**: Added policy `volunteer_skills_own_update` allowing volunteers to modify their own columns (`info`, `proof`, `volunteer_response`, `status`) to respond to clarification queries when their credentials remain unverified (`verified = false` and `auth.uid() = user_id`).
+### Database Linter Remediation (migration 0008)
+Remediates Supabase Database Linter security findings:
+- **`leaderboard_weekly` & `impact_summary` Views (`security_definer_view`)**: Configured with `WITH (security_invoker = true)` / `ALTER VIEW ... SET (security_invoker = true)` to enforce Postgres permissions and Row Level Security policies of the querying user instead of the view creator.
+- **`public.spatial_ref_sys` Table (`rls_disabled_in_public`)**: Enabled Row-Level Security (`ALTER TABLE public.spatial_ref_sys ENABLE ROW LEVEL SECURITY`) and added public read policy `allow_read_spatial_ref_sys` for spatial projection queries.
+- **Function `search_path` Hardening (`function_search_path_mutable`)**: Defined explicit `SET search_path = public` on `get_displayable_location`, `prevent_meownet_bucket_modification`, `check_notice_write`, `get_actor_role`, `trigger_audit_point_log`, `trigger_audit_cats`, `trigger_audit_tnr_events`, `trigger_audit_moderator_queries`, and `trigger_audit_profiles`.
+- **Policy Validation Tightening (`rls_policy_always_true`)**: Hardened `research_requests_insert_public` on `research_data_requests` to validate required fields (`organization_name`, `contact_email`, `purpose`) and enforce `status = 'pending'`.
+- **Privileged RPC & Trigger Execution Revocation (`anon/authenticated_security_definer_function_executable`)**: Revoked `EXECUTE` on 32 trigger, internal helper, and SECURITY DEFINER functions from `PUBLIC`, `anon`, and `authenticated` roles to eliminate exposed RPC endpoints on PostgREST.
 
 
 

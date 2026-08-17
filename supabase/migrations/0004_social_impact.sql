@@ -659,7 +659,12 @@ ALTER TABLE public.research_data_requests ENABLE ROW LEVEL SECURITY;
 -- Anyone can submit a research request (no auth required)
 CREATE POLICY "research_requests_insert_public"
   ON public.research_data_requests FOR INSERT
-  WITH CHECK (true);
+  WITH CHECK (
+    organization_name IS NOT NULL AND
+    contact_email IS NOT NULL AND
+    purpose IS NOT NULL AND
+    status = 'pending'
+  );
 
 -- Only admins can view and manage requests
 CREATE POLICY "research_requests_admin_all"
